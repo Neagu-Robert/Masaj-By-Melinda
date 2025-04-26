@@ -33,7 +33,7 @@ const deviceTreatments = [
   },
   {
     title: "40Khz Cavitation Body Remodeling",
-    image: "public/lovable-uploads/fa42b781-cd55-48fc-91b5-18f873fbb702.png",
+    image: "public/lovable-uploads/16817603-5ec2-4bff-a5aa-9ac7174c302d.png", // Updated image
     benefits: [
       "Body remodeling through fat burning",
       "Lymphatic detoxification",
