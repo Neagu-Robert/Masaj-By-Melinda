@@ -4,22 +4,46 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 
 const massageServices = [
   {
-    title: "Swedish Massage",
-    description: "A gentle, relaxing massage that uses long strokes to ease tension.",
-    duration: "60 min",
-    price: "$85"
+    title: "Masaj de relaxare",
+    description: "*Description*",
+    duration: "",
+    price: ""
   },
   {
-    title: "Deep Tissue Massage",
-    description: "Targets deep muscle layers to release chronic muscle tension.",
-    duration: "60 min",
-    price: "$95"
+    title: "Masaj terapeutic",
+    description: "*Description*",
+    duration: "",
+    price: ""
   },
   {
-    title: "Hot Stone Massage",
-    description: "Heated stones and gentle pressure create deep relaxation.",
-    duration: "90 min",
-    price: "$120"
+    title: "Masaj de drenaj limfatic",
+    description: "*Description*",
+    duration: "",
+    price: ""
+  },
+  {
+    title: "Masaj anticelulitic",
+    description: "*Description*",
+    duration: "",
+    price: ""
+  },
+  {
+    title: "Masaj facial",
+    description: "*Description*",
+    duration: "",
+    price: ""
+  },
+  {
+    title: "Masaj cu pietre vulcanice",
+    description: "*Description*",
+    duration: "",
+    price: ""
+  },
+  {
+    title: "Masaj cu bete de bambus",
+    description: "*Description*",
+    duration: "",
+    price: ""
   }
 ];
 
@@ -27,7 +51,7 @@ const MassageServices = () => {
   return (
     <div className="container mx-auto px-4">
       <h3 className="text-2xl font-semibold text-center text-[#63099c] mb-8">Massage Services</h3>
-      <div className="grid md:grid-cols-3 gap-8">
+      <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-8">
         {massageServices.map((service) => (
           <Card key={service.title} className="hover:shadow-lg transition-shadow duration-300">
             <CardHeader>
