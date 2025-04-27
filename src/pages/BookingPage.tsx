@@ -1,17 +1,62 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { useForm } from 'react-hook-form';
+import { toast } from '@/components/ui/sonner';
+import { Calendar as CalendarIcon, Clock, User, Phone } from 'lucide-react';
 
 const BookingPage = () => {
   const navigate = useNavigate();
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>();
+  const [selectedTime, setSelectedTime] = useState<string | undefined>();
+  const [selectedService, setSelectedService] = useState<string | undefined>();
   const timeSlots = Array.from({ length: 13 }, (_, i) => {
     const hour = i + 8; // Start from 8 AM
     return `${hour}:00`;
   });
+  
+  const form = useForm({
+    defaultValues: {
+      fullName: '',
+      phoneNumber: '',
+      serviceType: '',
+    }
+  });
+
+  const onSubmit = (data: any) => {
+    if (!selectedDate || !selectedTime) {
+      toast("Selectați data și ora", {
+        description: "Vă rugăm să alegeți data și ora pentru rezervare"
+      });
+      return;
+    }
+    
+    toast("Confirmare trimisă", {
+      description: "Rezervarea dumneavoastră a fost trimisă cu succes!"
+    });
+  };
+
+  const massageServices = [
+    "Masaj de relaxare",
+    "Masaj terapeutic",
+    "Masaj de drenaj limfatic",
+    "Masaj anticelulitic",
+    "Masaj facial",
+    "Masaj cu pietre vulcanice",
+    "Masaj cu bete de bambus"
+  ];
+  
+  const deviceServices = [
+    "Tratament cu ultrasunete",
+    "Tratament cu radiofrecvență",
+    "Tratament cu vacuum"
+  ];
 
   return (
     <div className="min-h-screen bg-white">
@@ -32,37 +77,175 @@ const BookingPage = () => {
       <div className="pt-24 pb-20">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-semibold text-center text-[#63099c] mb-12">Book Your Session</h2>
-          <div className="max-w-2xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Select a Date</CardTitle>
-                <CardDescription>Choose your preferred massage date</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Calendar mode="single" className="rounded-md border" />
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>Select Time</CardTitle>
-                <CardDescription>Choose your preferred time slot</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Select>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select a time" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {timeSlots.map((time) => (
-                      <SelectItem key={time} value={time}>
-                        {time}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </CardContent>
-            </Card>
+          
+          <div className="max-w-3xl mx-auto">
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                {/* Contact Information */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Date de contact</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="fullName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Nume complet</FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <User className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
+                              <Input 
+                                placeholder="Introduceți numele complet" 
+                                className="pl-10" 
+                                {...field}
+                                required
+                              />
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="phoneNumber"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Număr de telefon</FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
+                              <Input 
+                                placeholder="Introduceți numărul de telefon" 
+                                className="pl-10" 
+                                {...field}
+                                required
+                              />
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </CardContent>
+                </Card>
+
+                {/* Service Selection */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Selectați serviciul</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <FormField
+                      control={form.control}
+                      name="serviceType"
+                      render={({ field }) => (
+                        <FormItem>
+                          <Select 
+                            onValueChange={(value) => {
+                              field.onChange(value);
+                              setSelectedService(value);
+                            }}
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Selectați un serviciu" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <optgroup label="Masaje">
+                                {massageServices.map((service) => (
+                                  <SelectItem key={service} value={service}>
+                                    {service}
+                                  </SelectItem>
+                                ))}
+                              </optgroup>
+                              <optgroup label="Tratamente cu aparate">
+                                {deviceServices.map((service) => (
+                                  <SelectItem key={service} value={service}>
+                                    {service}
+                                  </SelectItem>
+                                ))}
+                              </optgroup>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </CardContent>
+                </Card>
+
+                {/* Date and Time Selection */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Selectați data și ora</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="flex flex-col md:flex-row md:space-x-4">
+                      <div className="mb-4 md:mb-0 md:w-1/2">
+                        <div className="flex items-center mb-2">
+                          <CalendarIcon className="mr-2 h-5 w-5 text-gray-500" />
+                          <span className="font-medium">Selectați data</span>
+                        </div>
+                        <Calendar 
+                          mode="single" 
+                          selected={selectedDate}
+                          onSelect={setSelectedDate}
+                          className="rounded-md border"
+                          disabled={(date) => date < new Date()}
+                        />
+                      </div>
+                      <div className="md:w-1/2">
+                        <div className="flex items-center mb-2">
+                          <Clock className="mr-2 h-5 w-5 text-gray-500" />
+                          <span className="font-medium">Selectați ora</span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                          {timeSlots.map((time) => (
+                            <Button
+                              key={time}
+                              type="button"
+                              variant={selectedTime === time ? "default" : "outline"}
+                              className={`${selectedTime === time ? 'bg-[#7E69AB] text-white' : 'text-gray-700'}`}
+                              onClick={() => setSelectedTime(time)}
+                            >
+                              {time}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Booking Summary */}
+                {selectedDate && selectedTime && form.watch('fullName') && form.watch('phoneNumber') && selectedService && (
+                  <Card className="border-2 border-[#7E69AB]/30">
+                    <CardHeader>
+                      <CardTitle>Rezumatul rezervării</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      <p><strong>Nume:</strong> {form.watch('fullName')}</p>
+                      <p><strong>Telefon:</strong> {form.watch('phoneNumber')}</p>
+                      <p><strong>Serviciu:</strong> {selectedService}</p>
+                      <p><strong>Data:</strong> {selectedDate.toLocaleDateString('ro-RO')}</p>
+                      <p><strong>Ora:</strong> {selectedTime}</p>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Submit Button */}
+                <div className="flex justify-center">
+                  <Button 
+                    type="submit"
+                    className="bg-[#63099c] hover:bg-[#63099c]/90 text-white text-xl py-6 px-8 w-full md:w-auto"
+                  >
+                    Confirmă rezervarea
+                  </Button>
+                </div>
+              </form>
+            </Form>
           </div>
         </div>
       </div>
