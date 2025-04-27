@@ -7,6 +7,20 @@ const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const scrollToElement = (elementId: string) => {
+    // Navigate to homepage first if not already there
+    if (location.pathname !== '/') {
+      navigate('/', { state: { scrollTo: elementId } });
+      return;
+    }
+    
+    // If already on homepage, scroll to the element
+    const element = document.getElementById(elementId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <nav className="bg-white/80 backdrop-blur-sm fixed w-full z-50 shadow-sm">
       <div className="container mx-auto px-4 py-4">
@@ -16,21 +30,21 @@ const Navbar = () => {
             <Button 
               variant="ghost" 
               className="text-[#7E69AB] hover:text-[#9b87f5]"
-              onClick={() => navigate('/#services')}
+              onClick={() => scrollToElement('services')}
             >
               Services
             </Button>
             <Button 
               variant="ghost" 
               className="text-[#7E69AB] hover:text-[#9b87f5]"
-              onClick={() => navigate('/#pricing')}
+              onClick={() => scrollToElement('pricing')}
             >
               Pricing
             </Button>
             <Button 
               variant="ghost" 
               className="text-[#7E69AB] hover:text-[#9b87f5]"
-              onClick={() => navigate('/#contact')}
+              onClick={() => scrollToElement('contact')}
             >
               Contact
             </Button>

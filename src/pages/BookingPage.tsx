@@ -53,9 +53,11 @@ const BookingPage = () => {
   ];
   
   const deviceServices = [
-    "Tratament cu ultrasunete",
-    "Tratament cu radiofrecvență",
-    "Tratament cu vacuum"
+    "Termocuverta Treatment",
+    "Volcanic Stone Therapy",
+    "40Khz Cavitation Body Remodeling",
+    "Electrostimulation Treatment",
+    "TECAR Radiofrequency"
   ];
 
   return (
@@ -148,6 +150,7 @@ const BookingPage = () => {
                               field.onChange(value);
                               setSelectedService(value);
                             }}
+                            value={field.value}
                           >
                             <SelectTrigger className="w-full">
                               <SelectValue placeholder="Selectați un serviciu" />
@@ -192,7 +195,7 @@ const BookingPage = () => {
                           mode="single" 
                           selected={selectedDate}
                           onSelect={setSelectedDate}
-                          className="rounded-md border"
+                          className="rounded-md border pointer-events-auto"
                           disabled={(date) => date < new Date()}
                         />
                       </div>

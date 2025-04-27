@@ -74,8 +74,15 @@ const DeviceTreatments = () => {
     <div className="container mx-auto px-4">
       <h3 className="text-2xl font-semibold text-center text-[#63099c] mb-8">Device Treatments</h3>
       <div className="grid md:grid-cols-2 gap-8">
-        {deviceTreatments.map((treatment) => (
-          <Card key={treatment.title} className="hover:shadow-lg transition-shadow duration-300">
+        {deviceTreatments.map((treatment, index) => (
+          <Card 
+            key={treatment.title} 
+            className={`hover:shadow-lg transition-shadow duration-300 ${
+              index === deviceTreatments.length - 1 && deviceTreatments.length % 2 === 1 
+                ? "md:col-span-2 md:max-w-2xl md:mx-auto" 
+                : ""
+            }`}
+          >
             <CardHeader>
               <CardTitle className="text-[#63099c]">{treatment.title}</CardTitle>
             </CardHeader>
