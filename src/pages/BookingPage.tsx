@@ -10,12 +10,14 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { useForm } from 'react-hook-form';
 import { toast } from '@/components/ui/sonner';
 import { Calendar as CalendarIcon, Clock, User, Phone } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 const BookingPage = () => {
   const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [selectedTime, setSelectedTime] = useState<string | undefined>();
   const [selectedService, setSelectedService] = useState<string | undefined>();
+
   const timeSlots = Array.from({ length: 13 }, (_, i) => {
     const hour = i + 8; // Start from 8 AM
     return `${hour}:00`;
@@ -42,6 +44,7 @@ const BookingPage = () => {
     });
   };
 
+  // Massage services that match the pricing section
   const massageServices = [
     "Masaj de relaxare",
     "Masaj terapeutic",
@@ -52,6 +55,7 @@ const BookingPage = () => {
     "Masaj cu bete de bambus"
   ];
   
+  // Device treatments that match the pricing section
   const deviceServices = [
     "Termocuverta Treatment",
     "Volcanic Stone Therapy",
@@ -134,7 +138,7 @@ const BookingPage = () => {
                   </CardContent>
                 </Card>
 
-                {/* Service Selection */}
+                {/* Service Selection with Radio Group */}
                 <Card>
                   <CardHeader>
                     <CardTitle>Selectați serviciul</CardTitle>
@@ -144,34 +148,60 @@ const BookingPage = () => {
                       control={form.control}
                       name="serviceType"
                       render={({ field }) => (
-                        <FormItem>
-                          <Select 
-                            onValueChange={(value) => {
-                              field.onChange(value);
-                              setSelectedService(value);
-                            }}
-                            value={field.value}
-                          >
-                            <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Selectați un serviciu" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <optgroup label="Masaje">
-                                {massageServices.map((service) => (
-                                  <SelectItem key={service} value={service}>
-                                    {service}
-                                  </SelectItem>
-                                ))}
-                              </optgroup>
-                              <optgroup label="Tratamente cu aparate">
-                                {deviceServices.map((service) => (
-                                  <SelectItem key={service} value={service}>
-                                    {service}
-                                  </SelectItem>
-                                ))}
-                              </optgroup>
-                            </SelectContent>
-                          </Select>
+                        <FormItem className="space-y-6">
+                          <FormControl>
+                            <div className="space-y-4">
+                              {/* Massage Services Section */}
+                              <div>
+                                <h4 className="text-lg font-medium text-[#7E69AB] mb-2">Masaje</h4>
+                                <RadioGroup 
+                                  onValueChange={(value) => {
+                                    field.onChange(value);
+                                    setSelectedService(value);
+                                  }}
+                                  value={field.value}
+                                  className="grid grid-cols-1 md:grid-cols-2 gap-2"
+                                >
+                                  {massageServices.map((service) => (
+                                    <div key={service} className="flex items-center space-x-2 rounded-md border p-3 hover:bg-slate-50">
+                                      <RadioGroupItem value={service} id={service} />
+                                      <label 
+                                        htmlFor={service} 
+                                        className="flex-1 cursor-pointer text-sm font-medium"
+                                      >
+                                        {service}
+                                      </label>
+                                    </div>
+                                  ))}
+                                </RadioGroup>
+                              </div>
+                              
+                              {/* Device Services Section */}
+                              <div>
+                                <h4 className="text-lg font-medium text-[#7E69AB] mb-2">Tratamente cu aparate</h4>
+                                <RadioGroup 
+                                  onValueChange={(value) => {
+                                    field.onChange(value);
+                                    setSelectedService(value);
+                                  }}
+                                  value={field.value}
+                                  className="grid grid-cols-1 md:grid-cols-2 gap-2"
+                                >
+                                  {deviceServices.map((service) => (
+                                    <div key={service} className="flex items-center space-x-2 rounded-md border p-3 hover:bg-slate-50">
+                                      <RadioGroupItem value={service} id={service} />
+                                      <label 
+                                        htmlFor={service} 
+                                        className="flex-1 cursor-pointer text-sm font-medium"
+                                      >
+                                        {service}
+                                      </label>
+                                    </div>
+                                  ))}
+                                </RadioGroup>
+                              </div>
+                            </div>
+                          </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
