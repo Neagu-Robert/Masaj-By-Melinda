@@ -4,19 +4,20 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
 import { toast } from '@/components/ui/sonner';
 import { Calendar as CalendarIcon, Clock, User, Phone } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { supabase } from '@/integrations/supabase/client';
 
 const BookingPage = () => {
   const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [selectedTime, setSelectedTime] = useState<string | undefined>();
   const [selectedService, setSelectedService] = useState<string | undefined>();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const timeSlots = Array.from({ length: 13 }, (_, i) => {
     const hour = i + 8; // Start from 8 AM
@@ -31,17 +32,64 @@ const BookingPage = () => {
     }
   });
 
-  const onSubmit = (data: any) => {
-    if (!selectedDate || !selectedTime) {
+  const onSubmit = async (data: any) => {
+    if (!selectedDate || !selectedTime || !selectedService) {
       toast("Selectați data și ora", {
-        description: "Vă rugăm să alegeți data și ora pentru rezervare"
+        description: "Vă rugăm să alegeți data, ora și serviciul pentru rezervare"
       });
       return;
     }
     
-    toast("Confirmare trimisă", {
-      description: "Rezervarea dumneavoastră a fost trimisă cu succes!"
-    });
+    try {
+      setIsSubmitting(true);
+
+      // Split full name into first name and last name
+      const nameParts = data.fullName.split(' ');
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
+      
+      // Format date as YYYY-MM-DD
+      const formattedDate = selectedDate.toISOString().split('T')[0];
+
+      // Insert booking data into Supabase
+      const { error } = await supabase
+        .from('bookings')
+        .insert({
+          first_name: firstName,
+          last_name: lastName,
+          phone_number: data.phoneNumber,
+          service_type: selectedService,
+          booking_date: formattedDate,
+          booking_time: selectedTime
+        });
+
+      if (error) {
+        console.error('Error saving booking:', error);
+        toast("Eroare", {
+          description: "A apărut o eroare la salvarea rezervării. Vă rugăm să încercați din nou.",
+        });
+      } else {
+        toast("Confirmare trimisă", {
+          description: "Rezervarea dumneavoastră a fost trimisă cu succes!"
+        });
+        
+        // Reset form after successful submission
+        setTimeout(() => {
+          form.reset();
+          setSelectedDate(undefined);
+          setSelectedTime(undefined);
+          setSelectedService(undefined);
+          navigate('/', { state: { fromBooking: true } });
+        }, 2000);
+      }
+    } catch (error) {
+      console.error('Submission error:', error);
+      toast("Eroare", {
+        description: "A apărut o eroare la salvarea rezervării. Vă rugăm să încercați din nou.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Massage services that match the pricing section
@@ -273,8 +321,9 @@ const BookingPage = () => {
                   <Button 
                     type="submit"
                     className="bg-[#63099c] hover:bg-[#63099c]/90 text-white text-xl py-6 px-8 w-full md:w-auto"
+                    disabled={isSubmitting}
                   >
-                    Confirmă rezervarea
+                    {isSubmitting ? "Se procesează..." : "Confirmă rezervarea"}
                   </Button>
                 </div>
               </form>
