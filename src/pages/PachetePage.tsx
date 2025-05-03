@@ -2,7 +2,7 @@
 import React from 'react';
 import Navbar from '../components/Navbar';
 import { Card, CardContent } from '@/components/ui/card';
-import { package as PackageIcon, gift } from 'lucide-react';
+import { Package, Gift } from 'lucide-react';
 
 const PachetePage = () => {
   return (
@@ -26,7 +26,7 @@ const PachetePage = () => {
                 </div>
                 <CardContent className="p-6">
                   <div className="flex items-center mb-4">
-                    <PackageIcon className="w-6 h-6 text-[#9b87f5] mr-2" />
+                    <Package className="w-6 h-6 text-[#9b87f5] mr-2" />
                     <h3 className="text-xl font-semibold text-[#63099c]">Pachet loialitate</h3>
                   </div>
                   <p className="text-gray-700">
@@ -48,7 +48,7 @@ const PachetePage = () => {
                 </div>
                 <CardContent className="p-6">
                   <div className="flex items-center mb-4">
-                    <PackageIcon className="w-6 h-6 text-[#9b87f5] mr-2" />
+                    <Package className="w-6 h-6 text-[#9b87f5] mr-2" />
                     <h3 className="text-xl font-semibold text-[#63099c]">Remodelare corporala</h3>
                   </div>
                   <p className="text-gray-700">
@@ -62,11 +62,11 @@ const PachetePage = () => {
             <Card className="overflow-hidden border-[#9b87f5]/30 shadow-lg hover:shadow-xl transition-shadow">
               <div className="grid md:grid-cols-2">
                 <div className="h-64 md:h-auto bg-[#9b87f5]/10 flex items-center justify-center">
-                  <PackageIcon className="w-20 h-20 text-[#9b87f5]" />
+                  <Package className="w-20 h-20 text-[#9b87f5]" />
                 </div>
                 <CardContent className="p-6">
                   <div className="flex items-center mb-4">
-                    <PackageIcon className="w-6 h-6 text-[#9b87f5] mr-2" />
+                    <Package className="w-6 h-6 text-[#9b87f5] mr-2" />
                     <h3 className="text-xl font-semibold text-[#63099c]">Impachetari pentru detox/remodelare</h3>
                   </div>
                   <p className="text-gray-700">
@@ -80,11 +80,11 @@ const PachetePage = () => {
             <Card className="overflow-hidden border-[#9b87f5]/30 shadow-lg hover:shadow-xl transition-shadow">
               <div className="grid md:grid-cols-2">
                 <div className="h-64 md:h-auto bg-[#9b87f5]/10 flex items-center justify-center">
-                  <gift className="w-20 h-20 text-[#9b87f5]" />
+                  <Gift className="w-20 h-20 text-[#9b87f5]" />
                 </div>
                 <CardContent className="p-6">
                   <div className="flex items-center mb-4">
-                    <gift className="w-6 h-6 text-[#9b87f5] mr-2" />
+                    <Gift className="w-6 h-6 text-[#9b87f5] mr-2" />
                     <h3 className="text-xl font-semibold text-[#63099c]">Vouchere cadou</h3>
                   </div>
                   <p className="text-gray-700">
