@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from './ui/button';
@@ -25,7 +24,7 @@ const Navbar = () => {
     <nav className="bg-white/80 backdrop-blur-sm fixed w-full z-50 shadow-sm">
       <div className="container mx-auto px-4 py-4">
         <div className="flex justify-between items-center">
-          <div className="text-2xl font-semibold text-[#7E69AB]">Serenity Spa</div>
+          <div className="text-2xl font-semibold text-[#7E69AB]">Masaj by Melinda</div>
           <div className="space-x-6">
             <Button 
               variant="ghost" 
