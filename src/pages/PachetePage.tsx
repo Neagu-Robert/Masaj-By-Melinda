@@ -19,7 +19,7 @@ const PachetePage = () => {
               <div className="grid md:grid-cols-2">
                 <div className="h-64 md:h-auto">
                   <img 
-                    src="/lovable-uploads/918d4504-6b81-4311-b421-c0e2df19ed59.png" 
+                    src="/lovable-uploads/d1638de6-ca53-4e9b-96fd-bd385a3f988f.png" 
                     alt="Masaj loialitate" 
                     className="w-full h-full object-cover"
                   />
@@ -61,8 +61,12 @@ const PachetePage = () => {
             {/* Pachet 3 */}
             <Card className="overflow-hidden border-[#9b87f5]/30 shadow-lg hover:shadow-xl transition-shadow">
               <div className="grid md:grid-cols-2">
-                <div className="h-64 md:h-auto bg-[#9b87f5]/10 flex items-center justify-center">
-                  <Package className="w-20 h-20 text-[#9b87f5]" />
+                <div className="h-64 md:h-auto">
+                  <img 
+                    src="/lovable-uploads/918d4504-6b81-4311-b421-c0e2df19ed59.png" 
+                    alt="Impachetari pentru detox" 
+                    className="w-full h-full object-cover"
+                  />
                 </div>
                 <CardContent className="p-6">
                   <div className="flex items-center mb-4">
