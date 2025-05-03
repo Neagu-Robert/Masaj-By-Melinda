@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from './ui/button';
@@ -36,9 +37,9 @@ const Navbar = () => {
             <Button 
               variant="ghost" 
               className="text-[#7E69AB] hover:text-[#9b87f5]"
-              onClick={() => scrollToElement('pricing')}
+              onClick={() => navigate('/pachete')}
             >
-              Pricing
+              Pachete
             </Button>
             <Button 
               variant="ghost" 
