@@ -1,6 +1,8 @@
+
 import React from 'react';
 import MassageServices from './MassageServices';
 import DeviceTreatments from './DeviceTreatments';
+
 const Services = () => {
   return <div className="py-20 bg-white">
       <div className="container mx-auto px-4">
@@ -12,4 +14,5 @@ const Services = () => {
       </div>
     </div>;
 };
+
 export default Services;

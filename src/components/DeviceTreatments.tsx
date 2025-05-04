@@ -1,28 +1,29 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+
 const deviceTreatments = [{
-  title: "Termocuverta Treatment",
-  image: "public/lovable-uploads/8799995d-a401-4d09-96d3-2e8cb400d2c0.png", // Updated image path
-  benefits: ["Body detoxification", "Weight and centimeter loss", "Reduction of water retention", "Skin elasticity restoration", "Adipose tissue reduction", "Eliminates orange peel appearance", "Improves stretch marks", "Improves lymphatic system", "Improves skin appearance", "Dilates pores for maximum active principle permeability"]
+  title: "Tratament cu Termocuvertă",
+  image: "public/lovable-uploads/8799995d-a401-4d09-96d3-2e8cb400d2c0.png",
+  benefits: ["Detoxifierea corpului", "Pierdere în greutate și centimetri", "Reducerea retenției de apă", "Restabilirea elasticității pielii", "Reducerea țesutului adipos", "Elimină aspectul de coajă de portocală", "Îmbunătățește vergeturile", "Îmbunătățește sistemul limfatic", "Îmbunătățește aspectul pielii", "Dilată porii pentru permeabilitate maximă a principiilor active"]
 }, {
-  title: "Volcanic Stone Therapy",
+  title: "Terapie cu Pietre Vulcanice",
   image: "public/lovable-uploads/4425c182-0165-46c6-b526-0aa1c5085642.png",
-  benefits: ["Body detoxification through toxin elimination", "Reduction or elimination of acute or chronic pain", "Accelerates cellular oxygen assimilation", "Improves kidney activity", "Hot stone application reduces tension", "Stores beneficial energy and transmits it through meridians"]
+  benefits: ["Detoxifierea corpului prin eliminarea toxinelor", "Reducerea sau eliminarea durerii acute sau cronice", "Accelerează asimilarea oxigenului celular", "Îmbunătățește activitatea renală", "Aplicarea pietrelor calde reduce tensiunea", "Stochează energia benefică și o transmite prin meridiane"]
 }, {
-  title: "40Khz Cavitation Body Remodeling",
+  title: "Remodelare Corporală cu Cavitație 40Khz",
   image: "public/lovable-uploads/16817603-5ec2-4bff-a5aa-9ac7174c302d.png",
-  // Updated image
-  benefits: ["Body remodeling through fat burning", "Lymphatic detoxification", "Body skin tightening", "Cellulite reduction"]
+  benefits: ["Remodelarea corpului prin arderea grăsimilor", "Detoxifierea limfatică", "Tonifierea pielii corpului", "Reducerea celulitei"]
 }, {
-  title: "Electrostimulation Treatment",
+  title: "Tratament cu Electrostimulare",
   image: "public/lovable-uploads/629509b2-80de-4919-a147-fb5c164c9984.png",
-  benefits: ["Blood circulation acceleration", "Cellulite and orange peel appearance elimination", "Collagen and elastin increase", "Muscle toning", "Weight loss", "Increased strength and muscle mass", "Body remodeling and circumference reduction"]
+  benefits: ["Accelerarea circulației sanguine", "Eliminarea celulitei și a aspectului de coajă de portocală", "Creșterea colagenului și elastinei", "Tonifierea musculară", "Pierdere în greutate", "Creșterea forței și a masei musculare", "Remodelarea corpului și reducerea circumferinței"]
 }, {
-  title: "TECAR Radiofrequency",
+  title: "Radiofrecvență TECAR",
   image: "public/lovable-uploads/67ac2584-7197-482d-8842-b3580622aaa2.png",
-  benefits: ["Spectacular effects in body contouring", "Silhouette remodeling through fat reduction", "Treatment of all cellulite stages", "Stretch mark improvement", "Treatment of sagging skin", "High-frequency electromagnetic energy transfer", "Selective tissue hyperthermia for weight loss"]
+  benefits: ["Efecte spectaculoase în conturarea corpului", "Remodelarea siluetei prin reducerea grăsimii", "Tratamentul tuturor stadiilor de celulită", "Îmbunătățirea vergeturilor", "Tratamentul pielii lăsate", "Transfer de energie electromagnetică de înaltă frecvență", "Hipertermie selectivă a țesuturilor pentru pierderea în greutate"]
 }];
+
 const DeviceTreatments = () => {
   return <div className="container mx-auto px-4">
       <h3 className="text-2xl font-semibold text-center text-[#63099c] mb-8">Tratamente cu dispozitive</h3>
@@ -45,4 +46,5 @@ const DeviceTreatments = () => {
       </div>
     </div>;
 };
+
 export default DeviceTreatments;
