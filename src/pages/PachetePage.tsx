@@ -83,8 +83,12 @@ const PachetePage = () => {
             {/* Pachet 4 */}
             <Card className="overflow-hidden border-[#9b87f5]/30 shadow-lg hover:shadow-xl transition-shadow">
               <div className="grid md:grid-cols-2">
-                <div className="h-64 md:h-auto bg-[#9b87f5]/10 flex items-center justify-center">
-                  <Gift className="w-20 h-20 text-[#9b87f5]" />
+                <div className="h-64 md:h-auto">
+                  <img 
+                    src="/lovable-uploads/c94579d3-e2b1-4851-892c-79044c3ca995.png" 
+                    alt="Voucher cadou" 
+                    className="w-full h-full object-cover"
+                  />
                 </div>
                 <CardContent className="p-6">
                   <div className="flex items-center mb-4">
