@@ -1,8 +1,9 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 const deviceTreatments = [{
   title: "Termocuverta Treatment",
-  image: "public/lovable-uploads/83a9bae4-ffae-4e2c-8896-f03c0f4070a5.png",
+  image: "public/lovable-uploads/8799995d-a401-4d09-96d3-2e8cb400d2c0.png", // Updated image path
   benefits: ["Body detoxification", "Weight and centimeter loss", "Reduction of water retention", "Skin elasticity restoration", "Adipose tissue reduction", "Eliminates orange peel appearance", "Improves stretch marks", "Improves lymphatic system", "Improves skin appearance", "Dilates pores for maximum active principle permeability"]
 }, {
   title: "Volcanic Stone Therapy",
