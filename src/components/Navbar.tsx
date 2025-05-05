@@ -2,6 +2,7 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from './ui/button';
+import { Home, Package, Calendar } from 'lucide-react';
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -21,6 +22,19 @@ const Navbar = () => {
     }
   };
 
+  const isActive = (path: string) => {
+    if (path === '/' && location.pathname === '/') {
+      return true;
+    }
+    if (path === '/pachete' && location.pathname === '/pachete') {
+      return true;
+    }
+    if (path === '/book' && location.pathname === '/book') {
+      return true;
+    }
+    return false;
+  };
+
   return (
     <nav className="bg-white/80 backdrop-blur-sm fixed w-full z-50 shadow-sm">
       <div className="container mx-auto px-4 py-4">
@@ -28,31 +42,30 @@ const Navbar = () => {
           <div className="text-2xl font-semibold text-[#7E69AB]">Masaj by Melinda</div>
           <div className="space-x-6">
             <Button 
-              variant="ghost" 
-              className="text-[#7E69AB] hover:text-[#9b87f5]"
+              variant={isActive('/') ? "default" : "ghost"}
+              className={isActive('/') 
+                ? "bg-[#7E69AB] text-white hover:bg-[#9b87f5]" 
+                : "text-[#7E69AB] hover:text-[#9b87f5]"}
               onClick={() => scrollToElement('services')}
             >
-              Services
+              <Home className="mr-1" /> Servicii
             </Button>
             <Button 
-              variant="ghost" 
-              className="text-[#7E69AB] hover:text-[#9b87f5]"
+              variant={isActive('/pachete') ? "default" : "ghost"}
+              className={isActive('/pachete') 
+                ? "bg-[#7E69AB] text-white hover:bg-[#9b87f5]" 
+                : "text-[#7E69AB] hover:text-[#9b87f5]"}
               onClick={() => navigate('/pachete')}
             >
-              Pachete
+              <Package className="mr-1" /> Pachete
             </Button>
             <Button 
-              variant="ghost" 
-              className="text-[#7E69AB] hover:text-[#9b87f5]"
-              onClick={() => scrollToElement('contact')}
-            >
-              Contact
-            </Button>
-            <Button 
-              className="bg-[#9b87f5] text-white hover:bg-[#7E69AB]"
+              className={isActive('/book') 
+                ? "bg-[#7E69AB] text-white hover:bg-[#9b87f5]" 
+                : "bg-[#9b87f5] text-white hover:bg-[#7E69AB]"}
               onClick={() => navigate('/book')}
             >
-              Book Now
+              <Calendar className="mr-1" /> Rezerva acum
             </Button>
           </div>
         </div>
