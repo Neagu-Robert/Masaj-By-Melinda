@@ -20,7 +20,7 @@ const deviceTreatments = [{
   benefits: ["Accelerarea circulației sanguine", "Eliminarea celulitei și a aspectului de coajă de portocală", "Creșterea colagenului și elastinei", "Tonifierea musculară", "Pierdere în greutate", "Creșterea forței și a masei musculare", "Remodelarea corpului și reducerea circumferinței"]
 }, {
   title: "Radiofrecvență TECAR",
-  image: "public/lovable-uploads/67ac2584-7197-482d-8842-b3580622aaa2.png",
+  image: "public/lovable-uploads/08b53e34-d1fb-4fab-bbda-087bc55f6d1e.png",
   benefits: ["Efecte spectaculoase în conturarea corpului", "Remodelarea siluetei prin reducerea grăsimii", "Tratamentul tuturor stadiilor de celulită", "Îmbunătățirea vergeturilor", "Tratamentul pielii lăsate", "Transfer de energie electromagnetică de înaltă frecvență", "Hipertermie selectivă a țesuturilor pentru pierderea în greutate"]
 }];
 
