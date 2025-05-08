@@ -2,7 +2,7 @@ import React from 'react';
 const Contact = () => {
   return <div className="py-20 bg-white">
       <div className="container mx-auto px-4 text-center">
-        <h2 className="text-3xl font-semibold text-[#7E69AB] mb-8">Contact Us</h2>
+        <h2 className="text-3xl font-semibold text-[#7E69AB] mb-8">Contact</h2>
         <div className="max-w-lg mx-auto">
           <p className="text-xl text-gray-600 mb-4">str. Aluminei</p>
           <p className="text-xl text-gray-600 mb-4">Oradea, Bihor, Romania</p>
