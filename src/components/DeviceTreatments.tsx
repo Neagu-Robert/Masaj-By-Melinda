@@ -16,7 +16,7 @@ const deviceTreatments = [{
   benefits: ["Remodelarea corpului prin arderea grăsimilor", "Detoxifierea limfatică", "Tonifierea pielii corpului", "Reducerea celulitei"]
 }, {
   title: "Tratament cu Electrostimulare",
-  image: "public/lovable-uploads/6edd442e-9894-4629-b380-e171365a1a6c.png",
+  image: "public/lovable-uploads/629509b2-80de-4919-a147-fb5c164c9984.png",
   benefits: ["Accelerarea circulației sanguine", "Eliminarea celulitei și a aspectului de coajă de portocală", "Creșterea colagenului și elastinei", "Tonifierea musculară", "Pierdere în greutate", "Creșterea forței și a masei musculare", "Remodelarea corpului și reducerea circumferinței"]
 }, {
   title: "Radiofrecvență TECAR",
