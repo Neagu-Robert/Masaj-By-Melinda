@@ -8,7 +8,7 @@ const Hero = () => {
           <h1 className="text-5xl font-bold mb-6 text-[#63099c]">
             Masaj de relaxare si remodelare
           </h1>
-          <p className="text-xl text-gray-200 mb-8">Descoperiți un sanctuar de pace și bunăstare în care mâinile experte aduc armonie corpului și minții.</p>
+          <p className="text-xl text-gray-200 mb-8">Descoperiți un sanctuar de pace și bunăstare în care mâini experte aduc armonie corpului și minții.</p>
         </div>
       </div>
     </div>;
