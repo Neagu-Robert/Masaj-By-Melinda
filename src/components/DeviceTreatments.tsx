@@ -8,7 +8,7 @@ const deviceTreatments = [{
   benefits: ["Detoxifierea corpului", "Pierdere în greutate și centimetri", "Reducerea retenției de apă", "Restabilirea elasticității pielii", "Reducerea țesutului adipos", "Elimină aspectul de coajă de portocală", "Îmbunătățește vergeturile", "Îmbunătățește sistemul limfatic", "Îmbunătățește aspectul pielii", "Dilată porii pentru permeabilitate maximă a principiilor active"]
 }, {
   title: "Terapie cu Pietre Vulcanice",
-  image: "public/lovable-uploads/4425c182-0165-46c6-b526-0aa1c5085642.png",
+  image: "public/lovable-uploads/3c73d91c-e5c0-4f72-a58e-3479610f6bfa.png",
   benefits: ["Detoxifierea corpului prin eliminarea toxinelor", "Reducerea sau eliminarea durerii acute sau cronice", "Accelerează asimilarea oxigenului celular", "Îmbunătățește activitatea renală", "Aplicarea pietrelor calde reduce tensiunea", "Stochează energia benefică și o transmite prin meridiane"]
 }, {
   title: "Remodelare Corporală cu Cavitație 40Khz",
