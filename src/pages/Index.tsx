@@ -4,8 +4,8 @@ import { useLocation } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Hero from '../components/Hero';
 import Services from '../components/Services';
-import Booking from '../components/Booking';
 import Contact from '../components/Contact';
+import Booking from '../components/Booking';
 
 const Index = () => {
   const location = useLocation();
@@ -22,12 +22,17 @@ const Index = () => {
     }
   }, [location.state]);
 
+  console.log("Index page rendering");
+
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
       <Hero />
       <div id="services">
         <Services />
+      </div>
+      <div id="booking">
+        <Booking />
       </div>
       <div id="contact">
         <Contact />

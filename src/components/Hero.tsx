@@ -1,14 +1,22 @@
+
 import React from 'react';
+
 const Hero = () => {
-  return <div className="min-h-screen flex items-center justify-center bg-cover bg-center" style={{
-    backgroundImage: "url('/lovable-uploads/18542ad9-d45c-4897-80b0-b833afd3b342.png')"
-  }}>
+  return (
+    <div 
+      className="min-h-screen flex items-center justify-center bg-cover bg-center bg-purple-100" 
+      style={{
+        backgroundImage: "url('/lovable-uploads/18542ad9-d45c-4897-80b0-b833afd3b342.png')"
+      }}
+    >
       <div className="container mx-auto px-4 text-center">
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-2xl mx-auto bg-white/60 p-6 rounded-lg backdrop-blur-sm">
           <h1 className="text-5xl font-bold mb-6 text-[#63099c]">Masaj de relaxare și remodelare</h1>
-          <p className="text-xl text-gray-200 mb-8">Descoperiți un sanctuar de pace și bunăstare în care mâini experte aduc armonie corpului și minții.</p>
+          <p className="text-xl text-gray-800 mb-8">Descoperiți un sanctuar de pace și bunăstare în care mâini experte aduc armonie corpului și minții.</p>
         </div>
       </div>
-    </div>;
+    </div>
+  );
 };
+
 export default Hero;
