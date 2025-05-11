@@ -2,8 +2,7 @@
 import React from 'react';
 import Navbar from '../components/Navbar';
 import { Card, CardContent } from '@/components/ui/card';
-import { Package, Gift, Phone, MessageSquare } from 'lucide-react';
-import Booking from '@/components/Booking';
+import { Package, Gift, Phone, Mail } from 'lucide-react';
 
 const PachetePage = () => {
   return (
@@ -104,20 +103,27 @@ const PachetePage = () => {
             </Card>
           </div>
           
-          {/* New contact message */}
+          {/* Contact message */}
           <div className="mt-14 max-w-3xl mx-auto text-center p-6 bg-[#f8f5ff] rounded-lg border border-[#9b87f5]/30 shadow-sm">
-            <p className="text-lg text-[#63099c] flex flex-col md:flex-row items-center justify-center gap-2">
-              <span>Pentru achiziționarea unui pachet special vă rugăm să ne contactați printr-un apel sau mesaj și vă vom face o rezervare</span>
-              <span className="flex items-center gap-2 mt-2 md:mt-0 md:ml-2">
-                <Phone className="text-[#63099c] w-5 h-5" />
-                <MessageSquare className="text-[#63099c] w-5 h-5" />
-              </span>
+            <p className="text-lg text-[#63099c] mb-4">
+              Pentru achiziționarea unui pachet special vă rugăm să ne contactați printr-un apel sau mesaj și vă vom face o rezervare
             </p>
+            
+            {/* Contact details */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mt-6">
+              <div className="flex items-center gap-3 bg-white px-6 py-3 rounded-full shadow-sm border border-[#9b87f5]/20 hover:shadow-md transition-shadow">
+                <Phone className="text-[#63099c] w-5 h-5" />
+                <span className="text-[#63099c] font-medium">0771 761 649</span>
+              </div>
+              
+              <div className="flex items-center gap-3 bg-white px-6 py-3 rounded-full shadow-sm border border-[#9b87f5]/20 hover:shadow-md transition-shadow">
+                <Mail className="text-[#63099c] w-5 h-5" />
+                <span className="text-[#63099c] font-medium">melindaneagu22@gmail.com</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-
-      <Booking />
     </div>
   );
 };
