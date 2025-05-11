@@ -25,17 +25,24 @@ const Index = () => {
   console.log("Index page rendering");
 
   return (
-    <div className="min-h-screen bg-white">
+    <div 
+      className="min-h-screen bg-fixed bg-cover bg-center relative"
+      style={{
+        backgroundImage: "url('/lovable-uploads/8659eb40-96fc-4579-9af8-1b649574c3ff.png')"
+      }}
+    >
       <Navbar />
       <Hero />
-      <div id="services">
-        <Services />
-      </div>
-      <div id="booking">
-        <Booking />
-      </div>
-      <div id="contact">
-        <Contact />
+      <div className="relative z-10">
+        <div id="services" className="bg-black/40 backdrop-blur-sm text-white">
+          <Services />
+        </div>
+        <div id="booking" className="bg-black/40 backdrop-blur-sm text-white">
+          <Booking />
+        </div>
+        <div id="contact" className="bg-black/40 backdrop-blur-sm text-white">
+          <Contact />
+        </div>
       </div>
     </div>
   );
