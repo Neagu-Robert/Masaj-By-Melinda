@@ -2,7 +2,8 @@
 import React from 'react';
 import Navbar from '../components/Navbar';
 import { Card, CardContent } from '@/components/ui/card';
-import { Package, Gift } from 'lucide-react';
+import { Package, Gift, Phone, MessageSquare } from 'lucide-react';
+import Booking from '@/components/Booking';
 
 const PachetePage = () => {
   return (
@@ -102,8 +103,21 @@ const PachetePage = () => {
               </div>
             </Card>
           </div>
+          
+          {/* New contact message */}
+          <div className="mt-14 max-w-3xl mx-auto text-center p-6 bg-[#f8f5ff] rounded-lg border border-[#9b87f5]/30 shadow-sm">
+            <p className="text-lg text-[#63099c] flex flex-col md:flex-row items-center justify-center gap-2">
+              <span>Pentru achiziționarea unui pachet special vă rugăm să ne contactați printr-un apel sau mesaj și vă vom face o rezervare</span>
+              <span className="flex items-center gap-2 mt-2 md:mt-0 md:ml-2">
+                <Phone className="text-[#63099c] w-5 h-5" />
+                <MessageSquare className="text-[#63099c] w-5 h-5" />
+              </span>
+            </p>
+          </div>
         </div>
       </div>
+
+      <Booking />
     </div>
   );
 };
