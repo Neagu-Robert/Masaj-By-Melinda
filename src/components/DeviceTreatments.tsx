@@ -25,10 +25,19 @@ const deviceTreatments = [{
 }];
 
 const DeviceTreatments = () => {
-  return <div className="container mx-auto px-4">
-      <h3 className="text-2xl font-semibold text-center text-[#63099c] mb-8">Tratamente cu dispozitive</h3>
+  return (
+    <div className="container mx-auto px-4">
+      <h3 className="text-2xl font-semibold text-center text-white mb-8">Tratamente cu dispozitive</h3>
       <div className="grid md:grid-cols-2 gap-8">
-        {deviceTreatments.map((treatment, index) => <Card key={treatment.title} className={`hover:shadow-lg transition-shadow duration-300 ${index === deviceTreatments.length - 1 && deviceTreatments.length % 2 === 1 ? "md:col-span-2 md:max-w-2xl md:mx-auto" : ""}`}>
+        {deviceTreatments.map((treatment, index) => (
+          <Card 
+            key={treatment.title} 
+            className={`hover:shadow-lg transition-shadow duration-300 bg-black/60 backdrop-blur-sm text-white border-none ${
+              index === deviceTreatments.length - 1 && deviceTreatments.length % 2 === 1 
+                ? "md:col-span-2 md:max-w-2xl md:mx-auto" 
+                : ""
+            }`}
+          >
             <CardHeader>
               <CardTitle className="text-[#63099c]">{treatment.title}</CardTitle>
             </CardHeader>
@@ -37,14 +46,18 @@ const DeviceTreatments = () => {
                 <img src={treatment.image} alt={treatment.title} className="w-full h-auto rounded-lg" />
               </div>
               <div className="md:w-2/3">
-                <ul className="list-disc list-inside space-y-2 text-gray-600">
-                  {treatment.benefits.map((benefit, index) => <li key={index}>{benefit}</li>)}
+                <ul className="list-disc list-inside space-y-2 text-gray-200">
+                  {treatment.benefits.map((benefit, index) => (
+                    <li key={index}>{benefit}</li>
+                  ))}
                 </ul>
               </div>
             </CardContent>
-          </Card>)}
+          </Card>
+        ))}
       </div>
-    </div>;
+    </div>
+  );
 };
 
 export default DeviceTreatments;

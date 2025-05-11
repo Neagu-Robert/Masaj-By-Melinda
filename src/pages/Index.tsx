@@ -34,7 +34,7 @@ const Index = () => {
       <Navbar />
       <Hero />
       <div className="relative z-10">
-        <div id="services" className="bg-black/40 backdrop-blur-sm text-white">
+        <div id="services" className="bg-black/20 backdrop-blur-sm">
           <Services />
         </div>
         <div id="booking" className="bg-black/40 backdrop-blur-sm text-white">
