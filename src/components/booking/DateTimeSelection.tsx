@@ -107,7 +107,7 @@ const DateTimeSelection = ({
                     variant={selectedTime === time ? "default" : "outline"}
                     className={`
                       ${selectedTime === time ? 'bg-[#7E69AB] text-white' : 'text-gray-700'}
-                      ${isBooked ? 'bg-gray-300 text-gray-500 cursor-not-allowed hover:bg-gray-300' : ''}
+                      ${isBooked ? 'bg-gray-300 text-gray-500 cursor-not-allowed hover:bg-gray-300' : 'border-2 border-[#9b87f5] hover:bg-[#9b87f5]/10'}
                     `}
                     onClick={() => !isBooked && setSelectedTime(time)}
                     disabled={isBooked}
