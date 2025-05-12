@@ -1,9 +1,10 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar as CalendarIcon, Clock } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 type DateTimeSelectionProps = {
   selectedDate: Date | undefined;
@@ -18,10 +19,57 @@ const DateTimeSelection = ({
   selectedTime, 
   setSelectedTime 
 }: DateTimeSelectionProps) => {
+  // Generate time slots from 8 AM to 8 PM
   const timeSlots = Array.from({ length: 13 }, (_, i) => {
     const hour = i + 8; // Start from 8 AM
     return `${hour}:00`;
   });
+
+  // State to track booked time slots for the selected date
+  const [bookedTimeSlots, setBookedTimeSlots] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  // Fetch booked time slots when the selected date changes
+  useEffect(() => {
+    const fetchBookedTimeSlots = async () => {
+      if (!selectedDate) return;
+
+      setIsLoading(true);
+      
+      // Format date as YYYY-MM-DD for Supabase query
+      const formattedDate = selectedDate.toISOString().split('T')[0];
+      
+      try {
+        const { data, error } = await supabase
+          .from('bookings')
+          .select('booking_time')
+          .eq('booking_date', formattedDate);
+          
+        if (error) {
+          console.error('Error fetching booked time slots:', error);
+          return;
+        }
+        
+        // Extract booked times from the response
+        const bookedTimes = data.map(booking => booking.booking_time);
+        setBookedTimeSlots(bookedTimes);
+        
+        // If the currently selected time is now booked, reset it
+        if (selectedTime && bookedTimes.includes(selectedTime)) {
+          setSelectedTime('');
+        }
+      } catch (error) {
+        console.error('Error in fetching booked slots:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchBookedTimeSlots();
+  }, [selectedDate, selectedTime, setSelectedTime]);
+
+  // Check if a time slot is booked
+  const isTimeSlotBooked = (time: string) => bookedTimeSlots.includes(time);
 
   return (
     <Card>
@@ -47,19 +95,27 @@ const DateTimeSelection = ({
             <div className="flex items-center mb-2">
               <Clock className="mr-2 h-5 w-5 text-gray-500" />
               <span className="font-medium">Selectați ora</span>
+              {isLoading && <span className="ml-2 text-sm text-gray-500">(Încărcare...)</span>}
             </div>
             <div className="grid grid-cols-3 gap-2">
-              {timeSlots.map((time) => (
-                <Button
-                  key={time}
-                  type="button"
-                  variant={selectedTime === time ? "default" : "outline"}
-                  className={`${selectedTime === time ? 'bg-[#7E69AB] text-white' : 'text-gray-700'}`}
-                  onClick={() => setSelectedTime(time)}
-                >
-                  {time}
-                </Button>
-              ))}
+              {timeSlots.map((time) => {
+                const isBooked = isTimeSlotBooked(time);
+                return (
+                  <Button
+                    key={time}
+                    type="button"
+                    variant={selectedTime === time ? "default" : "outline"}
+                    className={`
+                      ${selectedTime === time ? 'bg-[#7E69AB] text-white' : 'text-gray-700'}
+                      ${isBooked ? 'bg-gray-300 text-gray-500 cursor-not-allowed hover:bg-gray-300' : ''}
+                    `}
+                    onClick={() => !isBooked && setSelectedTime(time)}
+                    disabled={isBooked}
+                  >
+                    {time}
+                  </Button>
+                );
+              })}
             </div>
           </div>
         </div>

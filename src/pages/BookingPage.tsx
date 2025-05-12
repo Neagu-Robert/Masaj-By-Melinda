@@ -38,13 +38,37 @@ const BookingPage = () => {
     try {
       setIsSubmitting(true);
 
+      // Format date as YYYY-MM-DD
+      const formattedDate = selectedDate.toISOString().split('T')[0];
+      
+      // Check one more time if the slot is already booked (prevents race conditions)
+      const { data: existingBookings, error: checkError } = await supabase
+        .from('bookings')
+        .select('id')
+        .eq('booking_date', formattedDate)
+        .eq('booking_time', selectedTime);
+        
+      if (checkError) {
+        console.error('Error checking booking availability:', checkError);
+        toast("Eroare", {
+          description: "A apărut o eroare la verificarea disponibilității. Vă rugăm să încercați din nou.",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+      
+      if (existingBookings && existingBookings.length > 0) {
+        toast("Slot rezervat", {
+          description: "Ne pare rău, acest slot a fost deja rezervat. Vă rugăm să selectați altă dată sau oră."
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
       // Split full name into first name and last name
       const nameParts = data.fullName.split(' ');
       const firstName = nameParts[0] || '';
       const lastName = nameParts.slice(1).join(' ') || '';
-      
-      // Format date as YYYY-MM-DD
-      const formattedDate = selectedDate.toISOString().split('T')[0];
 
       // Insert booking data into Supabase
       const { error } = await supabase
