@@ -12,49 +12,49 @@ const massageServices = [
   {
     title: "Masaj de relaxare",
     description:
-      "Relaxează mușchii tensionați și calmează mintea, oferind o stare profundă de bine și destindere.Reduce stresul și îmbunătățește somnul.",
+      "Relaxează mușchii tensionați și calmează mintea, oferind o stare profundă de bine și destindere. Reduce stresul și îmbunătățește somnul.",
     duration: "60 min",
     price: "140 RON",
   },
   {
     title: "Masaj terapeutic",
     description:
-      "Ameliorează durerile musculare și articulațiile rigide prin tehnici specializate cu efecte vindecătoare.Contribuie la recuperarea fizică și mobilitatea articulară.",
+      "Ameliorează durerile musculare și articulațiile rigide prin tehnici specializate cu efecte vindecătoare. Contribuie la recuperarea fizică și mobilitatea articulară.",
     duration: "60 min",
     price: "140 RON",
   },
   {
     title: "Masaj de drenaj limfatic",
     description:
-      "Stimulează sistemul limfatic pentru eliminarea toxinelor, reducând retenția de apă și umflăturile.Întărește sistemul imunitar și combate oboseala cronică.",
+      "Stimulează sistemul limfatic pentru eliminarea toxinelor, reducând retenția de apă și umflăturile. Întărește sistemul imunitar și combate oboseala cronică.",
     duration: "60 min",
     price: "140 RON",
   },
   {
     title: "Masaj anticelulitic",
     description:
-      "Activează circulația și ajută la diminuarea aspectului de „coajă de portocală", redând fermitatea pielii.Remodelează silueta și îmbunătățește textura pielii.",
+      "Activează circulația și ajută la diminuarea aspectului de \"coajă de portocală\", redând fermitatea pielii. Remodelează silueta și îmbunătățește textura pielii.",
     duration: "60 min",
     price: "140 RON",
   },
   {
     title: "Masaj facial",
     description:
-      "Revigorează pielea feței, stimulează circulația și oferă un efect vizibil de prospețime și tonifiere.Încetinește apariția ridurilor și redă luminozitatea tenului.",
+      "Revigorează pielea feței, stimulează circulația și oferă un efect vizibil de prospețime și tonifiere. Încetinește apariția ridurilor și redă luminozitatea tenului.",
     duration: "60 min",
     price: "140 RON",
   },
   {
     title: "Masaj cu pietre vulcanice",
     description:
-      "Combină căldura naturală a pietrelor cu presiunea blândă pentru relaxare profundă și echilibru energetic.Reduce tensiunea musculară și îmbunătățește circulația sângelui.",
+      "Combină căldura naturală a pietrelor cu presiunea blândă pentru relaxare profundă și echilibru energetic. Reduce tensiunea musculară și îmbunătățește circulația sângelui.",
     duration: "60 min",
     price: "140 RON",
   },
   {
     title: "Masaj cu bete de bambus",
     description:
-      "Folosește bețe de bambus pentru a destinde mușchii și a activa circulația, oferind o experiență tonifiantă.Stimulează metabolismul și combate oboseala musculară.",
+      "Folosește bețe de bambus pentru a destinde mușchii și a activa circulația, oferind o experiență tonifiantă. Stimulează metabolismul și combate oboseala musculară.",
     duration: "60 min",
     price: "140 RON",
   },
