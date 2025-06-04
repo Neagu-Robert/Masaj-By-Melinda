@@ -26,7 +26,7 @@ const Index = () => {
 
   return (
     <div 
-      className="min-h-screen bg-fixed bg-cover bg-center relative"
+      className="min-h-screen bg-scroll md:bg-fixed bg-cover bg-center relative"
       style={{
         backgroundImage: "url('/lovable-uploads/8659eb40-96fc-4579-9af8-1b649574c3ff.png')"
       }}

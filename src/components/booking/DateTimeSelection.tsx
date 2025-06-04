@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
@@ -82,30 +81,32 @@ const DateTimeSelection = ({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Selectați data și ora</CardTitle>
+        <CardTitle className="text-lg md:text-xl">Selectați data și ora</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="flex flex-col md:flex-row md:space-x-4">
-          <div className="mb-4 md:mb-0 md:w-1/2">
+        <div className="flex flex-col space-y-6 md:space-y-0 md:flex-row md:space-x-4">
+          <div className="w-full md:w-1/2">
             <div className="flex items-center mb-2">
               <CalendarIcon className="mr-2 h-5 w-5 text-gray-500" />
               <span className="font-medium">Selectați data</span>
             </div>
-            <Calendar 
-              mode="single" 
-              selected={selectedDate}
-              onSelect={setSelectedDate}
-              className="rounded-md border pointer-events-auto"
-              disabled={(date) => date < new Date()}
-            />
+            <div className="flex justify-center">
+              <Calendar 
+                mode="single" 
+                selected={selectedDate}
+                onSelect={setSelectedDate}
+                className="rounded-md border pointer-events-auto w-full max-w-sm"
+                disabled={(date) => date < new Date()}
+              />
+            </div>
           </div>
-          <div className="md:w-1/2">
+          <div className="w-full md:w-1/2">
             <div className="flex items-center mb-2">
               <Clock className="mr-2 h-5 w-5 text-gray-500" />
               <span className="font-medium">Selectați ora</span>
               {isLoading && <span className="ml-2 text-sm text-gray-500">(Încărcare...)</span>}
             </div>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {timeSlots.map((time) => {
                 const isBooked = isTimeSlotBooked(time);
                 return (
@@ -114,8 +115,9 @@ const DateTimeSelection = ({
                     type="button"
                     variant={selectedTime === time ? "default" : "outline"}
                     className={`
+                      h-12 text-sm md:text-base
                       ${selectedTime === time ? 'bg-[#7E69AB] text-white' : 'text-gray-700'}
-                      ${isBooked ? 'bg-gray-300 text-gray-500 cursor-not-allowed hover:bg-gray-300' : 'border-2 border-[#9b87f5] hover:bg-[#9b87f5]/10'}
+                      ${isBooked ? 'bg-gray-300 text-gray-500 cursor-not-allowed hover:bg-gray-300' : 'border-2 border-[#63099c] hover:bg-[#63099c]/10'}
                     `}
                     onClick={() => !isBooked && setSelectedTime(time)}
                     disabled={isBooked}

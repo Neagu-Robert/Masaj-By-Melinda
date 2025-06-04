@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -123,13 +122,13 @@ const BookingPage = () => {
     <div className="min-h-screen bg-white">
       <BookingHeader />
 
-      <div className="pt-24 pb-20">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-semibold text-center text-[#63099c] mb-12">Book Your Session</h2>
+      <div className="pt-24 pb-20 px-4 md:px-0">
+        <div className="container mx-auto">
+          <h2 className="text-2xl md:text-3xl font-semibold text-center text-[#63099c] mb-8 md:mb-12">Book Your Session</h2>
           
           <div className="max-w-3xl mx-auto">
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 md:space-y-8">
                 {/* Contact Information */}
                 <ContactForm form={form} />
 
@@ -155,10 +154,10 @@ const BookingPage = () => {
                 )}
 
                 {/* Submit Button */}
-                <div className="flex justify-center">
+                <div className="flex justify-center pt-4">
                   <Button 
                     type="submit"
-                    className="bg-[#63099c] hover:bg-[#63099c]/90 text-white text-xl py-6 px-8 w-full md:w-auto"
+                    className="bg-[#63099c] hover:bg-[#63099c]/90 text-white text-lg md:text-xl py-4 md:py-6 px-6 md:px-8 w-full md:w-auto h-12 md:h-auto"
                     disabled={isSubmitting}
                   >
                     {isSubmitting ? "Se procesează..." : "Confirmă rezervarea"}
