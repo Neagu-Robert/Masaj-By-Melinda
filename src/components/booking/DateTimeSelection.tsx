@@ -29,6 +29,14 @@ const DateTimeSelection = ({
   const [bookedTimeSlots, setBookedTimeSlots] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
+  // Helper function to format date correctly without timezone issues
+  const formatDateForDB = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   // Fetch booked time slots when the selected date changes
   useEffect(() => {
     const fetchBookedTimeSlots = async () => {
@@ -36,8 +44,8 @@ const DateTimeSelection = ({
 
       setIsLoading(true);
       
-      // Format date as YYYY-MM-DD for Supabase query
-      const formattedDate = selectedDate.toISOString().split('T')[0];
+      // Format date correctly without timezone conversion
+      const formattedDate = formatDateForDB(selectedDate);
       
       try {
         const { data, error } = await supabase
