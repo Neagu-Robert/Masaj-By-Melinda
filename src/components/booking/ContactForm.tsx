@@ -16,9 +16,9 @@ type ContactFormProps = {
 
 const ContactForm = ({ form }: ContactFormProps) => {
   return (
-    <Card>
+    <Card className="bg-gray-800 border-gray-700">
       <CardHeader>
-        <CardTitle>Date de contact</CardTitle>
+        <CardTitle className="text-white">Date de contact</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <FormField
@@ -26,13 +26,13 @@ const ContactForm = ({ form }: ContactFormProps) => {
           name="fullName"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Nume complet</FormLabel>
+              <FormLabel className="text-gray-200">Nume complet</FormLabel>
               <FormControl>
                 <div className="relative">
-                  <User className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
+                  <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <Input 
                     placeholder="Introduceți numele complet" 
-                    className="pl-10" 
+                    className="pl-10 bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 focus:border-[#7E69AB]" 
                     {...field}
                     required
                   />
@@ -47,13 +47,13 @@ const ContactForm = ({ form }: ContactFormProps) => {
           name="phoneNumber"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Număr de telefon</FormLabel>
+              <FormLabel className="text-gray-200">Număr de telefon</FormLabel>
               <FormControl>
                 <div className="relative">
-                  <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
+                  <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <Input 
                     placeholder="Introduceți numărul de telefon" 
-                    className="pl-10" 
+                    className="pl-10 bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 focus:border-[#7E69AB]" 
                     {...field}
                     required
                   />

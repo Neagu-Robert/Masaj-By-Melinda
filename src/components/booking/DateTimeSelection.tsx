@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
@@ -79,32 +80,32 @@ const DateTimeSelection = ({
   const isTimeSlotBooked = (time: string) => bookedTimeSlots.includes(time);
 
   return (
-    <Card>
+    <Card className="bg-gray-800 border-gray-700">
       <CardHeader>
-        <CardTitle className="text-lg md:text-xl">Selectați data și ora</CardTitle>
+        <CardTitle className="text-lg md:text-xl text-white">Selectați data și ora</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="flex flex-col space-y-6 md:space-y-0 md:flex-row md:space-x-4">
           <div className="w-full md:w-1/2">
             <div className="flex items-center mb-2">
-              <CalendarIcon className="mr-2 h-5 w-5 text-gray-500" />
-              <span className="font-medium">Selectați data</span>
+              <CalendarIcon className="mr-2 h-5 w-5 text-gray-400" />
+              <span className="font-medium text-gray-200">Selectați data</span>
             </div>
             <div className="flex justify-center">
               <Calendar 
                 mode="single" 
                 selected={selectedDate}
                 onSelect={setSelectedDate}
-                className="rounded-md border pointer-events-auto w-full max-w-sm"
+                className="rounded-md border border-gray-600 bg-gray-700 text-white pointer-events-auto w-full max-w-sm [&_.rdp-day]:text-white [&_.rdp-day_selected]:bg-[#7E69AB] [&_.rdp-day_selected]:text-white [&_.rdp-day:hover]:bg-gray-600"
                 disabled={(date) => date < new Date()}
               />
             </div>
           </div>
           <div className="w-full md:w-1/2">
             <div className="flex items-center mb-2">
-              <Clock className="mr-2 h-5 w-5 text-gray-500" />
-              <span className="font-medium">Selectați ora</span>
-              {isLoading && <span className="ml-2 text-sm text-gray-500">(Încărcare...)</span>}
+              <Clock className="mr-2 h-5 w-5 text-gray-400" />
+              <span className="font-medium text-gray-200">Selectați ora</span>
+              {isLoading && <span className="ml-2 text-sm text-gray-400">(Încărcare...)</span>}
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {timeSlots.map((time) => {
@@ -116,8 +117,8 @@ const DateTimeSelection = ({
                     variant={selectedTime === time ? "default" : "outline"}
                     className={`
                       h-12 text-sm md:text-base
-                      ${selectedTime === time ? 'bg-[#7E69AB] text-white' : 'text-gray-700'}
-                      ${isBooked ? 'bg-gray-300 text-gray-500 cursor-not-allowed hover:bg-gray-300' : 'border-2 border-[#63099c] hover:bg-[#63099c]/10'}
+                      ${selectedTime === time ? 'bg-[#7E69AB] text-white hover:bg-[#7E69AB]/90' : 'text-gray-200 bg-gray-700 border-gray-600'}
+                      ${isBooked ? 'bg-gray-600 text-gray-500 cursor-not-allowed hover:bg-gray-600 border-gray-600' : 'hover:bg-[#63099c]/20 hover:border-[#63099c]'}
                     `}
                     onClick={() => !isBooked && setSelectedTime(time)}
                     disabled={isBooked}

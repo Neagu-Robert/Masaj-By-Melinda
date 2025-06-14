@@ -36,9 +36,9 @@ const ServiceSelection = ({ form, setSelectedService }: ServiceSelectionProps) =
   ];
 
   return (
-    <Card>
+    <Card className="bg-gray-800 border-gray-700">
       <CardHeader>
-        <CardTitle>Selectați serviciul</CardTitle>
+        <CardTitle className="text-white">Selectați serviciul</CardTitle>
       </CardHeader>
       <CardContent>
         <FormField
@@ -50,7 +50,7 @@ const ServiceSelection = ({ form, setSelectedService }: ServiceSelectionProps) =
                 <div className="space-y-4">
                   {/* Massage Services Section */}
                   <div>
-                    <h4 className="text-lg font-medium text-[#7E69AB] mb-2">Masaje</h4>
+                    <h4 className="text-lg font-medium text-[#9b87f5] mb-2">Masaje</h4>
                     <RadioGroup 
                       onValueChange={(value) => {
                         field.onChange(value);
@@ -60,11 +60,11 @@ const ServiceSelection = ({ form, setSelectedService }: ServiceSelectionProps) =
                       className="grid grid-cols-1 md:grid-cols-2 gap-2"
                     >
                       {massageServices.map((service) => (
-                        <div key={service} className="flex items-center space-x-2 rounded-md border p-3 hover:bg-slate-50">
-                          <RadioGroupItem value={service} id={service} />
+                        <div key={service} className="flex items-center space-x-2 rounded-md border border-gray-600 bg-gray-700 p-3 hover:bg-gray-600">
+                          <RadioGroupItem value={service} id={service} className="border-gray-500 text-[#7E69AB]" />
                           <label 
                             htmlFor={service} 
-                            className="flex-1 cursor-pointer text-sm font-medium"
+                            className="flex-1 cursor-pointer text-sm font-medium text-white"
                           >
                             {service}
                           </label>
@@ -75,7 +75,7 @@ const ServiceSelection = ({ form, setSelectedService }: ServiceSelectionProps) =
                   
                   {/* Device Services Section */}
                   <div>
-                    <h4 className="text-lg font-medium text-[#7E69AB] mb-2">Tratamente cu aparate</h4>
+                    <h4 className="text-lg font-medium text-[#9b87f5] mb-2">Tratamente cu aparate</h4>
                     <RadioGroup 
                       onValueChange={(value) => {
                         field.onChange(value);
@@ -85,11 +85,11 @@ const ServiceSelection = ({ form, setSelectedService }: ServiceSelectionProps) =
                       className="grid grid-cols-1 md:grid-cols-2 gap-2"
                     >
                       {deviceServices.map((service) => (
-                        <div key={service} className="flex items-center space-x-2 rounded-md border p-3 hover:bg-slate-50">
-                          <RadioGroupItem value={service} id={service} />
+                        <div key={service} className="flex items-center space-x-2 rounded-md border border-gray-600 bg-gray-700 p-3 hover:bg-gray-600">
+                          <RadioGroupItem value={service} id={service} className="border-gray-500 text-[#7E69AB]" />
                           <label 
                             htmlFor={service} 
-                            className="flex-1 cursor-pointer text-sm font-medium"
+                            className="flex-1 cursor-pointer text-sm font-medium text-white"
                           >
                             {service}
                           </label>
