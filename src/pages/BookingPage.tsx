@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -119,12 +120,12 @@ const BookingPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gray-900">
       <BookingHeader />
 
       <div className="pt-24 pb-20 px-4 md:px-0">
         <div className="container mx-auto">
-          <h2 className="text-2xl md:text-3xl font-semibold text-center text-[#63099c] mb-8 md:mb-12">Book Your Session</h2>
+          <h2 className="text-2xl md:text-3xl font-semibold text-center text-white mb-8 md:mb-12">Book Your Session</h2>
           
           <div className="max-w-3xl mx-auto">
             <Form {...form}>

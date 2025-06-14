@@ -6,16 +6,16 @@ import { Package, Gift, Phone, Mail } from 'lucide-react';
 
 const PachetePage = () => {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gray-900">
       <Navbar />
       
       <div className="pt-24 pb-20">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-semibold text-center text-[#63099c] mb-12">Pachete Speciale</h2>
+          <h2 className="text-3xl font-semibold text-center text-white mb-12">Pachete Speciale</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto">
             {/* Pachet 1 */}
-            <Card className="overflow-hidden border-[#9b87f5]/30 shadow-lg hover:shadow-xl transition-shadow">
+            <Card className="overflow-hidden border-[#9b87f5]/30 shadow-lg hover:shadow-xl transition-shadow bg-gray-800">
               <div className="grid md:grid-cols-2">
                 <div className="h-64 md:h-auto">
                   <img 
@@ -27,9 +27,9 @@ const PachetePage = () => {
                 <CardContent className="p-6">
                   <div className="flex items-center mb-4">
                     <Package className="w-6 h-6 text-[#9b87f5] mr-2" />
-                    <h3 className="text-xl font-semibold text-[#63099c]">Pachet loialitate</h3>
+                    <h3 className="text-xl font-semibold text-white">Pachet loialitate</h3>
                   </div>
-                  <p className="text-gray-700">
+                  <p className="text-gray-300">
                     10 masaje + 1 gratis (pot fi folosite de mai multe persoane /prieteni/ membrii ai familiei)
                   </p>
                 </CardContent>
@@ -37,7 +37,7 @@ const PachetePage = () => {
             </Card>
 
             {/* Pachet 2 */}
-            <Card className="overflow-hidden border-[#9b87f5]/30 shadow-lg hover:shadow-xl transition-shadow">
+            <Card className="overflow-hidden border-[#9b87f5]/30 shadow-lg hover:shadow-xl transition-shadow bg-gray-800">
               <div className="grid md:grid-cols-2">
                 <div className="h-64 md:h-auto">
                   <img 
@@ -49,9 +49,9 @@ const PachetePage = () => {
                 <CardContent className="p-6">
                   <div className="flex items-center mb-4">
                     <Package className="w-6 h-6 text-[#9b87f5] mr-2" />
-                    <h3 className="text-xl font-semibold text-[#63099c]">Remodelare corporala</h3>
+                    <h3 className="text-xl font-semibold text-white">Remodelare corporala</h3>
                   </div>
-                  <p className="text-gray-700">
+                  <p className="text-gray-300">
                     30 de minute cu un aparat in functie de nevoi + un masaj fie de fermitate/anticelulitic (10 sedinte -950 lei) dupa 2 abonamente primiti un tratament facial antiimbatranire gratuit.
                   </p>
                 </CardContent>
@@ -59,7 +59,7 @@ const PachetePage = () => {
             </Card>
 
             {/* Pachet 3 */}
-            <Card className="overflow-hidden border-[#9b87f5]/30 shadow-lg hover:shadow-xl transition-shadow">
+            <Card className="overflow-hidden border-[#9b87f5]/30 shadow-lg hover:shadow-xl transition-shadow bg-gray-800">
               <div className="grid md:grid-cols-2">
                 <div className="h-64 md:h-auto">
                   <img 
@@ -71,9 +71,9 @@ const PachetePage = () => {
                 <CardContent className="p-6">
                   <div className="flex items-center mb-4">
                     <Package className="w-6 h-6 text-[#9b87f5] mr-2" />
-                    <h3 className="text-xl font-semibold text-[#63099c]">Impachetari pentru detox/remodelare</h3>
+                    <h3 className="text-xl font-semibold text-white">Impachetari pentru detox/remodelare</h3>
                   </div>
-                  <p className="text-gray-700">
+                  <p className="text-gray-300">
                     Impachetari pentru detox/remodelare cu termocuvertura (10 sedinte - 900 de lei) dupa un abonament primiti un masaj facial/reflexo/masaj la spate.
                   </p>
                 </CardContent>
@@ -81,7 +81,7 @@ const PachetePage = () => {
             </Card>
 
             {/* Pachet 4 */}
-            <Card className="overflow-hidden border-[#9b87f5]/30 shadow-lg hover:shadow-xl transition-shadow">
+            <Card className="overflow-hidden border-[#9b87f5]/30 shadow-lg hover:shadow-xl transition-shadow bg-gray-800">
               <div className="grid md:grid-cols-2">
                 <div className="h-64 md:h-auto">
                   <img 
@@ -93,9 +93,9 @@ const PachetePage = () => {
                 <CardContent className="p-6">
                   <div className="flex items-center mb-4">
                     <Gift className="w-6 h-6 text-[#9b87f5] mr-2" />
-                    <h3 className="text-xl font-semibold text-[#63099c]">Vouchere cadou</h3>
+                    <h3 className="text-xl font-semibold text-white">Vouchere cadou</h3>
                   </div>
-                  <p className="text-gray-700">
+                  <p className="text-gray-300">
                     Vouchere valorice ce se pot oferi cadou persoanelor dragi. Cu suma valorica de pe voucher se poate achizitiona orice serviciu din gama noastra. Se plateste la salon cash/card.
                   </p>
                 </CardContent>
@@ -104,21 +104,21 @@ const PachetePage = () => {
           </div>
           
           {/* Contact message */}
-          <div className="mt-14 max-w-3xl mx-auto text-center p-6 bg-[#f8f5ff] rounded-lg border border-[#9b87f5]/30 shadow-sm">
-            <p className="text-lg text-[#63099c] mb-4">
+          <div className="mt-14 max-w-3xl mx-auto text-center p-6 bg-gray-800 rounded-lg border border-[#9b87f5]/30 shadow-sm">
+            <p className="text-lg text-white mb-4">
               Pentru achiziționarea unui pachet special vă rugăm să ne contactați printr-un apel sau mesaj și vă vom face o rezervare
             </p>
             
             {/* Contact details */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mt-6">
-              <div className="flex items-center gap-3 bg-white px-6 py-3 rounded-full shadow-sm border border-[#9b87f5]/20 hover:shadow-md transition-shadow">
-                <Phone className="text-[#63099c] w-5 h-5" />
-                <span className="text-[#63099c] font-medium">0771 761 649</span>
+              <div className="flex items-center gap-3 bg-gray-700 px-6 py-3 rounded-full shadow-sm border border-[#9b87f5]/20 hover:shadow-md transition-shadow">
+                <Phone className="text-[#9b87f5] w-5 h-5" />
+                <span className="text-white font-medium">0771 761 649</span>
               </div>
               
-              <div className="flex items-center gap-3 bg-white px-6 py-3 rounded-full shadow-sm border border-[#9b87f5]/20 hover:shadow-md transition-shadow">
-                <Mail className="text-[#63099c] w-5 h-5" />
-                <span className="text-[#63099c] font-medium">melindaneagu22@gmail.com</span>
+              <div className="flex items-center gap-3 bg-gray-700 px-6 py-3 rounded-full shadow-sm border border-[#9b87f5]/20 hover:shadow-md transition-shadow">
+                <Mail className="text-[#9b87f5] w-5 h-5" />
+                <span className="text-white font-medium">melindaneagu22@gmail.com</span>
               </div>
             </div>
           </div>
