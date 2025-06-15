@@ -9,6 +9,15 @@ const Navbar = () => {
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  const handleLogoClick = () => {
+    setIsMobileMenuOpen(false);
+    if (location.pathname === '/') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      navigate('/');
+    }
+  };
+
   const scrollToElement = (elementId: string) => {
     setIsMobileMenuOpen(false);
     // Navigate to homepage first if not already there
@@ -43,10 +52,15 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="bg-gray-900/90 backdrop-blur-sm fixed w-full z-50 shadow-sm border-b border-gray-800">
+    <nav className="bg-gray-900 fixed w-full z-50 shadow-lg border-b border-gray-800">
       <div className="container mx-auto px-4 py-4">
         <div className="flex justify-between items-center">
-          <div className="text-xl md:text-2xl font-semibold text-white">Masaj by Melinda</div>
+          <div 
+            className="text-xl md:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-400 to-pink-500 cursor-pointer"
+            onClick={handleLogoClick}
+          >
+            Masaj by Melinda
+          </div>
           
           {/* Desktop Navigation */}
           <div className="hidden md:flex space-x-6">
@@ -54,7 +68,7 @@ const Navbar = () => {
               variant={isActive('/') ? "default" : "ghost"}
               className={isActive('/') 
                 ? "bg-[#7E69AB] text-white hover:bg-[#9b87f5]" 
-                : "text-gray-200 hover:text-white hover:bg-gray-800"}
+                : "text-gray-300 hover:text-white hover:bg-white/10"}
               onClick={() => scrollToElement('services')}
             >
               <Home className="mr-1" /> Servicii
@@ -63,7 +77,7 @@ const Navbar = () => {
               variant={isActive('/pachete') ? "default" : "ghost"}
               className={isActive('/pachete') 
                 ? "bg-[#7E69AB] text-white hover:bg-[#9b87f5]" 
-                : "text-gray-200 hover:text-white hover:bg-gray-800"}
+                : "text-gray-300 hover:text-white hover:bg-white/10"}
               onClick={() => handleNavigation('/pachete')}
             >
               <Package className="mr-1" /> Pachete
@@ -82,7 +96,7 @@ const Navbar = () => {
           <Button
             variant="ghost"
             size="icon"
-            className="md:hidden text-gray-200 hover:text-white hover:bg-gray-800"
+            className="md:hidden text-gray-300 hover:text-white hover:bg-white/10"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           >
             {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -97,7 +111,7 @@ const Navbar = () => {
                 variant={isActive('/') ? "default" : "ghost"}
                 className={`w-full justify-start h-12 ${isActive('/') 
                   ? "bg-[#7E69AB] text-white hover:bg-[#9b87f5]" 
-                  : "text-gray-200 hover:text-white hover:bg-gray-800"}`}
+                  : "text-gray-300 hover:text-white hover:bg-white/10"}`}
                 onClick={() => scrollToElement('services')}
               >
                 <Home className="mr-2 h-5 w-5" /> Servicii
@@ -106,7 +120,7 @@ const Navbar = () => {
                 variant={isActive('/pachete') ? "default" : "ghost"}
                 className={`w-full justify-start h-12 ${isActive('/pachete') 
                   ? "bg-[#7E69AB] text-white hover:bg-[#9b87f5]" 
-                  : "text-gray-200 hover:text-white hover:bg-gray-800"}`}
+                  : "text-gray-300 hover:text-white hover:bg-white/10"}`}
                 onClick={() => handleNavigation('/pachete')}
               >
                 <Package className="mr-2 h-5 w-5" /> Pachete
