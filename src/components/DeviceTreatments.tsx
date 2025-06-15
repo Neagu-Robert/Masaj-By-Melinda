@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 
@@ -6,10 +5,6 @@ const deviceTreatments = [{
   title: "Tratament cu Termocuvertă",
   image: "public/lovable-uploads/8799995d-a401-4d09-96d3-2e8cb400d2c0.png",
   benefits: ["Detoxifierea corpului", "Pierdere în greutate și centimetri", "Reducerea retenției de apă", "Restabilirea elasticității pielii", "Reducerea țesutului adipos", "Elimină aspectul de coajă de portocală", "Îmbunătățește vergeturile", "Îmbunătățește sistemul limfatic", "Îmbunătățește aspectul pielii", "Dilată porii pentru permeabilitate maximă a principiilor active"]
-}, {
-  title: "Terapie cu Pietre Vulcanice",
-  image: "public/lovable-uploads/3c73d91c-e5c0-4f72-a58e-3479610f6bfa.png",
-  benefits: ["Detoxifierea corpului prin eliminarea toxinelor", "Reducerea sau eliminarea durerii acute sau cronice", "Accelerează asimilarea oxigenului celular", "Îmbunătățește activitatea renală", "Aplicarea pietrelor calde reduce tensiunea", "Stochează energia benefică și o transmite prin meridiane"]
 }, {
   title: "Remodelare Corporală cu Cavitație 40Khz",
   image: "public/lovable-uploads/16817603-5ec2-4bff-a5aa-9ac7174c302d.png",

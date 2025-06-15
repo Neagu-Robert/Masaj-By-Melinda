@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,10 +25,9 @@ const ServiceSelection = ({ form, setSelectedService }: ServiceSelectionProps) =
     "Masaj cu bete de bambus"
   ];
   
-  // Device treatments that match the pricing section
+  // Device treatments - removed Volcanic Stone Therapy as it belongs in massages
   const deviceServices = [
     "Termocuverta Treatment",
-    "Volcanic Stone Therapy",
     "40Khz Cavitation Body Remodeling",
     "Electrostimulation Treatment",
     "TECAR Radiofrequency"
