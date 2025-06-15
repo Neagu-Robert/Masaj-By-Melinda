@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
@@ -107,6 +106,7 @@ const DateTimeSelection = ({
       <CardContent className="space-y-6">
         <div className="flex flex-col space-y-6 md:space-y-0 md:flex-row md:space-x-4">
           <div className="w-full md:w-1/2">
+            {/* Calendar Section */}
             <div className="flex items-center mb-2">
               <CalendarIcon className="mr-2 h-5 w-5 text-gray-400" />
               <span className="font-medium text-gray-200">Selectați data</span>
@@ -135,13 +135,15 @@ const DateTimeSelection = ({
                   <Button
                     key={time}
                     type="button"
-                    variant={isSelected ? "default" : "outline"}
+                    variant={isBooked ? "outline" : isSelected ? "default" : "outline"}
                     className={`
                       h-12 text-sm md:text-base transition
-                      ${isSelected ? 'bg-[#7E69AB] text-white hover:bg-[#7E69AB]/90 border-transparent' : ''}
+                      ${isSelected ? 'bg-[#7E69AB] text-white border-transparent hover:bg-[#7E69AB]/90' : ''}
                       ${isBooked
                         ? 'bg-gray-700 text-gray-500 border-gray-600 opacity-60 cursor-not-allowed pointer-events-none'
-                        : 'bg-gray-700 text-gray-200 border-gray-600 hover:bg-[#63099c]/20 hover:border-[#63099c]'}
+                        : !isSelected
+                          ? 'bg-gray-700 text-gray-200 border-gray-600 hover:bg-[#63099c]/20 hover:border-[#63099c]'
+                          : ''}
                     `}
                     onClick={() => {
                       if (!isBooked) {
@@ -173,4 +175,3 @@ const DateTimeSelection = ({
 };
 
 export default DateTimeSelection;
-
