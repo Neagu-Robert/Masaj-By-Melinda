@@ -4,7 +4,7 @@ import { useLocation } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Hero from '../components/Hero';
 import Services from '../components/Services';
-import Contact from '../components/Contact';
+import Footer from '../components/Footer';
 import Booking from '../components/Booking';
 
 const Index = () => {
@@ -41,7 +41,7 @@ const Index = () => {
           <Booking />
         </div>
         <div id="contact" className="bg-black/40 backdrop-blur-sm text-white">
-          <Contact />
+          <Footer />
         </div>
       </div>
     </div>
