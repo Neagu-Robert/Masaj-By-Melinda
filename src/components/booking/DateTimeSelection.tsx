@@ -13,11 +13,11 @@ type DateTimeSelectionProps = {
   setSelectedTime: (time: string) => void;
 };
 
-const DateTimeSelection = ({ 
-  selectedDate, 
-  setSelectedDate, 
-  selectedTime, 
-  setSelectedTime 
+const DateTimeSelection = ({
+  selectedDate,
+  setSelectedDate,
+  selectedTime,
+  setSelectedTime,
 }: DateTimeSelectionProps) => {
   // Generate time slots from 8 AM to 8 PM
   const timeSlots = Array.from({ length: 13 }, (_, i) => {
@@ -25,11 +25,11 @@ const DateTimeSelection = ({
     return `${hour}:00`;
   });
 
-  // State to track booked time slots for the selected date
+  // Track booked time slots for the selected date
   const [bookedTimeSlots, setBookedTimeSlots] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  // Helper function to format date correctly without timezone issues
+  // Helper: format date correctly
   const formatDateForDB = (date: Date) => {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -37,47 +37,67 @@ const DateTimeSelection = ({
     return `${year}-${month}-${day}`;
   };
 
-  // Fetch booked time slots when the selected date changes
+  // Fetch booked slots each time selectedDate changes
   useEffect(() => {
     const fetchBookedTimeSlots = async () => {
-      if (!selectedDate) return;
-
+      if (!selectedDate) {
+        setBookedTimeSlots([]);
+        return;
+      }
       setIsLoading(true);
-      
-      // Format date correctly without timezone conversion
+
       const formattedDate = formatDateForDB(selectedDate);
-      
+
       try {
         const { data, error } = await supabase
           .from('bookings')
           .select('booking_time')
           .eq('booking_date', formattedDate);
-          
+
         if (error) {
           console.error('Error fetching booked time slots:', error);
+          setBookedTimeSlots([]);
           return;
         }
-        
-        // Extract booked times from the response
-        const bookedTimes = data.map(booking => booking.booking_time);
-        setBookedTimeSlots(bookedTimes);
-        
+
+        const booked = (data ?? []).map(booking => {
+          // booking.booking_time may be "14:00:00" so adjust to "14:00"
+          return (booking.booking_time || "").toString().slice(0, 5);
+        });
+        setBookedTimeSlots(booked);
+
         // If the currently selected time is now booked, reset it
-        if (selectedTime && bookedTimes.includes(selectedTime)) {
+        if (selectedTime && booked.includes(selectedTime)) {
           setSelectedTime('');
         }
       } catch (error) {
         console.error('Error in fetching booked slots:', error);
+        setBookedTimeSlots([]);
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchBookedTimeSlots();
-  }, [selectedDate, selectedTime, setSelectedTime]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDate]);
 
-  // Check if a time slot is booked
-  const isTimeSlotBooked = (time: string) => bookedTimeSlots.includes(time);
+  // If the current selected time just became booked, reset it
+  useEffect(() => {
+    if (selectedTime && bookedTimeSlots.includes(selectedTime)) {
+      setSelectedTime('');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookedTimeSlots]);
+
+  // Is slot booked (normalize/compare)
+  const isTimeSlotBooked = (time: string) => {
+    // time = "8:00", booked = "08:00"
+    const normalized = time.padStart(5, "0");
+    return bookedTimeSlots.some(
+      (b) => b === time || b === normalized || b.replace(/^0/, "") === time.replace(/^0/, "")
+    );
+  };
 
   return (
     <Card className="bg-gray-800 border-gray-700">
@@ -92,8 +112,8 @@ const DateTimeSelection = ({
               <span className="font-medium text-gray-200">Selectați data</span>
             </div>
             <div className="flex justify-center">
-              <Calendar 
-                mode="single" 
+              <Calendar
+                mode="single"
                 selected={selectedDate}
                 onSelect={setSelectedDate}
                 className="rounded-md border border-gray-600 bg-gray-700 text-white pointer-events-auto w-full max-w-sm [&_.rdp-day]:text-white [&_.rdp-day_selected]:bg-[#7E69AB] [&_.rdp-day_selected]:text-white [&_.rdp-day:hover]:bg-gray-600"
@@ -110,24 +130,41 @@ const DateTimeSelection = ({
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {timeSlots.map((time) => {
                 const isBooked = isTimeSlotBooked(time);
+                const isSelected = selectedTime === time && !isBooked;
                 return (
                   <Button
                     key={time}
                     type="button"
-                    variant={selectedTime === time ? "default" : "outline"}
+                    variant={isSelected ? "default" : "outline"}
                     className={`
-                      h-12 text-sm md:text-base
-                      ${selectedTime === time ? 'bg-[#7E69AB] text-white hover:bg-[#7E69AB]/90' : 'text-gray-200 bg-gray-700 border-gray-600'}
-                      ${isBooked ? 'bg-gray-600 text-gray-500 cursor-not-allowed hover:bg-gray-600 border-gray-600' : 'hover:bg-[#63099c]/20 hover:border-[#63099c]'}
+                      h-12 text-sm md:text-base transition
+                      ${isSelected ? 'bg-[#7E69AB] text-white hover:bg-[#7E69AB]/90 border-transparent' : ''}
+                      ${isBooked
+                        ? 'bg-gray-700 text-gray-500 border-gray-600 opacity-60 cursor-not-allowed pointer-events-none'
+                        : 'bg-gray-700 text-gray-200 border-gray-600 hover:bg-[#63099c]/20 hover:border-[#63099c]'}
                     `}
-                    onClick={() => !isBooked && setSelectedTime(time)}
+                    onClick={() => {
+                      if (!isBooked) {
+                        setSelectedTime(time);
+                      }
+                    }}
                     disabled={isBooked}
+                    aria-disabled={isBooked}
+                    tabIndex={isBooked ? -1 : 0}
                   >
                     {time}
+                    {isBooked && (
+                      <span className="ml-2 text-xs text-red-400 align-middle">(rezervat)</span>
+                    )}
                   </Button>
                 );
               })}
             </div>
+            {selectedDate && bookedTimeSlots.length > 0 && (
+              <div className="mt-2 text-xs text-gray-400">
+                * Intervalele marcate "rezervat" nu pot fi selectate
+              </div>
+            )}
           </div>
         </div>
       </CardContent>
@@ -136,3 +173,4 @@ const DateTimeSelection = ({
 };
 
 export default DateTimeSelection;
+
