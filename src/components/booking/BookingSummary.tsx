@@ -21,16 +21,16 @@ const BookingSummary = ({
   selectedService
 }: BookingSummaryProps) => {
   return (
-    <Card className="border-2 border-[#7E69AB]/30">
+    <Card className="bg-gray-800 border-gray-700">
       <CardHeader>
-        <CardTitle>Rezumatul rezervării</CardTitle>
+        <CardTitle className="text-white">Rezumatul rezervării</CardTitle>
       </CardHeader>
       <CardContent className="space-y-2">
-        <p><strong>Nume:</strong> {form.watch('fullName')}</p>
-        <p><strong>Telefon:</strong> {form.watch('phoneNumber')}</p>
-        <p><strong>Serviciu:</strong> {selectedService}</p>
-        <p><strong>Data:</strong> {selectedDate.toLocaleDateString('ro-RO')}</p>
-        <p><strong>Ora:</strong> {selectedTime}</p>
+        <p className="text-gray-200"><strong className="text-white">Nume:</strong> {form.watch('fullName')}</p>
+        <p className="text-gray-200"><strong className="text-white">Telefon:</strong> {form.watch('phoneNumber')}</p>
+        <p className="text-gray-200"><strong className="text-white">Serviciu:</strong> {selectedService}</p>
+        <p className="text-gray-200"><strong className="text-white">Data:</strong> {selectedDate.toLocaleDateString('ro-RO')}</p>
+        <p className="text-gray-200"><strong className="text-white">Ora:</strong> {selectedTime}</p>
       </CardContent>
     </Card>
   );
