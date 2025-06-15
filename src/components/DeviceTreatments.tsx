@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 
@@ -27,14 +28,14 @@ const DeviceTreatments = () => {
         {deviceTreatments.map((treatment, index) => (
           <Card 
             key={treatment.title} 
-            className={`hover:shadow-lg transition-shadow duration-300 bg-black/60 backdrop-blur-sm text-white border-none ${
+            className={`transition-all duration-300 hover:scale-[1.03] hover:shadow-xl hover:shadow-violet-400/20 bg-black/60 backdrop-blur-sm text-white border-none ${
               index === deviceTreatments.length - 1 && deviceTreatments.length % 2 === 1 
                 ? "md:col-span-2 md:max-w-2xl md:mx-auto" 
                 : ""
             }`}
           >
             <CardHeader>
-              <CardTitle className="text-[#63099c]">{treatment.title}</CardTitle>
+              <CardTitle className="text-violet-400">{treatment.title}</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col md:flex-row gap-6">
               <div className="md:w-1/3">

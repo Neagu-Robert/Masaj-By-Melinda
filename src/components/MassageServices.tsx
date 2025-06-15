@@ -70,10 +70,10 @@ const MassageServices = () => {
         {massageServices.map((service) => (
           <Card
             key={service.title}
-            className="hover:shadow-lg transition-shadow duration-300 p-4 bg-black/60 backdrop-blur-sm text-white border-none"
+            className="transition-all duration-300 hover:scale-[1.03] hover:shadow-xl hover:shadow-violet-400/20 p-4 bg-black/60 backdrop-blur-sm text-white border-none"
           >
             <CardHeader>
-              <CardTitle className="text-[#63099c] text-2xl">
+              <CardTitle className="text-violet-400 text-2xl">
                 {service.title}
               </CardTitle>
               <CardDescription className="text-lg text-gray-300">
@@ -84,7 +84,7 @@ const MassageServices = () => {
               <p className="text-gray-200 mb-4 text-lg">
                 {service.description}
               </p>
-              <p className="text-3xl font-semibold text-[#63099c]">
+              <p className="text-3xl font-semibold text-violet-400">
                 {service.price}
               </p>
             </CardContent>

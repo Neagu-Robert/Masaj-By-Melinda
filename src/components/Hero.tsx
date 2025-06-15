@@ -5,11 +5,11 @@ const Hero = () => {
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
       <div className="container mx-auto text-center">
-        <div className="max-w-2xl mx-auto bg-black/40 p-4 md:p-6 rounded-lg backdrop-blur-sm">
-          <h1 className="text-3xl md:text-5xl font-bold mb-4 md:mb-6 text-white leading-tight">
+        <div className="max-w-3xl mx-auto bg-black/50 p-6 md:p-8 rounded-xl backdrop-blur-md">
+          <h1 className="text-4xl md:text-6xl font-bold mb-4 md:mb-6 text-white leading-tight animate-fade-in opacity-0 [animation-delay:200ms]">
             Masaj de relaxare și remodelare
           </h1>
-          <p className="text-lg md:text-xl text-gray-100 mb-6 md:mb-8 leading-relaxed">
+          <p className="text-lg md:text-xl text-gray-200 mb-6 md:mb-8 leading-relaxed animate-fade-in opacity-0 [animation-delay:500ms]">
             Descoperiți un sanctuar de pace și bunăstare în care mâini experte aduc armonie corpului și minții.
           </p>
         </div>
