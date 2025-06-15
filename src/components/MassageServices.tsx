@@ -63,30 +63,36 @@ const massageServices = [
 const MassageServices = () => {
   return (
     <div className="container mx-auto px-4">
-      <h3 className="text-2xl font-semibold text-center text-white mb-8">
-        Masaje
+      <h3 className="text-2xl md:text-3xl font-semibold text-center text-white mb-8 relative">
+        <span className="relative z-10">Masaje</span>
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#63099c]/20 to-transparent h-0.5 top-1/2 transform -translate-y-1/2"></div>
       </h3>
       <div className="grid md:grid-cols-2 gap-8 [&>*:last-child:nth-child(2n+1)]:col-span-2 [&>*:last-child:nth-child(2n+1)]:mx-auto [&>*:last-child:nth-child(2n+1)]:max-w-2xl">
-        {massageServices.map((service) => (
+        {massageServices.map((service, index) => (
           <Card
             key={service.title}
-            className="hover:shadow-lg transition-shadow duration-300 p-4 bg-black/60 backdrop-blur-sm text-white border-none"
+            className="hover:shadow-lg transition-all duration-500 p-4 bg-black/60 backdrop-blur-sm text-white border-none transform hover:scale-105 hover:bg-black/70 group animate-fade-in"
+            style={{ animationDelay: `${index * 0.1}s`, animationFillMode: 'forwards', opacity: 0 }}
           >
-            <CardHeader>
-              <CardTitle className="text-[#63099c] text-2xl">
+            <CardHeader className="relative">
+              <CardTitle className="text-[#63099c] text-2xl group-hover:text-[#7E69AB] transition-colors duration-300">
                 {service.title}
               </CardTitle>
               <CardDescription className="text-lg text-gray-300">
                 {service.duration}
               </CardDescription>
+              <div className="absolute top-0 right-0 w-12 h-12 bg-gradient-to-br from-[#63099c]/20 to-transparent rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-200 mb-4 text-lg">
+              <p className="text-gray-200 mb-4 text-lg leading-relaxed">
                 {service.description}
               </p>
-              <p className="text-3xl font-semibold text-[#63099c]">
-                {service.price}
-              </p>
+              <div className="flex justify-between items-center">
+                <p className="text-3xl font-semibold text-[#63099c] group-hover:text-[#7E69AB] transition-colors duration-300">
+                  {service.price}
+                </p>
+                <div className="w-8 h-0.5 bg-gradient-to-r from-[#63099c] to-[#7E69AB] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              </div>
             </CardContent>
           </Card>
         ))}
