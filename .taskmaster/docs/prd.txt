@@ -1,0 +1,105 @@
+Masaj by Melinda – Product Requirements Document (PRD)
+
+---
+
+### 1. Project Overview
+
+Masaj by Melinda is a web application for a professional wellness and massage services business. The platform allows users to explore available treatments, view details, and book appointments online. The site is designed for both desktop and mobile, with a modern, relaxing visual style.
+
+---
+
+### 2. Core Features & Requirements
+
+#### A. Service Presentation
+
+- Display a catalog of massage services and device-based treatments.
+- Each service/treatment includes:
+  - Name
+  - Description/benefits
+  - Duration
+  - Price
+  - (For device therapies) Images
+- Sections: "Masaje" and "Tratamente cu dispozitive"
+- Responsive layout for desktop and mobile.
+
+#### B. Booking System
+
+- Multi-step booking form:
+  1. Contact information
+  2. Service selection
+  3. Date & time selection (with real-time availability)
+  4. Booking summary and confirmation
+- Prevent double-booking by disabling already-booked slots (real-time check).
+- Store bookings in Supabase (PostgreSQL).
+- Show confirmation toast and redirect after successful booking.
+
+#### C. Navigation & Layout
+
+- Responsive navbar with desktop (inline links) and mobile (hamburger menu) modes.
+- Smooth scrolling and easy navigation between sections/pages.
+- All interactive elements should be touch-friendly on mobile.
+
+#### D. Contact & Information
+
+- Dedicated contact section with business details and a way to reach out for questions or special requests.
+
+#### E. Visual Design
+
+- Use images, gradients, and blur effects for a relaxing, professional look.
+- Consistent use of Tailwind CSS and shadcn/ui components for styling.
+
+#### F. Admin/Management (Future Expansion)
+
+- Admins can view bookings and manage service availabilities (not yet implemented, but plan for future).
+
+---
+
+### 3. Technical Requirements
+
+- **Frontend:** React (with TypeScript), Vite, Tailwind CSS, shadcn/ui, lucide-react icons
+- **State/Form:** react-hook-form for booking forms
+- **Database/Backend:** Supabase (PostgreSQL) for bookings and availability
+- **Routing:** react-router-dom for navigation
+- **Notifications:** sonner for toast notifications
+- **Date Handling:** date-fns for date logic
+- **Theme:** next-themes for light/dark mode support
+- **Other:** Custom hooks, utility functions, and reusable UI components
+
+---
+
+### 4. User Stories
+
+- As a visitor, I want to browse all available massage and device treatments, so I can choose the best option for me.
+- As a user, I want to book a session by selecting a service, date, and time, so I can schedule my appointment online.
+- As a user, I want to see only available time slots, so I don’t accidentally double-book.
+- As a user, I want to receive a confirmation after booking, so I know my appointment is set.
+- As an admin (future), I want to view and manage bookings and service availability.
+
+---
+
+### 5. Non-Functional Requirements
+
+- The site must be responsive and work well on both desktop and mobile devices.
+- All user data must be validated before submission.
+- The booking process should be fast and user-friendly.
+- The design should inspire trust and relaxation.
+
+---
+
+### 6. Stretch Goals / Future Features
+
+- Admin dashboard for managing bookings and availabilities.
+- User authentication for booking history.
+- Email/SMS notifications for bookings.
+- Analytics dashboard for business insights.
+- Secure admin access with security measures 
+
+---
+
+### 7. References
+
+- See README.md for full tech stack and folder structure.
+- Supabase documentation for backend/database integration.
+- shadcn/ui and Tailwind CSS docs for UI components and styling.
+
+---
