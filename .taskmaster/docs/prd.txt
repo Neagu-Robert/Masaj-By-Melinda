@@ -46,7 +46,10 @@ Masaj by Melinda is a web application for a professional wellness and massage se
 #### E. Visual Design
 
 - Use images, gradients, and blur effects for a relaxing, professional look.
-- Consistent use of Tailwind CSS and shadcn/ui components for styling.
+- Consistent use of Tailwind CSS utility classes and shadcn/ui components for styling.
+- Main color: violet-400 
+- Secondary color: Pink-500
+- Page background theme: dark
 
 #### F. Admin/Management (Future Expansion)
 

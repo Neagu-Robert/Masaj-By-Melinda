@@ -1,11 +1,18 @@
 
 import React, { useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, Routes, Route } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Hero from '../components/Hero';
 import Services from '../components/Services';
 import Footer from '../components/Footer';
 import Booking from '../components/Booking';
+import DashboardLayout from "./admin/DashboardLayout";
+import AdminHome from "./admin/AdminHome";
+import Bookings from "./admin/Bookings";
+import Availabilities from "./admin/Availabilities";
+import Analytics from "./admin/Analytics";
+import Users from "./admin/Users";
+import Settings from "./admin/Settings";
 
 const Index = () => {
   const location = useLocation();

@@ -45,6 +45,33 @@ export type Database = {
         }
         Relationships: []
       }
+      availabilities: {
+        Row: {
+          id: string;
+          date: string; // ISO date
+          hour: string; // HH:MM:SS
+          is_available: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          date: string;
+          hour: string;
+          is_available?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          date?: string;
+          hour?: string;
+          is_available?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
     }
     Views: {
       [_ in never]: never
