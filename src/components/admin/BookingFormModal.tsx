@@ -1,15 +1,13 @@
 import React, { useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useForm } from "react-hook-form";
-import { supabase } from "@/integrations/supabase/client";
-import { Tables } from "@/integrations/supabase/types";
+import { useBookings } from "../../contexts/BookingsContext";
 import { toast } from "@/components/ui/use-toast";
 
 interface BookingFormModalProps {
   open: boolean;
   onClose: () => void;
-  booking: Tables<"bookings"> | null;
-  onSave: (booking: Tables<"bookings">) => void;
+  booking: any;
 }
 
 type FormValues = {
@@ -21,7 +19,7 @@ type FormValues = {
   booking_time: string;
 };
 
-export default function BookingFormModal({ open, onClose, booking, onSave }: BookingFormModalProps) {
+export default function BookingFormModal({ open, onClose, booking }: BookingFormModalProps) {
   const form = useForm<FormValues>({
     defaultValues: {
       first_name: "",
@@ -32,6 +30,7 @@ export default function BookingFormModal({ open, onClose, booking, onSave }: Boo
       booking_time: "",
     },
   });
+  const { addBooking, updateBooking } = useBookings();
 
   useEffect(() => {
     if (booking) {
@@ -58,33 +57,14 @@ export default function BookingFormModal({ open, onClose, booking, onSave }: Boo
   const handleSubmit = async (values: FormValues) => {
     if (booking) {
       // Update
-      const { error } = await supabase
-        .from("bookings")
-        .update(values)
-        .eq("id", booking.id);
-      
-      if (error) {
-        toast({ title: "Error", description: error.message, variant: "destructive" });
-      } else {
-        toast({ title: "Booking updated" });
-        onSave({ ...booking, ...values });
-        onClose();
-      }
+      await updateBooking(booking.id, values);
+      toast({ title: "Booking updated" });
+      onClose();
     } else {
       // Create
-      const { data, error } = await supabase
-        .from("bookings")
-        .insert([values])
-        .select()
-        .single();
-        
-      if (error) {
-        toast({ title: "Error", description: error.message, variant: "destructive" });
-      } else {
-        toast({ title: "Booking created" });
-        onSave(data);
-        onClose();
-      }
+      await addBooking(values);
+      toast({ title: "Booking created" });
+      onClose();
     }
   };
 

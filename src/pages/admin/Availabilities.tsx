@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSameMonth, isSameDay, format, isWithinInterval } from "date-fns";
-import { supabase } from "@/integrations/supabase/client";
-import { Tables } from "@/integrations/supabase/types";
-import type { Database } from "@/integrations/supabase/types";
+import { addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSameMonth, isSameDay, format } from "date-fns";
+import { useAvailabilities } from "../../contexts/AvailabilitiesContext";
 import { toast } from "@/components/ui/use-toast";
 
 const HOURS = [
@@ -27,45 +25,34 @@ export default function Availabilities() {
   const [availability, setAvailability] = useState<Record<string, Record<string, boolean> & { _allOff?: boolean }>>({});
   const [originalAvailability, setOriginalAvailability] = useState<Record<string, Record<string, boolean> & { _allOff?: boolean }>>({});
   const [dirty, setDirty] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const { availabilities, loading, fetchAvailabilities, upsertAvailabilities } = useAvailabilities();
 
   const days = getMonthDays(currentMonth);
   const monthStr = format(currentMonth, "MMMM yyyy");
 
   // Fetch availabilities for the current month
   useEffect(() => {
-    async function fetchAvailabilities() {
-      setLoading(true);
-      const monthStart = format(startOfMonth(currentMonth), "yyyy-MM-dd");
-      const monthEnd = format(endOfMonth(currentMonth), "yyyy-MM-dd");
-      const { data, error } = await supabase
-        .from("availabilities")
-        .select("*")
-        .gte("date", monthStart)
-        .lte("date", monthEnd);
-      if (error) {
-        toast({ title: "Error loading availabilities", description: error.message, variant: "destructive" });
-        setLoading(false);
-        return;
-      }
-      // Map DB data to local state
-      const availMap: Record<string, Record<string, boolean> & { _allOff?: boolean }> = {};
-      data?.forEach((row: Tables<"availabilities">) => {
-        const key = row.date;
-        if (!availMap[key]) availMap[key] = {};
-        availMap[key][row.hour.slice(0,5)] = row.is_available; // slice to HH:MM
-      });
-      // Mark _allOff if all hours are off
-      Object.keys(availMap).forEach(key => {
-        availMap[key]._allOff = HOURS.every(h => availMap[key][h] === false);
-      });
-      setAvailability(availMap);
-      setOriginalAvailability(JSON.parse(JSON.stringify(availMap)));
-      setDirty(false);
-      setLoading(false);
-    }
-    fetchAvailabilities();
+    const monthStart = format(startOfMonth(currentMonth), "yyyy-MM-dd");
+    const monthEnd = format(endOfMonth(currentMonth), "yyyy-MM-dd");
+    fetchAvailabilities(monthStart, monthEnd);
+    // eslint-disable-next-line
   }, [currentMonth]);
+
+  // Map context data to local state for UI editing
+  useEffect(() => {
+    const availMap: Record<string, Record<string, boolean> & { _allOff?: boolean }> = {};
+    availabilities.forEach((row) => {
+      const key = row.date;
+      if (!availMap[key]) availMap[key] = {};
+      availMap[key][row.hour.slice(0,5)] = row.is_available;
+    });
+    Object.keys(availMap).forEach(key => {
+      availMap[key]._allOff = HOURS.every(h => availMap[key][h] === false);
+    });
+    setAvailability(availMap);
+    setOriginalAvailability(JSON.parse(JSON.stringify(availMap)));
+    setDirty(false);
+  }, [availabilities]);
 
   // Helper: is whole day off?
   const isDayAllOff = (date: Date) => {
@@ -95,7 +82,6 @@ export default function Availabilities() {
     setAvailability(prev => {
       const day = { ...prev[key] };
       day[hour] = !(day[hour] !== false);
-      // If all hours are off, mark _allOff
       day._allOff = HOURS.every(h => day[h] === false);
       return { ...prev, [key]: day };
     });
@@ -116,44 +102,33 @@ export default function Availabilities() {
 
   // Save handler: upsert all changed slots
   const handleSave = async () => {
-    setLoading(true);
-    const upserts: Database['public']['Tables']['availabilities']['Insert'][] = [];
-    // For each day in the month
+    const upserts: any[] = [];
     days.forEach(day => {
       const key = format(day, "yyyy-MM-dd");
       const dayAvail = availability[key] || {};
       HOURS.forEach(hour => {
         const isAvailable = dayAvail[hour] !== false;
-        // Compare to original
         const origAvail = (originalAvailability[key] && originalAvailability[key][hour] !== undefined)
           ? originalAvailability[key][hour] !== false : true;
         if (isAvailable !== origAvail) {
           upserts.push({
             date: key,
-            hour: hour + ":00", // store as HH:MM:SS
+            hour: hour + ":00",
             is_available: isAvailable,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
-            // Do NOT include id for new rows
           });
         }
       });
     });
     if (upserts.length === 0) {
-      setLoading(false);
       toast({ title: "No changes to save." });
       return;
     }
-    // Upsert all changed slots
-    const { error } = await supabase.from("availabilities").upsert(upserts, { onConflict: "date,hour" });
-    if (error) {
-      toast({ title: "Error saving availabilities", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Availabilities saved!" });
-      setOriginalAvailability(JSON.parse(JSON.stringify(availability)));
-      setDirty(false);
-    }
-    setLoading(false);
+    await upsertAvailabilities(upserts);
+    toast({ title: "Availabilities saved!" });
+    setOriginalAvailability(JSON.parse(JSON.stringify(availability)));
+    setDirty(false);
   };
 
   return (

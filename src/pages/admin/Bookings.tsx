@@ -1,57 +1,39 @@
-import React, { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { Tables } from "@/integrations/supabase/types";
+import React, { useState } from "react";
+import { useBookings } from "../../contexts/BookingsContext";
 import { toast } from "@/components/ui/use-toast";
 import BookingFormModal from "@/components/admin/BookingFormModal";
 
 export default function Bookings() {
-  const [bookings, setBookings] = useState<Tables<"bookings">[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { bookings, loading, addBooking, updateBooking, deleteBooking } = useBookings();
   const [modalOpen, setModalOpen] = useState(false);
-  const [selectedBooking, setSelectedBooking] = useState<Tables<"bookings"> | null>(null);
-
-  // Fetch bookings
-  useEffect(() => {
-    async function fetchBookings() {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from("bookings")
-        .select("*")
-        .order("booking_date", { ascending: false });
-      if (error) toast({ title: "Error", description: error.message });
-      else setBookings(data || []);
-      setLoading(false);
-    }
-    fetchBookings();
-  }, []);
+  const [selectedBooking, setSelectedBooking] = useState<any>(null);
 
   // Handlers for CRUD
-  const handleEdit = (booking: Tables<"bookings">) => {
+  const handleEdit = (booking: any) => {
     setSelectedBooking(booking);
-    setModalOpen(true); // Placeholder for modal logic
+    setModalOpen(true);
   };
   const handleDelete = async (id: string) => {
     if (!window.confirm("Are you sure you want to delete this booking?")) return;
-    const { error } = await supabase.from("bookings").delete().eq("id", id);
-    if (error) toast({ title: "Error", description: error.message });
-    else setBookings(bookings.filter(b => b.id !== id));
+    await deleteBooking(id);
+    toast({ title: "Booking deleted" });
   };
   const handleCreate = () => {
     setSelectedBooking(null);
-    setModalOpen(true); // Placeholder for modal logic
+    setModalOpen(true);
   };
   const handleModalClose = () => {
     setModalOpen(false);
     setSelectedBooking(null);
   };
-  // Placeholder for modal save logic
-  const handleModalSave = (newBooking: Tables<"bookings">) => {
+  // Save logic uses context
+  const handleModalSave = async (values: any) => {
     if (selectedBooking) {
-      // Update in place
-      setBookings(bookings.map(b => b.id === newBooking.id ? newBooking : b));
+      await updateBooking(selectedBooking.id, values);
+      toast({ title: "Booking updated" });
     } else {
-      // Add new
-      setBookings([newBooking, ...bookings]);
+      await addBooking(values);
+      toast({ title: "Booking created" });
     }
     setModalOpen(false);
     setSelectedBooking(null);
@@ -83,7 +65,7 @@ export default function Bookings() {
                 <td colSpan={6} className="text-center py-8">No bookings found.</td>
               </tr>
             ) : (
-              bookings.map(b => (
+              bookings.map((b: any) => (
                 <tr key={b.id} className="border-b border-gray-700">
                   <td className="px-4 py-2">{b.first_name} {b.last_name}</td>
                   <td className="px-4 py-2">{b.phone_number}</td>
