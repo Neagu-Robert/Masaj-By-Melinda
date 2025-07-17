@@ -31,6 +31,7 @@ export type Database = {
           phone_number: string
           service_type: string
           updated_at?: string
+          user_id?: string
         }
         Update: {
           booking_date?: string
@@ -42,6 +43,7 @@ export type Database = {
           phone_number?: string
           service_type?: string
           updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }

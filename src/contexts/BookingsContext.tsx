@@ -3,7 +3,7 @@ import { supabase } from '../integrations/supabase/client';
 import { Tables, TablesInsert, TablesUpdate } from '../integrations/supabase/types';
 
 // Booking type from Supabase types
-export type Booking = Tables<'bookings'>;
+export type Booking = Tables<'bookings'> & { profiles?: { email: string } };
 export type BookingInsert = TablesInsert<'bookings'>;
 export type BookingUpdate = TablesUpdate<'bookings'>;
 
@@ -24,11 +24,14 @@ export const BookingsProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch all bookings
+  // Fetch all bookings with user email from profiles
   const fetchBookings = async () => {
     setLoading(true);
     setError(null);
-    const { data, error } = await supabase.from('bookings').select('*').order('booking_date', { ascending: true });
+    const { data, error } = await supabase
+      .from('bookings')
+      .select('*, profiles:profiles(email)')
+      .order('booking_date', { ascending: true });
     if (error) setError(error.message);
     setBookings(data || []);
     setLoading(false);

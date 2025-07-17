@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Home, Package, Calendar, Menu, X } from 'lucide-react';
 
+const HOME_PATH = '/home';
+
 const BookingHeader = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -11,21 +13,20 @@ const BookingHeader = () => {
   
   const handleLogoClick = () => {
     setIsMobileMenuOpen(false);
-    if (location.pathname === '/') {
+    if (location.pathname === HOME_PATH) {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
-      navigate('/');
+      navigate(HOME_PATH);
     }
   };
 
   const scrollToElement = (elementId: string) => {
     setIsMobileMenuOpen(false);
     // Navigate to homepage first if not already there
-    if (location.pathname !== '/') {
-      navigate('/', { state: { scrollTo: elementId } });
+    if (location.pathname !== HOME_PATH) {
+      navigate(HOME_PATH, { state: { scrollTo: elementId } });
       return;
     }
-    
     // If already on homepage, scroll to the element
     const element = document.getElementById(elementId);
     if (element) {
@@ -39,7 +40,7 @@ const BookingHeader = () => {
   };
 
   const isActive = (path: string) => {
-    if (path === '/' && location.pathname === '/') {
+    if (path === HOME_PATH && location.pathname === HOME_PATH) {
       return true;
     }
     if (path === '/pachete' && location.pathname === '/pachete') {
@@ -61,12 +62,11 @@ const BookingHeader = () => {
           >
             Masaj by Melinda
           </div>
-          
           {/* Desktop Navigation */}
           <div className="hidden md:flex space-x-6">
             <Button 
-              variant={isActive('/') ? "default" : "ghost"}
-              className={isActive('/') 
+              variant={isActive(HOME_PATH) ? "default" : "ghost"}
+              className={isActive(HOME_PATH) 
                 ? "bg-[#7E69AB] text-white hover:bg-[#9b87f5]" 
                 : "text-gray-300 hover:text-white hover:bg-white/10"}
               onClick={() => scrollToElement('services')}
@@ -91,7 +91,6 @@ const BookingHeader = () => {
               <Calendar className="mr-1" /> Rezerva acum
             </Button>
           </div>
-
           {/* Mobile Menu Button */}
           <Button
             variant="ghost"
@@ -102,14 +101,13 @@ const BookingHeader = () => {
             {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </Button>
         </div>
-
         {/* Mobile Navigation Menu */}
         {isMobileMenuOpen && (
           <div className="md:hidden mt-4 pb-4 border-t border-gray-700">
             <div className="flex flex-col space-y-2 pt-4">
               <Button 
-                variant={isActive('/') ? "default" : "ghost"}
-                className={`w-full justify-start h-12 ${isActive('/') 
+                variant={isActive(HOME_PATH) ? "default" : "ghost"}
+                className={`w-full justify-start h-12 ${isActive(HOME_PATH) 
                   ? "bg-[#7E69AB] text-white hover:bg-[#9b87f5]" 
                   : "text-gray-300 hover:text-white hover:bg-white/10"}`}
                 onClick={() => scrollToElement('services')}

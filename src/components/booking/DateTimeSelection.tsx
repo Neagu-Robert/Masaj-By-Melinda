@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar as CalendarIcon, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAvailabilities } from '../../contexts/AvailabilitiesContext';
 
 type DateTimeSelectionProps = {
   selectedDate: Date | undefined;
@@ -27,6 +28,8 @@ const DateTimeSelection = ({
   // Track booked time slots for the selected date
   const [bookedTimeSlots, setBookedTimeSlots] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const { availabilities, fetchAvailabilities } = useAvailabilities();
+  const [unavailableSlots, setUnavailableSlots] = useState<string[]>([]);
 
   // Helper: format date correctly
   const formatDateForDB = (date: Date) => {
@@ -44,28 +47,21 @@ const DateTimeSelection = ({
         return;
       }
       setIsLoading(true);
-
       const formattedDate = formatDateForDB(selectedDate);
-
       try {
         const { data, error } = await supabase
           .from('bookings')
           .select('booking_time')
           .eq('booking_date', formattedDate);
-
         if (error) {
           console.error('Error fetching booked time slots:', error);
           setBookedTimeSlots([]);
           return;
         }
-
         const booked = (data ?? []).map(booking => {
-          // booking.booking_time may be "14:00:00" so adjust to "14:00"
           return (booking.booking_time || "").toString().slice(0, 5);
         });
         setBookedTimeSlots(booked);
-
-        // If the currently selected time is now booked, reset it
         if (selectedTime && booked.includes(selectedTime)) {
           setSelectedTime('');
         }
@@ -76,25 +72,57 @@ const DateTimeSelection = ({
         setIsLoading(false);
       }
     };
-
     fetchBookedTimeSlots();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDate]);
 
-  // If the current selected time just became booked, reset it
+  // Fetch availabilities for the selected date
   useEffect(() => {
-    if (selectedTime && bookedTimeSlots.includes(selectedTime)) {
+    if (!selectedDate) {
+      setUnavailableSlots([]);
+      return;
+    }
+    const formattedDate = formatDateForDB(selectedDate);
+    // Fetch availabilities for just this date
+    fetchAvailabilities(formattedDate, formattedDate);
+  }, [selectedDate, fetchAvailabilities]);
+
+  // Compute unavailable slots from availabilities context
+  useEffect(() => {
+    if (!selectedDate) {
+      setUnavailableSlots([]);
+      return;
+    }
+    const formattedDate = formatDateForDB(selectedDate);
+    const slots: string[] = [];
+    availabilities
+      .filter(a => a.date === formattedDate)
+      .forEach(a => {
+        if (!a.is_available) {
+          slots.push(a.hour.slice(0, 5));
+        }
+      });
+    setUnavailableSlots(slots);
+  }, [availabilities, selectedDate]);
+
+  // If the current selected time just became unavailable, reset it
+  useEffect(() => {
+    if (selectedTime && (bookedTimeSlots.includes(selectedTime) || unavailableSlots.includes(selectedTime))) {
       setSelectedTime('');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bookedTimeSlots]);
+  }, [bookedTimeSlots, unavailableSlots]);
 
-  // Is slot booked (normalize/compare)
-  const isTimeSlotBooked = (time: string) => {
-    // time = "8:00", booked = "08:00"
+  // Is slot unavailable (either booked or blocked)
+  const isTimeSlotUnavailable = (time: string) => {
     const normalized = time.padStart(5, "0");
-    return bookedTimeSlots.some(
-      (b) => b === time || b === normalized || b.replace(/^0/, "") === time.replace(/^0/, "")
+    return (
+      bookedTimeSlots.some(
+        (b) => b === time || b === normalized || b.replace(/^0/, "") === time.replace(/^0/, "")
+      ) ||
+      unavailableSlots.some(
+        (u) => u === time || u === normalized || u.replace(/^0/, "") === time.replace(/^0/, "")
+      )
     );
   };
 
@@ -129,42 +157,42 @@ const DateTimeSelection = ({
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {timeSlots.map((time) => {
-                const isBooked = isTimeSlotBooked(time);
-                const isSelected = selectedTime === time && !isBooked;
+                const isUnavailable = isTimeSlotUnavailable(time);
+                const isSelected = selectedTime === time && !isUnavailable;
                 return (
                   <Button
                     key={time}
                     type="button"
-                    variant={isBooked ? "outline" : isSelected ? "default" : "outline"}
+                    variant={isUnavailable ? "outline" : isSelected ? "default" : "outline"}
                     className={`
                       h-12 text-sm md:text-base transition
                       ${isSelected ? 'bg-[#7E69AB] text-white border-transparent hover:bg-[#7E69AB]/90' : ''}
-                      ${isBooked
+                      ${isUnavailable
                         ? 'bg-gray-700 text-gray-500 border-gray-600 opacity-60 cursor-not-allowed pointer-events-none'
                         : !isSelected
                           ? 'bg-gray-700 text-gray-200 border-gray-600 hover:bg-[#63099c]/20 hover:border-[#63099c]'
                           : ''}
                     `}
                     onClick={() => {
-                      if (!isBooked) {
+                      if (!isUnavailable) {
                         setSelectedTime(time);
                       }
                     }}
-                    disabled={isBooked}
-                    aria-disabled={isBooked}
-                    tabIndex={isBooked ? -1 : 0}
+                    disabled={isUnavailable}
+                    aria-disabled={isUnavailable}
+                    tabIndex={isUnavailable ? -1 : 0}
                   >
                     {time}
-                    {isBooked && (
-                      <span className="ml-2 text-xs text-red-400 align-middle">(rezervat)</span>
+                    {isUnavailable && (
+                      <span className="ml-2 text-xs text-red-400 align-middle">(indisponibil)</span>
                     )}
                   </Button>
                 );
               })}
             </div>
-            {selectedDate && bookedTimeSlots.length > 0 && (
+            {selectedDate && (bookedTimeSlots.length > 0 || unavailableSlots.length > 0) && (
               <div className="mt-2 text-xs text-gray-400">
-                * Intervalele marcate "rezervat" nu pot fi selectate
+                * Intervalele marcate "indisponibil" nu pot fi selectate
               </div>
             )}
           </div>

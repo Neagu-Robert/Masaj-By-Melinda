@@ -56,13 +56,13 @@ export default function BookingFormModal({ open, onClose, booking }: BookingForm
 
   const handleSubmit = async (values: FormValues) => {
     if (booking) {
-      // Update
-      await updateBooking(booking.id, values);
+      // Always include user_id in the update to preserve join
+      await updateBooking(booking.id, { ...values, user_id: booking.user_id });
       toast({ title: "Booking updated" });
       onClose();
     } else {
-      // Create
-      await addBooking(values);
+      // For new bookings, if booking.user_id is available, use it (fallback for admin-created bookings)
+      await addBooking({ ...values, ...(booking?.user_id ? { user_id: booking.user_id } : {}) });
       toast({ title: "Booking created" });
       onClose();
     }

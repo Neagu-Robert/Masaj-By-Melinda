@@ -10,6 +10,8 @@ import ContactForm from '@/components/booking/ContactForm';
 import ServiceSelection from '@/components/booking/ServiceSelection';
 import DateTimeSelection from '@/components/booking/DateTimeSelection';
 import BookingSummary from '@/components/booking/BookingSummary';
+import { AvailabilitiesProvider } from '@/contexts/AvailabilitiesContext';
+
 const BookingPage = () => {
   const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
@@ -70,6 +72,10 @@ const BookingPage = () => {
       const firstName = nameParts[0] || '';
       const lastName = nameParts.slice(1).join(' ') || '';
 
+      // Get current user ID
+      const { data: userData } = await supabase.auth.getUser();
+      const userId = userData?.user?.id;
+
       // Insert booking data into Supabase
       const {
         error
@@ -79,7 +85,8 @@ const BookingPage = () => {
         phone_number: data.phoneNumber,
         service_type: selectedService,
         booking_date: formattedDate,
-        booking_time: selectedTime
+        booking_time: selectedTime,
+        user_id: userId // <-- add this line
       });
       if (error) {
         console.error('Error saving booking:', error);
@@ -97,7 +104,7 @@ const BookingPage = () => {
           setSelectedDate(undefined);
           setSelectedTime(undefined);
           setSelectedService(undefined);
-          navigate('/', {
+          navigate('/home', {
             state: {
               fromBooking: true
             }
@@ -113,39 +120,38 @@ const BookingPage = () => {
       setIsSubmitting(false);
     }
   };
-  return <div className="min-h-screen bg-gray-900">
-      <BookingHeader />
+  return (
+    <AvailabilitiesProvider>
+      <div className="min-h-screen bg-gray-900">
+        <BookingHeader />
 
-      <div className="pt-24 pb-20 px-4 md:px-0">
-        <div className="container mx-auto">
-          <h2 className="text-2xl font-semibold text-center mb-8 md:mb-12 text-purple-500 md:text-3xl">Rezervăți Masajul</h2>
-          
-          <div className="max-w-3xl mx-auto">
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 md:space-y-8">
-                {/* Contact Information */}
-                <ContactForm form={form} />
-
-                {/* Service Selection */}
-                <ServiceSelection form={form} setSelectedService={setSelectedService} />
-
-                {/* Date and Time Selection */}
-                <DateTimeSelection selectedDate={selectedDate} setSelectedDate={setSelectedDate} selectedTime={selectedTime} setSelectedTime={setSelectedTime} />
-
-                {/* Booking Summary */}
-                {selectedDate && selectedTime && form.watch('fullName') && form.watch('phoneNumber') && selectedService && <BookingSummary form={form} selectedDate={selectedDate} selectedTime={selectedTime} selectedService={selectedService} />}
-
-                {/* Submit Button */}
-                <div className="flex justify-center pt-4">
-                  <Button type="submit" className="bg-[#63099c] hover:bg-[#63099c]/90 text-white text-lg md:text-xl py-4 md:py-6 px-6 md:px-8 w-full md:w-auto h-12 md:h-auto" disabled={isSubmitting}>
-                    {isSubmitting ? "Se procesează..." : "Confirmă rezervarea"}
-                  </Button>
-                </div>
-              </form>
-            </Form>
+        <div className="pt-24 pb-20 px-4 md:px-0">
+          <div className="container mx-auto">
+            <h2 className="text-2xl font-semibold text-center mb-8 md:mb-12 text-purple-500 md:text-3xl">Rezervăți Masajul</h2>
+            <div className="max-w-3xl mx-auto">
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 md:space-y-8">
+                  {/* Contact Information */}
+                  <ContactForm form={form} />
+                  {/* Service Selection */}
+                  <ServiceSelection form={form} setSelectedService={setSelectedService} />
+                  {/* Date and Time Selection */}
+                  <DateTimeSelection selectedDate={selectedDate} setSelectedDate={setSelectedDate} selectedTime={selectedTime} setSelectedTime={setSelectedTime} />
+                  {/* Booking Summary */}
+                  {selectedDate && selectedTime && form.watch('fullName') && form.watch('phoneNumber') && selectedService && <BookingSummary form={form} selectedDate={selectedDate} selectedTime={selectedTime} selectedService={selectedService} />}
+                  {/* Submit Button */}
+                  <div className="flex justify-center pt-4">
+                    <Button type="submit" className="bg-[#63099c] hover:bg-[#63099c]/90 text-white text-lg md:text-xl py-4 md:py-6 px-6 md:px-8 w-full md:w-auto h-12 md:h-auto" disabled={isSubmitting}>
+                      {isSubmitting ? "Se procesează..." : "Confirmă rezervarea"}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </div>
           </div>
         </div>
       </div>
-    </div>;
+    </AvailabilitiesProvider>
+  );
 };
 export default BookingPage;
