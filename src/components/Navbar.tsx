@@ -2,7 +2,8 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from './ui/button';
-import { Home, Package, Calendar, Menu, X } from 'lucide-react';
+import { Home, Package, Calendar, Menu, X, User } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 const HOME_PATH = '/home';
 
@@ -10,6 +11,7 @@ const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { role, user } = useAuth(); // Get user role and user object
 
   const handleLogoClick = () => {
     setIsMobileMenuOpen(false);
@@ -63,7 +65,16 @@ const Navbar = () => {
             Masaj by Melinda
           </div>
           {/* Desktop Navigation */}
-          <div className="hidden md:flex space-x-6">
+          <div className="hidden md:flex space-x-6 items-center">
+            {role === 'admin' && (
+              <Button
+                variant="ghost"
+                className="text-gray-300 hover:text-white hover:bg-white/10"
+                onClick={() => handleNavigation('/admin')}
+              >
+                Back to Dashboard
+              </Button>
+            )}
             <Button 
               variant={isActive(HOME_PATH) ? "default" : "ghost"}
               className={isActive(HOME_PATH) 
@@ -90,6 +101,16 @@ const Navbar = () => {
             >
               <Calendar className="mr-1" /> Rezerva acum
             </Button>
+            {user && role !== 'admin' && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="rounded-full bg-[#9b87f5] text-white hover:bg-[#7E69AB]"
+                onClick={() => handleNavigation('/profile')}
+              >
+                <User className="h-6 w-6" />
+              </Button>
+            )}
           </div>
           {/* Mobile Menu Button */}
           <Button
@@ -105,6 +126,15 @@ const Navbar = () => {
         {isMobileMenuOpen && (
           <div className="md:hidden mt-4 pb-4 border-t border-gray-700">
             <div className="flex flex-col space-y-2 pt-4">
+              {role === 'admin' && (
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start h-12 text-gray-300 hover:text-white hover:bg-white/10"
+                  onClick={() => handleNavigation('/admin')}
+                >
+                  Back to Dashboard
+                </Button>
+              )}
               <Button 
                 variant={isActive(HOME_PATH) ? "default" : "ghost"}
                 className={`w-full justify-start h-12 ${isActive(HOME_PATH) 
@@ -131,6 +161,14 @@ const Navbar = () => {
               >
                 <Calendar className="mr-2 h-5 w-5" /> Rezerva acum
               </Button>
+              {user && role !== 'admin' && (
+                <Button
+                  className="w-full justify-start h-12 bg-[#9b87f5] text-white hover:bg-[#7E69AB]"
+                  onClick={() => handleNavigation('/profile')}
+                >
+                  <User className="mr-2 h-5 w-5" /> Profile
+                </Button>
+              )}
             </div>
           </div>
         )}

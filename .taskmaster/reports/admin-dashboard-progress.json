@@ -30,7 +30,7 @@
     {
       "id": 5,
       "title": "Develop Access Control and Security Features",
-      "status": "in progress",
+      "status": "skipped",
       "notes": "Authentication and role-based redirection are implemented. Next: protected admin routes, audit logging, and advanced security features."
     }
   ],

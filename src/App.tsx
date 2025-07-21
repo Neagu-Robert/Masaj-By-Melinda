@@ -9,6 +9,7 @@ import AuthPage from "./pages/AuthPage";
 import NotFound from "./pages/NotFound";
 import BookingPage from "./pages/BookingPage";
 import PachetePage from "./pages/PachetePage";
+import ProfilePage from "./pages/ProfilePage";
 import DashboardLayout from "./pages/admin/DashboardLayout";
 import AdminHome from "./pages/admin/AdminHome";
 import Bookings from "./pages/admin/Bookings";
@@ -34,6 +35,11 @@ const App = () => (
             <Route path="/home" element={<Index />} />
             <Route path="/book" element={<BookingPage />} />
             <Route path="/pachete" element={<PachetePage />} />
+            <Route path="/profile" element={
+              <ProtectedRoute allowedRoles={['admin', 'customer']}>
+                <ProfilePage />
+              </ProtectedRoute>
+            } />
             <Route path="/admin" element={
               <ProtectedRoute>
                 <DashboardLayout />

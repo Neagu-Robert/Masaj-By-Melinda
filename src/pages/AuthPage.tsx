@@ -21,6 +21,20 @@ export default function AuthPage() {
     }
   }, [redirectRole, navigate]);
 
+  // Polling function to wait for the profile row to exist
+  async function waitForProfileRow(userId, maxAttempts = 10, delayMs = 300) {
+    for (let i = 0; i < maxAttempts; i++) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', userId)
+        .single();
+      if (profile) return true;
+      await new Promise(res => setTimeout(res, delayMs));
+    }
+    return false;
+  }
+
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -48,14 +62,25 @@ export default function AuthPage() {
       if (error) {
         setError(error.message);
       } else if (data.user) {
-        // Update profile with full name
-        await supabase
-          .from('profiles')
-          .update({ full_name: fullName })
-          .eq('id', data.user.id);
-        setSuccess('Registration successful! You can now log in.');
-        // Optionally, auto-login after registration:
-        // setIsLogin(true);
+        // Wait for the trigger to create the profile row
+        const profileExists = await waitForProfileRow(data.user.id);
+        if (profileExists) {
+          // Attempt to update full_name
+          const { error: updateError } = await supabase
+            .from('profiles')
+            .update({ full_name: fullName })
+            .eq('id', data.user.id);
+
+          if (updateError) {
+            console.error('Failed to update full name:', updateError.message);
+            setError('Failed to update full name: ' + updateError.message);
+          } else {
+            setSuccess('Registration successful! Please check your email to verify your account.');
+            setIsLogin(true); // Switch back to login view
+          }
+        } else {
+          setError('Profile creation timed out. Please try again.');
+        }
       }
     }
     setLoading(false);

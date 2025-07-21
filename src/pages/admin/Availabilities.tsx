@@ -29,6 +29,8 @@ export default function Availabilities() {
 
   const days = getMonthDays(currentMonth);
   const monthStr = format(currentMonth, "MMMM yyyy");
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
   // Fetch availabilities for the current month
   useEffect(() => {
@@ -146,16 +148,20 @@ export default function Availabilities() {
           <div key={d} className="text-center text-gray-400">{d}</div>
         ))}
         {days.map(day => {
+          const isPast = day < today;
           const isCurrentMonth = isSameMonth(day, currentMonth);
           const isSelected = selectedDay && isSameDay(day, selectedDay);
           const allOff = isDayAllOff(day);
           return (
             <button
               key={day.toISOString()}
-              onClick={() => setSelectedDay(day)}
+              onClick={() => !isPast && setSelectedDay(day)}
+              disabled={isPast}
               className={`aspect-square w-10 rounded flex items-center justify-center border transition-colors
-                ${!isCurrentMonth ? "bg-gray-800 text-gray-600" : allOff ? "bg-gray-700 text-gray-500" : "bg-violet-400 text-gray-900"}
-                ${isSelected ? "ring-2 ring-violet-400" : ""}
+                ${isPast ? "bg-gray-800 text-gray-700 cursor-not-allowed" : ""}
+                ${!isPast && !isCurrentMonth ? "bg-gray-800 text-gray-600" : ""}
+                ${!isPast && isCurrentMonth && (allOff ? "bg-gray-700 text-gray-500" : "bg-violet-400 text-gray-900")}
+                ${isSelected && !isPast ? "ring-2 ring-violet-400" : ""}
               `}
             >
               {format(day, "d")}
@@ -170,7 +176,8 @@ export default function Availabilities() {
             <span className="text-lg font-semibold mr-4">{format(selectedDay, "PPP")}</span>
             <button
               onClick={() => toggleWholeDay(selectedDay)}
-              className="ml-auto px-3 py-1 rounded bg-gray-700 hover:bg-gray-600"
+              disabled={selectedDay < today}
+              className={`ml-auto px-3 py-1 rounded bg-gray-700 hover:bg-gray-600 ${selectedDay < today ? "cursor-not-allowed opacity-50" : ""}`}
             >
               Toggle whole day {isDayAllOff(selectedDay) ? "on" : "off"}
             </button>
@@ -180,8 +187,9 @@ export default function Availabilities() {
               <button
                 key={hour}
                 onClick={() => toggleHour(selectedDay, hour)}
+                disabled={selectedDay < today}
                 className={`px-3 py-2 rounded font-mono transition-colors
-                  ${isHourAvailable(selectedDay, hour) ? "bg-violet-400 text-gray-900" : "bg-gray-700 text-gray-400"}
+                  ${selectedDay < today ? "bg-gray-700/50 text-gray-500 cursor-not-allowed" : isHourAvailable(selectedDay, hour) ? "bg-violet-400 text-gray-900" : "bg-gray-700 text-gray-400"}
                 `}
               >
                 {hour}
