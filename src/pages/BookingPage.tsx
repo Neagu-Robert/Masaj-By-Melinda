@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
@@ -11,6 +11,7 @@ import ServiceSelection from '@/components/booking/ServiceSelection';
 import DateTimeSelection from '@/components/booking/DateTimeSelection';
 import BookingSummary from '@/components/booking/BookingSummary';
 import { AvailabilitiesProvider } from '@/contexts/AvailabilitiesContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 const BookingPage = () => {
   const navigate = useNavigate();
@@ -25,6 +26,38 @@ const BookingPage = () => {
       serviceType: ''
     }
   });
+  const { user } = useAuth();
+  const [profileInfo, setProfileInfo] = useState<{ fullName: string; phoneNumber: string | null } | null>(null);
+  const [useProfileName, setUseProfileName] = useState(false);
+  const [useProfilePhone, setUseProfilePhone] = useState(false);
+
+  useEffect(() => {
+    async function fetchProfile() {
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('full_name, phone')
+          .eq('id', user.id)
+          .single();
+        setProfileInfo({
+          fullName: profile?.full_name || '',
+          phoneNumber: profile?.phone || ''
+        });
+      } else {
+        setProfileInfo(null);
+      }
+    }
+    fetchProfile();
+  }, [user]);
+
+  useEffect(() => {
+    if (useProfileName && profileInfo?.fullName) {
+      form.setValue('fullName', profileInfo.fullName);
+    }
+    if (useProfilePhone && profileInfo?.phoneNumber) {
+      form.setValue('phoneNumber', profileInfo.phoneNumber);
+    }
+  }, [useProfileName, useProfilePhone, profileInfo, form]);
 
   // Helper function to format date correctly without timezone issues
   const formatDateForDB = (date: Date) => {
@@ -132,7 +165,14 @@ const BookingPage = () => {
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 md:space-y-8">
                   {/* Contact Information */}
-                  <ContactForm form={form} />
+                  <ContactForm 
+                    form={form} 
+                    profileInfo={profileInfo}
+                    useProfileName={useProfileName}
+                    setUseProfileName={setUseProfileName}
+                    useProfilePhone={useProfilePhone}
+                    setUseProfilePhone={setUseProfilePhone}
+                  />
                   {/* Service Selection */}
                   <ServiceSelection form={form} setSelectedService={setSelectedService} />
                   {/* Date and Time Selection */}

@@ -7,6 +7,7 @@ import { ArrowLeft, User, Calendar, Phone, LogOut, Edit } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import EditBookingModal from '@/components/booking/EditBookingModal';
 import { AvailabilitiesProvider } from "@/contexts/AvailabilitiesContext";
+import EditProfileModal from '@/components/profile/EditProfileModal';
 
 function ProfilePageContent() {
   const { user, role } = useAuth();
@@ -19,6 +20,7 @@ function ProfilePageContent() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [_, setForceUpdate] = useState(0);
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -89,7 +91,7 @@ function ProfilePageContent() {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-900 text-white">
+    <div className="flex h-screen bg-gray-900 text-white">
       {/* Sidebar */}
       <aside className="w-64 bg-gray-800 p-6 flex flex-col">
         <h2 className="text-2xl font-bold mb-8 text-violet-400">My Account</h2>
@@ -136,7 +138,18 @@ function ProfilePageContent() {
           
           {activeView === 'details' && (
             <section id="profile-details">
-              <h2 className="text-3xl font-bold mb-6 text-violet-300 border-b border-gray-700 pb-2">Profile Details</h2>
+              <h2 className="text-3xl font-bold mb-6 text-violet-300 border-b border-gray-700 pb-2 flex items-center justify-between">
+                Profile Details
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setIsEditProfileOpen(true)}
+                  className="ml-2"
+                  aria-label="Edit Profile"
+                >
+                  <Edit className="h-5 w-5" />
+                </Button>
+              </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 bg-gray-800/50 p-6 rounded-lg">
                 <div>
                   <label className="text-sm font-medium text-gray-400">Full Name</label>
@@ -148,13 +161,23 @@ function ProfilePageContent() {
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-400">Phone Number</label>
-                  <p className="text-lg mt-1 text-gray-500">Not provided</p>
+                  <p className="text-lg mt-1 text-gray-500">{profile.phone || 'Not provided'}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-400">Account Role</label>
                   <p className="text-lg mt-1 capitalize">{role}</p>
                 </div>
               </div>
+              <EditProfileModal
+                open={isEditProfileOpen}
+                onClose={() => setIsEditProfileOpen(false)}
+                userId={user.id}
+                currentName={profile.full_name || ''}
+                currentPhone={profile.phone || ''}
+                onSuccess={(newName, newPhone) => {
+                  setProfile((prev) => ({ ...prev, full_name: newName, phone: newPhone }));
+                }}
+              />
             </section>
           )}
 

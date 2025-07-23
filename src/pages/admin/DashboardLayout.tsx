@@ -23,7 +23,7 @@ export default function DashboardLayout() {
   return (
     <AvailabilitiesProvider>
       <BookingsProvider>
-        <div className="flex min-h-screen bg-background text-foreground">
+        <div className="flex h-screen bg-background text-foreground">
           {/* Sidebar */}
           <aside className="w-64 bg-sidebar text-sidebar-foreground border-r border-border flex flex-col">
             <div className="h-16 flex items-center justify-center font-bold text-xl border-b border-border bg-sidebar">

@@ -1,0 +1,38 @@
+{
+  "taskId": 3,
+  "title": "Email/SMS Notification System for Bookings",
+  "status": "pending",
+  "subtasks": [
+    {
+      "id": 1,
+      "title": "Notification Service Architecture Setup",
+      "status": "pending",
+      "notes": "No work started. The plan is to create a dedicated service/module with a queue-based system."
+    },
+    {
+      "id": 2,
+      "title": "Email Notification Implementation",
+      "status": "pending",
+      "notes": "Not started. Will involve integrating an email provider like SendGrid."
+    },
+    {
+      "id": 3,
+      "title": "SMS Notification Implementation",
+      "status": "pending",
+      "notes": "Not started. Will involve integrating an SMS gateway like Twilio."
+    },
+    {
+      "id": 4,
+      "title": "User Notification Preferences UI and Backend",
+      "status": "pending",
+      "notes": "Not started. Requires database schema changes and new UI components."
+    },
+    {
+      "id": 5,
+      "title": "Error Handling, Monitoring and Security Implementation",
+      "status": "pending",
+      "notes": "Not started. This will be the final step to ensure reliability and security."
+    }
+  ],
+  "lastUpdated": "2024-07-22T12:00:00Z"
+} 

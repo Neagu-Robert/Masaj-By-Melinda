@@ -12,9 +12,14 @@ type ContactFormProps = {
     phoneNumber: string;
     serviceType: string;
   }>;
+  profileInfo?: { fullName: string; phoneNumber: string | null } | null;
+  useProfileName?: boolean;
+  setUseProfileName?: (v: boolean) => void;
+  useProfilePhone?: boolean;
+  setUseProfilePhone?: (v: boolean) => void;
 };
 
-const ContactForm = ({ form }: ContactFormProps) => {
+const ContactForm = ({ form, profileInfo, useProfileName, setUseProfileName, useProfilePhone, setUseProfilePhone }: ContactFormProps) => {
   return (
     <Card className="bg-gray-800 border-gray-700">
       <CardHeader>
@@ -26,7 +31,21 @@ const ContactForm = ({ form }: ContactFormProps) => {
           name="fullName"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-gray-200">Nume complet</FormLabel>
+              <FormLabel className="text-gray-200 flex flex-col gap-1">
+                Nume complet
+                {profileInfo && setUseProfileName && (
+                  <label className="flex items-center gap-2 text-xs text-gray-400 font-normal">
+                    <input
+                      type="checkbox"
+                      checked={!!useProfileName}
+                      onChange={e => setUseProfileName(e.target.checked)}
+                      disabled={!profileInfo.fullName}
+                    />
+                    Folosește numele din profil
+                    {!profileInfo.fullName && <span className="text-red-400 ml-2">(nu este setat în profil)</span>}
+                  </label>
+                )}
+              </FormLabel>
               <FormControl>
                 <div className="relative">
                   <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -35,6 +54,7 @@ const ContactForm = ({ form }: ContactFormProps) => {
                     className="pl-10 bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 focus:border-[#7E69AB]" 
                     {...field}
                     required
+                    disabled={!!useProfileName}
                   />
                 </div>
               </FormControl>
@@ -47,7 +67,21 @@ const ContactForm = ({ form }: ContactFormProps) => {
           name="phoneNumber"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-gray-200">Număr de telefon</FormLabel>
+              <FormLabel className="text-gray-200 flex flex-col gap-1">
+                Număr de telefon
+                {profileInfo && setUseProfilePhone && (
+                  <label className="flex items-center gap-2 text-xs text-gray-400 font-normal">
+                    <input
+                      type="checkbox"
+                      checked={!!useProfilePhone}
+                      onChange={e => setUseProfilePhone(e.target.checked)}
+                      disabled={!profileInfo.phoneNumber}
+                    />
+                    Folosește numărul din profil
+                    {!profileInfo.phoneNumber && <span className="text-red-400 ml-2">(nu este setat în profil)</span>}
+                  </label>
+                )}
+              </FormLabel>
               <FormControl>
                 <div className="relative">
                   <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -56,6 +90,7 @@ const ContactForm = ({ form }: ContactFormProps) => {
                     className="pl-10 bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 focus:border-[#7E69AB]" 
                     {...field}
                     required
+                    disabled={!!useProfilePhone}
                   />
                 </div>
               </FormControl>
