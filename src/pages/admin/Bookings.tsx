@@ -2,9 +2,12 @@ import React, { useState } from "react";
 import { useBookings } from "../../contexts/BookingsContext";
 import { toast } from "@/components/ui/use-toast";
 import BookingFormModal from "@/components/admin/BookingFormModal";
+import { useAuth } from "@/contexts/AuthContext";
+import { logAdminAction } from "@/lib/audit-logger";
 
 export default function Bookings() {
   const { bookings, loading, addBooking, updateBooking, deleteBooking } = useBookings();
+  const { user: adminUser } = useAuth();
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
 
@@ -21,8 +24,20 @@ export default function Bookings() {
   };
   const handleDelete = async (id: string) => {
     if (!window.confirm("Are you sure you want to delete this booking?")) return;
-    await deleteBooking(id);
-    toast({ title: "Booking deleted" });
+    try {
+      await deleteBooking(id);
+      toast({ title: "Booking deleted" });
+      await logAdminAction(
+        adminUser?.id || "",
+        "booking.delete",
+        "booking",
+        id,
+        `Deleted booking ID ${id}`
+      );
+    } catch (error) {
+      console.error("Error deleting booking:", error);
+      toast({ title: "Failed to delete booking." });
+    }
   };
   const handleCreate = () => {
     setSelectedBooking(null);

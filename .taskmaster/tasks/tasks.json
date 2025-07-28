@@ -64,7 +64,7 @@
               4
             ],
             "details": "Create a role-based permission system distinguishing admin and regular user capabilities. Implement protected routes that verify admin privileges before allowing access. Develop middleware to check permissions for specific administrative actions. Set up audit logging to record all administrative actions with timestamps and user information. Integrate with Supabase Auth for authentication and authorization. Implement security best practices including input validation, data sanitization, and protection against common web vulnerabilities.",
-            "status": "skipped",
+            "status": "finished",
             "testStrategy": "Test access control by attempting to access protected routes with different user roles. Verify that unauthorized actions are properly blocked. Test audit logging to ensure all administrative actions are correctly recorded. Verify that protected routes redirect unauthenticated users to the login page. Test security measures against common attack vectors like XSS and CSRF.",
             "subtasks": [
               {
@@ -186,7 +186,7 @@
             "description": "Create a dedicated notification microservice with queue-based system for asynchronous delivery",
             "dependencies": [],
             "details": "Implement a notification service module that connects to the booking system. Set up a message queue system (like AWS SQS, RabbitMQ, or Bull with Redis) to handle asynchronous processing. Create event listeners for booking events (creation, modification, cancellation). Design and implement reusable notification templates with variable placeholders for different event types. Ensure the architecture supports both email and SMS channels.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Unit test the notification service functions with mocked dependencies. Test event listeners with simulated booking events. Verify queue processing with test messages. Ensure templates render correctly with various input data."
           },
           {
@@ -385,7 +385,7 @@
     ],
     "metadata": {
       "created": "2025-07-14T11:52:01.429Z",
-      "updated": "2025-07-21T07:40:57.812Z",
+      "updated": "2025-07-24T11:35:50.271Z",
       "description": "Tasks for master context"
     }
   }

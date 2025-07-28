@@ -14,6 +14,41 @@ import { Calendar } from "@/components/ui/calendar";
 import { useAvailabilities } from "@/contexts/AvailabilitiesContext";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from 'date-fns';
+import { useBookingNotifications } from "@/services/notifications/hooks";
+
+// Service durations in minutes (default if not specified)
+const SERVICE_DURATIONS = {
+  'Masaj de relaxare': 60,
+  'Masaj terapeutic': 60,
+  'Masaj de drenaj limfatic': 60,
+  'Masaj anticelulitic': 60,
+  'Masaj facial': 45,
+  'Masaj cu pietre vulcanice': 75,
+  'Masaj cu bete de bambus': 75,
+  'Termocuverta Treatment': 60,
+  '40Khz Cavitation Body Remodeling': 45,
+  'Electrostimulation Treatment': 45,
+  'TECAR Radiofrequency': 60,
+  // Default duration
+  'default': 60
+};
+
+// Service prices in RON (default if not specified)
+const SERVICE_PRICES = {
+  'Masaj de relaxare': 150,
+  'Masaj terapeutic': 170,
+  'Masaj de drenaj limfatic': 180,
+  'Masaj anticelulitic': 180,
+  'Masaj facial': 120,
+  'Masaj cu pietre vulcanice': 200,
+  'Masaj cu bete de bambus': 200,
+  'Termocuverta Treatment': 180,
+  '40Khz Cavitation Body Remodeling': 250,
+  'Electrostimulation Treatment': 200,
+  'TECAR Radiofrequency': 250,
+  // Default price
+  'default': 150
+};
 
 const allServices = [
   "Masaj de relaxare",
@@ -40,8 +75,10 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
   const [isSaving, setIsSaving] = useState(false);
   const [availabilityMap, setAvailabilityMap] = useState({});
   const [allBookings, setAllBookings] = useState([]);
+  const [userDetails, setUserDetails] = useState<{ email: string; phone: string; fullName: string } | null>(null);
 
   const { availabilities, fetchAvailabilities } = useAvailabilities();
+  const { sendBookingUpdate } = useBookingNotifications();
 
   useEffect(() => {
     const from = format(new Date(), 'yyyy-MM-dd');
@@ -52,10 +89,37 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
       if (data) setAllBookings(data);
     };
 
+    const fetchUserDetails = async () => {
+      if (booking?.user_id) {
+        // Get user profile
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('full_name, phone, email')
+          .eq('id', booking.user_id)
+          .single();
+        
+        if (profile) {
+          setUserDetails({
+            email: profile.email || '',
+            phone: booking.phone_number || profile.phone || '',
+            fullName: `${booking.first_name || ''} ${booking.last_name || ''}`.trim() || profile.full_name || ''
+          });
+        } else {
+          // If no profile found, use booking details
+          setUserDetails({
+            email: '',
+            phone: booking.phone_number || '',
+            fullName: `${booking.first_name || ''} ${booking.last_name || ''}`.trim()
+          });
+        }
+      }
+    };
+
     if (booking) {
       setServiceType(booking.service_type);
       setBookingDate(new Date(booking.booking_date));
       setBookingTime(booking.booking_time.slice(0, 5));
+      fetchUserDetails();
     }
 
     if (open) {
@@ -76,19 +140,49 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
 
   const handleSave = async () => {
     setIsSaving(true);
-    const { error } = await supabase
+    
+    // Format date for DB
+    const formattedDate = bookingDate ? format(bookingDate, 'yyyy-MM-dd') : undefined;
+    
+    // Update booking in database
+    const { data: updatedBooking, error } = await supabase
       .from("bookings")
       .update({
         service_type: serviceType,
-        booking_date: bookingDate ? format(bookingDate, 'yyyy-MM-dd') : undefined,
+        booking_date: formattedDate,
         booking_time: `${bookingTime}:00`,
         updated_at: new Date().toISOString(),
       })
-      .eq("id", booking.id);
+      .eq("id", booking.id)
+      .select()
+      .single();
     
     if (error) {
       console.error("Failed to update booking:", error);
     } else {
+      // Send notification about the updated booking
+      if (userDetails && userDetails.email) {
+        try {
+          await sendBookingUpdate({
+            bookingId: booking.id,
+            userId: booking.user_id || '',
+            userName: userDetails.fullName,
+            userEmail: userDetails.email,
+            userPhone: userDetails.phone,
+            serviceName: serviceType,
+            serviceProvider: 'Melinda', // Default provider
+            bookingDate: formattedDate || '',
+            bookingTime: `${bookingTime}:00`,
+            duration: SERVICE_DURATIONS[serviceType] || SERVICE_DURATIONS.default,
+            price: SERVICE_PRICES[serviceType] || SERVICE_PRICES.default,
+            status: 'updated'
+          });
+        } catch (notificationError) {
+          console.error('Error sending notification:', notificationError);
+          // Don't block the booking process if notification fails
+        }
+      }
+      
       onBookingUpdated();
       onClose();
     }

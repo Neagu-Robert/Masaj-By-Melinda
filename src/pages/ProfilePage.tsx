@@ -212,7 +212,6 @@ function ProfilePageContent() {
                           <TableRow className="hover:bg-gray-700/50 border-b-gray-700">
                             <TableHead className="text-white">Service</TableHead>
                             <TableHead className="text-white">Date</TableHead>
-                            <TableHead className="text-white">Status</TableHead>
                             <TableHead className="text-white">Created</TableHead>
                             <TableHead className="text-white">Updated</TableHead>
                             <TableHead className="text-white">Actions</TableHead>
@@ -223,15 +222,6 @@ function ProfilePageContent() {
                             <TableRow key={booking.id} className="border-b-gray-800">
                               <TableCell>{booking.service_type}</TableCell>
                               <TableCell>{new Date(booking.booking_date).toLocaleDateString()}</TableCell>
-                              <TableCell>
-                                <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                                  booking.status === 'confirmed' ? 'bg-green-500/20 text-green-300' :
-                                  booking.status === 'pending' ? 'bg-yellow-500/20 text-yellow-300' :
-                                  'bg-red-500/20 text-red-300'
-                                }`}>
-                                  {booking.status}
-                                </span>
-                              </TableCell>
                               <TableCell>{booking.created_at ? new Date(booking.created_at).toLocaleString() : '—'}</TableCell>
                               <TableCell>{booking.updated_at ? new Date(booking.updated_at).toLocaleString() : '—'}</TableCell>
                               <TableCell>
@@ -259,7 +249,6 @@ function ProfilePageContent() {
                           <TableRow className="hover:bg-gray-700/50 border-b-gray-700">
                             <TableHead className="text-white">Service</TableHead>
                             <TableHead className="text-white">Date</TableHead>
-                            <TableHead className="text-white">Status</TableHead>
                             <TableHead className="text-white">Created</TableHead>
                             <TableHead className="text-white">Updated</TableHead>
                           </TableRow>
@@ -269,21 +258,12 @@ function ProfilePageContent() {
                             <TableRow key={booking.id} className="border-b-gray-800">
                               <TableCell>{booking.service_type}</TableCell>
                               <TableCell>{new Date(booking.booking_date).toLocaleDateString()}</TableCell>
-                              <TableCell>
-                                <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                                  booking.status === 'confirmed' ? 'bg-green-500/20 text-green-300' :
-                                  booking.status === 'pending' ? 'bg-yellow-500/20 text-yellow-300' :
-                                  'bg-red-500/20 text-red-300'
-                                }`}>
-                                  {booking.status}
-                                </span>
-                              </TableCell>
                               <TableCell>{booking.created_at ? new Date(booking.created_at).toLocaleString() : '—'}</TableCell>
                               <TableCell>{booking.updated_at ? new Date(booking.updated_at).toLocaleString() : '—'}</TableCell>
                             </TableRow>
                           )) : (
                             <TableRow>
-                              <TableCell colSpan={5} className="text-center py-8 text-gray-400">
+                              <TableCell colSpan={4} className="text-center py-8 text-gray-400">
                                 No bookings for today.
                               </TableCell>
                             </TableRow>
@@ -300,7 +280,6 @@ function ProfilePageContent() {
                           <TableRow className="hover:bg-gray-700/50 border-b-gray-700">
                             <TableHead className="text-white">Service</TableHead>
                             <TableHead className="text-white">Date</TableHead>
-                            <TableHead className="text-white">Status</TableHead>
                             <TableHead className="text-white">Created</TableHead>
                             <TableHead className="text-white">Updated</TableHead>
                           </TableRow>
@@ -310,21 +289,12 @@ function ProfilePageContent() {
                             <TableRow key={booking.id} className="border-b-gray-800">
                               <TableCell>{booking.service_type}</TableCell>
                               <TableCell>{new Date(booking.booking_date).toLocaleDateString()}</TableCell>
-                              <TableCell>
-                                <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                                  booking.status === 'confirmed' ? 'bg-green-500/20 text-green-300' :
-                                  booking.status === 'pending' ? 'bg-yellow-500/20 text-yellow-300' :
-                                  'bg-red-500/20 text-red-300'
-                                }`}>
-                                  {booking.status}
-                                </span>
-                              </TableCell>
                               <TableCell>{booking.created_at ? new Date(booking.created_at).toLocaleString() : '—'}</TableCell>
                               <TableCell>{booking.updated_at ? new Date(booking.updated_at).toLocaleString() : '—'}</TableCell>
                             </TableRow>
                           )) : (
                             <TableRow>
-                              <TableCell colSpan={5} className="text-center py-8 text-gray-400">
+                              <TableCell colSpan={4} className="text-center py-8 text-gray-400">
                                 No past bookings.
                               </TableCell>
                             </TableRow>

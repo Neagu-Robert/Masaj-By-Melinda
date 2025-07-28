@@ -10,7 +10,8 @@ const navItems = [
   { name: "Availabilities", path: "/admin/availabilities" },
   { name: "Analytics", path: "/admin/analytics" },
   { name: "Users", path: "/admin/users" },
-  { name: "Settings", path: "/admin/settings" },
+  { name: "Audit Logs", path: "/admin/auditlogs" },
+  { name: "Notifications", path: "/admin/notifications" },
 ];
 
 const actionItems = [

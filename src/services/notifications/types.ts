@@ -1,0 +1,69 @@
+// Notification Types
+
+export type NotificationType = 'booking_created' | 'booking_updated' | 'booking_cancelled' | 'reminder';
+
+export type NotificationChannel = 'email' | 'sms';
+
+export interface NotificationPreference {
+  userId: string;
+  emailEnabled: boolean;
+  smsEnabled: boolean;
+  emailTypes: NotificationType[];
+  smsTypes: NotificationType[];
+}
+
+export interface NotificationRecipient {
+  userId: string | null; // Allow null for demo purposes
+  email: string;
+  phone: string;
+  name: string;
+}
+
+export interface BookingNotificationData {
+  bookingId: string;
+  userId: string | null; // Allow null for demo purposes
+  userName: string;
+  userEmail: string;
+  userPhone: string;
+  serviceName: string;
+  dateTime: string;
+  duration: number;
+  price: number;
+  status: string;
+  location?: string;
+  notes?: string;
+}
+
+export interface NotificationPayload {
+  type: NotificationType;
+  recipient: NotificationRecipient;
+  data: BookingNotificationData;
+}
+
+export interface NotificationResult {
+  success: boolean;
+  channel: NotificationChannel;
+  messageId?: string;
+  error?: Error;
+  timestamp: number;
+}
+
+export interface NotificationLogEntry {
+  notificationType: NotificationType;
+  channel: NotificationChannel;
+  recipientId: string | null; // Allow null for demo purposes
+  recipientEmail?: string;
+  recipientPhone?: string;
+  success: boolean;
+  error?: string;
+  messageId?: string;
+  sentAt: string;
+  data?: any;
+  retryCount?: number;
+}
+
+export interface NotificationTemplate {
+  subject: string;
+  html: string;
+  text: string;
+} 

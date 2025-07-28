@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSameMonth, isSameDay, format } from "date-fns";
 import { useAvailabilities } from "../../contexts/AvailabilitiesContext";
-import { toast } from "@/components/ui/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { logAdminAction } from "@/lib/audit-logger";
+import { toast } from "sonner";
 
 const HOURS = [
   "08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "20:00"
@@ -20,6 +22,7 @@ function getMonthDays(month: Date) {
 }
 
 export default function Availabilities() {
+  const { user: adminUser } = useAuth();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const [availability, setAvailability] = useState<Record<string, Record<string, boolean> & { _allOff?: boolean }>>({});
@@ -104,6 +107,8 @@ export default function Availabilities() {
 
   // Save handler: upsert all changed slots
   const handleSave = async () => {
+    if (!adminUser) return;
+
     const upserts: any[] = [];
     days.forEach(day => {
       const key = format(day, "yyyy-MM-dd");
@@ -124,13 +129,25 @@ export default function Availabilities() {
       });
     });
     if (upserts.length === 0) {
-      toast({ title: "No changes to save." });
+      toast.info("No changes to save.");
       return;
     }
-    await upsertAvailabilities(upserts);
-    toast({ title: "Availabilities saved!" });
-    setOriginalAvailability(JSON.parse(JSON.stringify(availability)));
-    setDirty(false);
+    try {
+      await upsertAvailabilities(upserts);
+      toast.success("Availabilities saved successfully!");
+
+      // Log the action
+      await logAdminAction(
+        adminUser?.id || "",
+        "availability.update",
+        "availability",
+        adminUser?.id || "", // Target ID is the admin who made the change
+        `Updated availability for admin ID ${adminUser?.id} on ${format(currentMonth, "MMMM yyyy")}`
+      );
+    } catch (error) {
+      console.error("Error saving availabilities:", error);
+      toast.error("Failed to save availabilities.");
+    }
   };
 
   return (

@@ -16,19 +16,37 @@ import Bookings from "./pages/admin/Bookings";
 import Availabilities from "./pages/admin/Availabilities";
 import Analytics from "./pages/admin/Analytics";
 import Users from "./pages/admin/Users";
-import Settings from "./pages/admin/Settings";
-import { AuthProvider } from "./contexts/AuthContext";
+import AuditLogs from "./pages/admin/AuditLogs";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import NotAuthorized from "./pages/NotAuthorized";
+import { NotificationDemo } from "./services/notifications";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <AuthProvider>
+function App() {
+  const { status, loading } = useAuth();
+
+  if (loading) return <div>Loading...</div>;
+
+  if (status === "banned") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-900">
+        <div className="bg-gray-800 p-8 rounded shadow-md w-full max-w-sm text-center">
+          <h2 className="text-2xl font-bold mb-4 text-red-400">Account Banned</h2>
+          <p className="text-white mb-4">
+            Your account has been banned. Please contact support if you believe this is a mistake.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<AuthPage />} />
@@ -41,7 +59,7 @@ const App = () => (
               </ProtectedRoute>
             } />
             <Route path="/admin" element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={["admin"]}>
                 <DashboardLayout />
               </ProtectedRoute>
             }>
@@ -50,16 +68,17 @@ const App = () => (
               <Route path="availabilities" element={<Availabilities />} />
               <Route path="analytics" element={<Analytics />} />
               <Route path="users" element={<Users />} />
-              <Route path="settings" element={<Settings />} />
+              <Route path="auditlogs" element={<AuditLogs />} />
+              <Route path="notifications" element={<NotificationDemo />} />
             </Route>
             <Route path="/not-authorized" element={<NotAuthorized />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
-      </AuthProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+}
 
 export default App;

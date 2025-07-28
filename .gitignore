@@ -29,6 +29,9 @@ node_modules/
 # Environment variables
 .env
 .vscode
+.env.local
+sendgrid.env
+infobip.env
 # OS specific
 
 # Task files

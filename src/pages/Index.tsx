@@ -12,7 +12,7 @@ import Bookings from "./admin/Bookings";
 import Availabilities from "./admin/Availabilities";
 import Analytics from "./admin/Analytics";
 import Users from "./admin/Users";
-import Settings from "./admin/Settings";
+import Settings from "./admin/AuditLogs";
 
 const Index = () => {
   const location = useLocation();
