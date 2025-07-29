@@ -185,7 +185,19 @@ const isEmailConfigured = (): boolean => {
 };
 
 /**
- * Send an email notification via Vercel API route
+ * Get the API base URL based on environment
+ */
+const getApiBaseUrl = (): string => {
+  // In development, use the Express server
+  if (import.meta.env.DEV) {
+    return 'http://localhost:3003';
+  }
+  // In production, use the deployed API (you'll need to update this)
+  return 'https://your-api-domain.com';
+};
+
+/**
+ * Send an email notification via Express API server
  */
 export const sendEmailNotification = async (
   payload: NotificationPayload
@@ -220,8 +232,9 @@ export const sendEmailNotification = async (
     // Generate the email content from template
     const emailContent = templateFn(payload.data as BookingNotificationData);
 
-    // Call the Vercel API route
-    const response = await fetch('/api/send-email', {
+    // Call the Express API server
+    const apiBaseUrl = getApiBaseUrl();
+    const response = await fetch(`${apiBaseUrl}/api/send-email`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -294,7 +307,7 @@ export const retryEmailNotification = async (
   payload: NotificationPayload,
   retryCount = 0
 ): Promise<NotificationResult> => {
-  if (retryCount >= 3) { // Fixed retry count for Vercel API
+  if (retryCount >= 3) { // Fixed retry count for Express API
     const error = new Error(`Maximum retry attempts (3) reached for email notification type: ${payload.type}`);
     
     // Log the final failed attempt

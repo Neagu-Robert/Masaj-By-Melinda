@@ -18,7 +18,7 @@ This module provides a comprehensive notification system for Masaj by Melinda, s
 There are two ways to provide the SendGrid API key:
 
 1. **Using a sendgrid.env file:**
-   Create a `sendgrid.env` file in the root directory with the following content:
+   Create a `sendgrid.env` file in the `src` directory with the following content:
    ```
    SENDGRID_API_KEY='your_sendgrid_api_key'
    ```
@@ -48,9 +48,9 @@ There are two ways to provide the SendGrid API key:
 
 ### Email Implementation
 
-The email functionality is implemented via a Vercel API route that uses the SendGrid API. This approach keeps your SendGrid credentials secure on the backend while allowing email notifications from the frontend.
+The email functionality is implemented via an Express server that uses the SendGrid API. This approach keeps your SendGrid credentials secure on the backend while allowing email notifications from the frontend.
 
-The API route is located at `api/send-email.ts` and handles:
+The Express server is located at `server.js` and handles:
 - Email message sending via SendGrid API
 - HTML and plain text email templates
 - Error handling and response formatting
@@ -65,13 +65,19 @@ The Edge Function is located at `supabase/functions/send-sms/` and handles:
 - Error handling and response formatting
 - CORS handling for cross-origin requests
 
-### Deploying the API Route
+### Running the Express Server
 
-The Vercel API route will be automatically deployed when you deploy your Vercel project. Make sure to:
+To run the Express server for email functionality:
 
-1. Add the `sendgrid.env` file to your project root
-2. Deploy to Vercel
-3. The API route will be available at `/api/send-email`
+```bash
+# Run the Express server only
+npm run server
+
+# Run both the Vite dev server and Express server concurrently
+npm run dev:full
+```
+
+The Express server will be available at `http://localhost:3003` and provides the `/api/send-email` endpoint.
 
 ### Deploying SMS Edge Function
 
@@ -170,9 +176,10 @@ supabase functions deploy send-booking-reminders
 
 - `config.ts` - Configuration settings and environment variables
 - `types.ts` - TypeScript interfaces and types
-- `emailService.ts` - Vercel API route integration for email notifications
+- `emailService.ts` - Express server integration for email notifications
 - `smsService.ts` - Infobip integration for SMS notifications
 - `loggingService.ts` - Notification logging functionality
 - `notificationService.ts` - Core notification service with queue
 - `hooks.ts` - React hooks for using notifications in components
-- `index.ts` - Main exports 
+- `index.ts` - Main exports
+- `server.js` - Express server for email API endpoint 

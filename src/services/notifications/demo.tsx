@@ -11,19 +11,32 @@ export function NotificationDemo() {
   const [testingApiRoute, setTestingApiRoute] = useState(false);
   const { user } = useAuth();
   
+  const getApiBaseUrl = (): string => {
+    // In development, use the Express server
+    if (import.meta.env.DEV) {
+      return 'http://localhost:3003'; // Change from 3002 to 3003
+    }
+    // In production, use the deployed API (you'll need to update this)
+    return 'https://your-api-domain.com';
+  };
+  
   const testApiRouteDirectly = async () => {
     setTestingApiRoute(true);
     try {
       const testData = {
         to: 'robertneagu814@gmail.com',
-        subject: 'Test Email from Vercel API',
-        htmlContent: '<h1>Test Email</h1><p>This is a test email from the Vercel API route.</p>',
-        textContent: 'Test Email\n\nThis is a test email from the Vercel API route.'
+        subject: 'Test Email from Express API',
+        htmlContent: '<h1>Test Email</h1><p>This is a test email from the Express API server.</p>',
+        textContent: 'Test Email\n\nThis is a test email from the Express API server.'
       };
       
-      console.log('Testing Vercel API route directly with data:', testData);
+      console.log('Testing Express API server directly with data:', testData);
       
-      const response = await fetch('/api/send-email', {
+      const apiBaseUrl = getApiBaseUrl();
+      console.log('API Base URL:', apiBaseUrl);
+      console.log('Full URL:', `${apiBaseUrl}/api/send-email`);
+      
+      const response = await fetch(`${apiBaseUrl}/api/send-email`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -31,21 +44,23 @@ export function NotificationDemo() {
         body: JSON.stringify(testData)
       });
       
+      console.log('Response received:', response.status, response.statusText);
+      
       const data = await response.json();
-      console.log('API route response:', { data, status: response.status });
+      console.log('API server response:', { data, status: response.status });
       
       if (!response.ok) {
-        toast.error('API Route Error', {
+        toast.error('API Server Error', {
           description: JSON.stringify(data, null, 2)
         });
       } else {
-        toast.success('API Route Success', {
+        toast.success('API Server Success', {
           description: JSON.stringify(data, null, 2)
         });
       }
     } catch (error) {
-      console.error('API route test error:', error);
-      toast.error('API Route Test Failed', {
+      console.error('API server test error:', error);
+      toast.error('API Server Test Failed', {
         description: error.message
       });
     } finally {
@@ -127,7 +142,7 @@ export function NotificationDemo() {
             disabled={testingApiRoute}
             variant="outline"
           >
-            {testingApiRoute ? 'Testing...' : 'Test Vercel API Route'}
+            {testingApiRoute ? 'Testing...' : 'Test Express API Server'}
           </Button>
         </div>
       </div>
