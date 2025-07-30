@@ -5,8 +5,17 @@
     },
     "api/send-sms.ts": {
       "maxDuration": 30
+    },
+    "api/send-reminders.ts": {
+      "maxDuration": 60
     }
   },
+  "crons": [
+    {
+      "path": "/api/send-reminders",
+      "schedule": "0 0 * * *"
+    }
+  ],
   "env": {
     "SENDGRID_API_KEY": "@sendgrid_api_key",
     "SENDGRID_FROM_EMAIL": "@sendgrid_from_email",

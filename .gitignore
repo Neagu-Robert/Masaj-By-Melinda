@@ -30,8 +30,7 @@ node_modules/
 .env
 .vscode
 .env.local
-sendgrid.env
-infobip.env
+
 # OS specific
 
 # Task files

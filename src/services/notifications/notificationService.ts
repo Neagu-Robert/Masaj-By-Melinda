@@ -89,6 +89,77 @@ const getServiceDetails = async (serviceId: number | null, serviceName: string):
 };
 
 /**
+ * Send reminder notifications using Vercel API route
+ */
+const sendReminderNotifications = async (): Promise<NotificationResult[]> => {
+  const results: NotificationResult[] = [];
+  
+  try {
+    // Get the API base URL based on environment
+    const apiBaseUrl = import.meta.env.DEV 
+      ? 'http://localhost:3003' 
+      : 'https://masajbymelinda.ro';
+    
+    // Call the Vercel API route for reminders
+    const response = await fetch(`${apiBaseUrl}/api/send-reminders`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || `HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    if (!data.success) {
+      throw new Error(data.message || 'Failed to send reminders');
+    }
+
+    // Log successful reminder processing
+    await logNotification({
+      notificationType: 'reminder',
+      channel: 'email',
+      recipientId: null, // System-wide reminder
+      success: true,
+      sentAt: new Date().toISOString(),
+      data: { message: data.message, results: data.results }
+    });
+
+    results.push({
+      success: true,
+      channel: 'email',
+      messageId: `reminder-${Date.now()}`,
+      timestamp: Date.now()
+    });
+
+  } catch (error) {
+    console.error('Error sending reminder notifications:', error);
+    
+    // Log failed reminder processing
+    await logNotification({
+      notificationType: 'reminder',
+      channel: 'email',
+      recipientId: null, // System-wide reminder
+      success: false,
+      error: error.message,
+      sentAt: new Date().toISOString()
+    });
+
+    results.push({
+      success: false,
+      channel: 'email',
+      error: error as Error,
+      timestamp: Date.now()
+    });
+  }
+
+  return results;
+};
+
+/**
  * Send SMS notifications to all admin numbers
  */
 const sendAdminSmsNotifications = async (
@@ -153,15 +224,15 @@ export const sendNotification = async (payload: NotificationPayload): Promise<No
   // Get service details for accurate duration and price
   const serviceDetails = await getServiceDetails(payload.data.serviceId, payload.data.serviceName);
   
-  // Update payload data with service details
-  const enrichedPayload = {
-    ...payload,
-    data: {
-      ...payload.data,
-      duration: serviceDetails.duration,
-      price: serviceDetails.price
-    }
-  };
+        // Update payload data with service details
+      const enrichedPayload = {
+        ...payload,
+        data: {
+          ...payload.data,
+          duration: serviceDetails.duration,
+          price: serviceDetails.price,
+        }
+      };
 
   // Handle different notification types according to new specifications
   switch (payload.type) {
@@ -339,4 +410,12 @@ export const notify = async (payload: NotificationPayload): Promise<Notification
   }
   
   return results;
+};
+
+/**
+ * Send reminder notifications (for manual triggering)
+ */
+export const sendReminders = async (): Promise<NotificationResult[]> => {
+  console.log('Sending reminder notifications...');
+  return await sendReminderNotifications();
 }; 

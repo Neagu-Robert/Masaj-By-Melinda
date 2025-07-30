@@ -1,28 +1,28 @@
-import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { format, addDays } from 'https://esm.sh/date-fns@2';
-
-// SendGrid client for sending emails
-import sgMail from 'https://esm.sh/@sendgrid/mail@7';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+import sgMail from '@sendgrid/mail';
+import { createClient } from '@supabase/supabase-js';
+import { format, addDays } from 'date-fns';
 
 // Initialize SendGrid
-const SENDGRID_API_KEY = Deno.env.get('SENDGRID_API_KEY') || '';
-const SENDGRID_FROM_EMAIL = Deno.env.get('SENDGRID_FROM_EMAIL') || 'noreply@masajbymelinda.com';
-const SENDGRID_FROM_NAME = Deno.env.get('SENDGRID_FROM_NAME') || 'Masaj by Melinda';
+const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY || '';
+const SENDGRID_FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL || 'noreply@masajbymelinda.com';
+const SENDGRID_FROM_NAME = process.env.SENDGRID_FROM_NAME || 'Masaj by Melinda';
 
 if (SENDGRID_API_KEY) {
   sgMail.setApiKey(SENDGRID_API_KEY);
 }
 
-// Create a Supabase client
-const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
-const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+// Create Supabase client
+const supabaseUrl = process.env.SUPABASE_URL || '';
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 // Email template for booking reminders
-const generateReminderEmailHtml = (booking: any) => {
+const generateReminderEmailHtml = (booking: any, serviceDetails: any) => {
   const { first_name, last_name, service_type, booking_date, booking_time } = booking;
   const fullName = `${first_name} ${last_name}`.trim();
+  const duration = serviceDetails?.duration || 60;
+  const price = serviceDetails?.price || 140.00;
   
   return `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -33,8 +33,8 @@ const generateReminderEmailHtml = (booking: any) => {
         <h3 style="margin-top: 0;">Appointment Details:</h3>
         <p><strong>Service:</strong> ${service_type}</p>
         <p><strong>Date & Time:</strong> ${booking_date} at ${booking_time}</p>
-        <p><strong>Duration:</strong> 60 minutes</p>
-        <p><strong>Price:</strong> 150 RON</p>
+        <p><strong>Duration:</strong> ${duration} minutes</p>
+        <p><strong>Price:</strong> ${price} RON</p>
       </div>
       <p>We look forward to seeing you!</p>
       <p>Best regards,<br>Masaj by Melinda</p>
@@ -42,9 +42,11 @@ const generateReminderEmailHtml = (booking: any) => {
   `;
 };
 
-const generateReminderEmailText = (booking: any) => {
+const generateReminderEmailText = (booking: any, serviceDetails: any) => {
   const { first_name, last_name, service_type, booking_date, booking_time } = booking;
   const fullName = `${first_name} ${last_name}`.trim();
+  const duration = serviceDetails?.duration || 60;
+  const price = serviceDetails?.price || 140.00;
   
   return `
     Appointment Reminder
@@ -56,8 +58,8 @@ const generateReminderEmailText = (booking: any) => {
     Appointment Details:
     - Service: ${service_type}
     - Date & Time: ${booking_date} at ${booking_time}
-    - Duration: 60 minutes
-    - Price: 150 RON
+    - Duration: ${duration} minutes
+    - Price: ${price} RON
     
     We look forward to seeing you!
     
@@ -67,7 +69,7 @@ const generateReminderEmailText = (booking: any) => {
 };
 
 // Send reminder email
-const sendReminderEmail = async (booking: any, userEmail: string) => {
+const sendReminderEmail = async (booking: any, userEmail: string, serviceDetails: any) => {
   if (!SENDGRID_API_KEY) {
     console.error('SendGrid API key is not configured');
     return false;
@@ -81,8 +83,8 @@ const sendReminderEmail = async (booking: any, userEmail: string) => {
         name: SENDGRID_FROM_NAME
       },
       subject: 'Reminder: Your Upcoming Appointment - Masaj by Melinda',
-      text: generateReminderEmailText(booking),
-      html: generateReminderEmailHtml(booking)
+      text: generateReminderEmailText(booking, serviceDetails),
+      html: generateReminderEmailHtml(booking, serviceDetails)
     };
 
     await sgMail.send(msg);
@@ -118,8 +120,69 @@ const sendReminderEmail = async (booking: any, userEmail: string) => {
   }
 };
 
-// Main handler function
-serve(async (req) => {
+// Get service details from services table
+const getServiceDetails = async (serviceId: number | null, serviceName: string) => {
+  try {
+    let service: { duration: number; price: number } | null = null;
+
+    // Try to get service by ID first
+    if (serviceId) {
+      const { data, error } = await supabase
+        .from('services')
+        .select('duration, price')
+        .eq('id', serviceId)
+        .single();
+
+      if (!error && data) {
+        service = data;
+      }
+    }
+
+    // If not found by ID, try by name
+    if (!service) {
+      const { data, error } = await supabase
+        .from('services')
+        .select('duration, price')
+        .eq('name', serviceName)
+        .eq('is_active', true)
+        .single();
+
+      if (!error && data) {
+        service = data;
+      }
+    }
+
+    // Return service details or defaults
+    return {
+      duration: service?.duration || 60,
+      price: service?.price || 140.00
+    };
+  } catch (error) {
+    console.error('Error fetching service details:', error);
+    return {
+      duration: 60,
+      price: 140.00
+    };
+  }
+};
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // Enable CORS
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+
+  // Only allow POST requests
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
   try {
     // Get tomorrow's date in YYYY-MM-DD format
     const tomorrow = addDays(new Date(), 1);
@@ -127,10 +190,14 @@ serve(async (req) => {
     
     console.log(`Sending reminders for bookings on ${tomorrowFormatted}`);
     
-    // Get all bookings for tomorrow
+    // Get all bookings for tomorrow with user profiles and service details
     const { data: bookings, error: bookingsError } = await supabase
       .from('bookings')
-      .select('*, profiles:profiles(email)')
+      .select(`
+        *,
+        profiles:profiles(email),
+        services:services(duration, price)
+      `)
       .eq('booking_date', tomorrowFormatted);
     
     if (bookingsError) {
@@ -148,8 +215,14 @@ serve(async (req) => {
           return { id: booking.id, success: false, reason: 'no_email' };
         }
         
+        // Get service details
+        const serviceDetails = await getServiceDetails(
+          booking.service_id, 
+          booking.service_type
+        );
+        
         // Send reminder email
-        const success = await sendReminderEmail(booking, booking.profiles.email);
+        const success = await sendReminderEmail(booking, booking.profiles.email, serviceDetails);
         return { id: booking.id, success };
       })
     );
@@ -158,29 +231,17 @@ serve(async (req) => {
     const successful = results.filter(r => r.success).length;
     const failed = results.length - successful;
     
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: `Processed ${results.length} reminders. ${successful} sent successfully, ${failed} failed.`,
-        results
-      }),
-      {
-        headers: { 'Content-Type': 'application/json' },
-        status: 200
-      }
-    );
+    return res.status(200).json({
+      success: true,
+      message: `Processed ${results.length} reminders. ${successful} sent successfully, ${failed} failed.`,
+      results
+    });
   } catch (error) {
     console.error('Error processing reminders:', error);
     
-    return new Response(
-      JSON.stringify({
-        success: false,
-        message: error.message
-      }),
-      {
-        headers: { 'Content-Type': 'application/json' },
-        status: 500
-      }
-    );
+    return res.status(500).json({
+      success: false,
+      message: error.message
+    });
   }
-}); 
+} 
