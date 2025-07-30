@@ -4,12 +4,15 @@ import { toast } from "@/components/ui/use-toast";
 import BookingFormModal from "@/components/admin/BookingFormModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { logAdminAction } from "@/lib/audit-logger";
+import { useBookingNotifications } from "@/services/notifications/hooks";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Bookings() {
   const { bookings, loading, addBooking, updateBooking, deleteBooking } = useBookings();
   const { user: adminUser } = useAuth();
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
+  const { sendBookingCancellationAdmin } = useBookingNotifications();
 
   // Filter/search state
   const [searchName, setSearchName] = useState("");
@@ -24,9 +27,16 @@ export default function Bookings() {
   };
   const handleDelete = async (id: string) => {
     if (!window.confirm("Are you sure you want to delete this booking?")) return;
+    
     try {
+      // Get booking details before deletion
+      const bookingToDelete = bookings.find(b => b.id === id);
+      
+      // Delete the booking
       await deleteBooking(id);
       toast({ title: "Booking deleted" });
+      
+      // Log the admin action
       await logAdminAction(
         adminUser?.id || "",
         "booking.delete",
@@ -34,6 +44,38 @@ export default function Bookings() {
         id,
         `Deleted booking ID ${id}`
       );
+
+      // Send notification if booking had a user
+      if (bookingToDelete && (bookingToDelete as any).user_id) {
+        try {
+          // Get user email
+          const { data: userData } = await supabase
+            .from('profiles')
+            .select('email')
+            .eq('id', (bookingToDelete as any).user_id)
+            .single();
+          
+          if (userData?.email) {
+            await sendBookingCancellationAdmin({
+              bookingId: bookingToDelete.id,
+              userId: (bookingToDelete as any).user_id,
+              userName: `${bookingToDelete.first_name} ${bookingToDelete.last_name}`,
+              userEmail: userData.email,
+              userPhone: bookingToDelete.phone_number,
+              serviceName: bookingToDelete.service_type,
+              serviceProvider: 'Melinda',
+              bookingDate: bookingToDelete.booking_date,
+              bookingTime: bookingToDelete.booking_time,
+              duration: 60, // Default duration
+              price: 150, // Default price
+              status: 'cancelled'
+            });
+          }
+        } catch (notificationError) {
+          console.error('Error sending cancellation notification:', notificationError);
+          // Don't block the deletion process if notification fails
+        }
+      }
     } catch (error) {
       console.error("Error deleting booking:", error);
       toast({ title: "Failed to delete booking." });

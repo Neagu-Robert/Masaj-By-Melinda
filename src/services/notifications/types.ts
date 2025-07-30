@@ -1,6 +1,13 @@
 // Notification Types
 
-export type NotificationType = 'booking_created' | 'booking_updated' | 'booking_cancelled' | 'reminder';
+export type NotificationType = 
+  | 'reminder'
+  | 'booking_created_customer'
+  | 'booking_updated_profile'
+  | 'booking_cancelled_profile'
+  | 'booking_created_admin'
+  | 'booking_updated_admin'
+  | 'booking_cancelled_admin';
 
 export type NotificationChannel = 'email' | 'sms';
 

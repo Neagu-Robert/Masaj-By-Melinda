@@ -20,7 +20,7 @@ import AuditLogs from "./pages/admin/AuditLogs";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import NotAuthorized from "./pages/NotAuthorized";
-import { NotificationDemo } from "./services/notifications";
+
 
 const queryClient = new QueryClient();
 
@@ -69,7 +69,7 @@ function App() {
               <Route path="analytics" element={<Analytics />} />
               <Route path="users" element={<Users />} />
               <Route path="auditlogs" element={<AuditLogs />} />
-              <Route path="notifications" element={<NotificationDemo />} />
+      
             </Route>
             <Route path="/not-authorized" element={<NotAuthorized />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

@@ -71,7 +71,7 @@ export default function BookingFormModal({ open, onClose, booking }: BookingForm
   const { addBooking, updateBooking } = useBookings();
   const { user: adminUser } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { sendBookingConfirmation, sendBookingUpdate } = useBookingNotifications();
+  const { sendBookingConfirmationAdmin, sendBookingUpdateAdmin } = useBookingNotifications();
 
   useEffect(() => {
     if (booking) {
@@ -124,7 +124,7 @@ export default function BookingFormModal({ open, onClose, booking }: BookingForm
             .single();
           
           if (userData?.email) {
-            await sendBookingUpdate({
+            await sendBookingUpdateAdmin({
               bookingId: booking.id,
               userId: booking.user_id,
               userName: `${values.first_name} ${values.last_name}`,
@@ -183,7 +183,7 @@ export default function BookingFormModal({ open, onClose, booking }: BookingForm
             .single();
           
           if (userData?.email) {
-            await sendBookingConfirmation({
+            await sendBookingConfirmationAdmin({
               bookingId: newBooking.id,
               userId: newBooking.user_id,
               userName: `${values.first_name} ${values.last_name}`,

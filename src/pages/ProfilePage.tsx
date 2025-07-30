@@ -3,11 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, User, Calendar, Phone, LogOut, Edit } from 'lucide-react';
+import { ArrowLeft, User, Calendar, Phone, LogOut, Edit, Trash2 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import EditBookingModal from '@/components/booking/EditBookingModal';
 import { AvailabilitiesProvider } from "@/contexts/AvailabilitiesContext";
 import EditProfileModal from '@/components/profile/EditProfileModal';
+import { useBookingNotifications } from '@/services/notifications/hooks';
+import { toast } from '@/components/ui/use-toast';
 
 function ProfilePageContent() {
   const { user, role } = useAuth();
@@ -21,6 +23,7 @@ function ProfilePageContent() {
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [_, setForceUpdate] = useState(0);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const { sendBookingCancellationProfile } = useBookingNotifications();
 
   useEffect(() => {
     let isMounted = true;
@@ -70,6 +73,59 @@ function ProfilePageContent() {
   const handleEditClick = (booking) => {
     setSelectedBooking(booking);
     setIsModalOpen(true);
+  };
+
+  const handleCancelBooking = async (booking) => {
+    if (!window.confirm('Are you sure you want to cancel this booking?')) {
+      return;
+    }
+
+    try {
+      // Delete the booking from the database
+      const { error } = await supabase
+        .from('bookings')
+        .delete()
+        .eq('id', booking.id);
+
+      if (error) {
+        throw error;
+      }
+
+      // Send cancellation notification
+      try {
+        await sendBookingCancellationProfile({
+          bookingId: booking.id,
+          userId: booking.user_id || '',
+          userName: `${booking.first_name} ${booking.last_name}`,
+          userEmail: profile?.email || '',
+          userPhone: booking.phone_number,
+          serviceName: booking.service_type,
+          serviceProvider: 'Melinda',
+          bookingDate: booking.booking_date,
+          bookingTime: booking.booking_time,
+          duration: 60, // Default duration
+          price: 150, // Default price
+          status: 'cancelled'
+        });
+      } catch (notificationError) {
+        console.error('Error sending cancellation notification:', notificationError);
+        // Don't block the cancellation process if notification fails
+      }
+
+      // Update local state
+      setBookings(bookings.filter(b => b.id !== booking.id));
+      toast({
+        title: "Booking cancelled",
+        description: "Your booking has been cancelled successfully."
+      });
+    } catch (error) {
+      console.error('Error cancelling booking:', error);
+      toast({
+        title: "Error",
+        description: "Failed to cancel booking. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleLogout = async () => {
@@ -225,9 +281,14 @@ function ProfilePageContent() {
                               <TableCell>{booking.created_at ? new Date(booking.created_at).toLocaleString() : '—'}</TableCell>
                               <TableCell>{booking.updated_at ? new Date(booking.updated_at).toLocaleString() : '—'}</TableCell>
                               <TableCell>
-                                <Button variant="ghost" size="icon" onClick={() => handleEditClick(booking)}>
-                                  <Edit className="h-4 w-4" />
-                                </Button>
+                                <div className="flex space-x-2">
+                                  <Button variant="ghost" size="icon" onClick={() => handleEditClick(booking)}>
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button variant="ghost" size="icon" onClick={() => handleCancelBooking(booking)} className="text-red-400 hover:text-red-300">
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
                               </TableCell>
                             </TableRow>
                           )) : (

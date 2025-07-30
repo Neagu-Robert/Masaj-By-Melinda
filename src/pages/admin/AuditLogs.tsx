@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { NotificationConfigStatus } from '../../services/notifications';
+
 
 type AuditLog = {
   id: string;
@@ -94,7 +94,7 @@ export default function AuditLogs() {
       {/* Notification System Status */}
       <div className="mb-8">
         <h3 className="text-xl font-semibold mb-4">Notification System Status</h3>
-        <NotificationConfigStatus />
+
       </div>
 
       {/* Filters */}

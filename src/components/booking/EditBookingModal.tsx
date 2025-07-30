@@ -78,7 +78,7 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
   const [userDetails, setUserDetails] = useState<{ email: string; phone: string; fullName: string } | null>(null);
 
   const { availabilities, fetchAvailabilities } = useAvailabilities();
-  const { sendBookingUpdate } = useBookingNotifications();
+  const { sendBookingUpdateProfile } = useBookingNotifications();
 
   useEffect(() => {
     const from = format(new Date(), 'yyyy-MM-dd');
@@ -163,7 +163,7 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
       // Send notification about the updated booking
       if (userDetails && userDetails.email) {
         try {
-          await sendBookingUpdate({
+          await sendBookingUpdateProfile({
             bookingId: booking.id,
             userId: booking.user_id || '',
             userName: userDetails.fullName,

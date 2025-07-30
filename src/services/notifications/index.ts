@@ -14,23 +14,10 @@ export {
   getNotificationStats
 } from './loggingService';
 
-// Export utility functions
+// Export hooks
 export {
-  loadSendGridApiKey,
-  loadInfobipApiKey,
-  loadInfobipSenderNumber,
-  testSendGridApiKey,
-  testInfobipApiKey
-} from './utils';
-
-// Export test utility
-export { testNotificationConfig } from './testApiKey';
-
-// Export status component
-export { NotificationConfigStatus } from './status';
-
-// Export demo component
-export { NotificationDemo } from './demo';
+  useBookingNotifications
+} from './hooks';
 
 // Export configuration
 export {

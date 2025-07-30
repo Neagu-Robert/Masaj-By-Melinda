@@ -12,7 +12,7 @@ import { logNotification } from './loggingService';
 
 // Email templates
 const emailTemplates = {
-  booking_created: (data: BookingNotificationData): { subject: string; html: string; text: string } => {
+  booking_created_customer: (data: BookingNotificationData): { subject: string; html: string; text: string } => {
     const subject = `Booking Confirmation - ${data.serviceName}`;
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -53,7 +53,7 @@ const emailTemplates = {
     return { subject, html, text };
   },
 
-  booking_updated: (data: BookingNotificationData): { subject: string; html: string; text: string } => {
+  booking_updated_profile: (data: BookingNotificationData): { subject: string; html: string; text: string } => {
     const subject = `Booking Updated - ${data.serviceName}`;
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -94,7 +94,48 @@ const emailTemplates = {
     return { subject, html, text };
   },
 
-  booking_cancelled: (data: BookingNotificationData): { subject: string; html: string; text: string } => {
+  booking_updated_admin: (data: BookingNotificationData): { subject: string; html: string; text: string } => {
+    const subject = `Booking Updated by Admin - ${data.serviceName}`;
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #8b5cf6;">Booking Updated</h2>
+        <p>Dear ${data.userName},</p>
+        <p>Your booking has been updated by our staff.</p>
+        <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="margin-top: 0;">Updated Booking Details:</h3>
+          <p><strong>Service:</strong> ${data.serviceName}</p>
+          <p><strong>Date & Time:</strong> ${data.dateTime}</p>
+          <p><strong>Duration:</strong> ${data.duration} minutes</p>
+          <p><strong>Price:</strong> ${data.price} RON</p>
+          <p><strong>Status:</strong> ${data.status}</p>
+        </div>
+        <p>If you have any questions about these changes, please contact us.</p>
+        <p>Best regards,<br>Masaj by Melinda</p>
+      </div>
+    `;
+    const text = `
+      Booking Updated by Admin
+      
+      Dear ${data.userName},
+      
+      Your booking has been updated by our staff.
+      
+      Updated Booking Details:
+      - Service: ${data.serviceName}
+      - Date & Time: ${data.dateTime}
+      - Duration: ${data.duration} minutes
+      - Price: ${data.price} RON
+      - Status: ${data.status}
+      
+      If you have any questions about these changes, please contact us.
+      
+      Best regards,
+      Masaj by Melinda
+    `;
+    return { subject, html, text };
+  },
+
+  booking_cancelled_profile: (data: BookingNotificationData): { subject: string; html: string; text: string } => {
     const subject = `Booking Cancelled - ${data.serviceName}`;
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -126,6 +167,45 @@ const emailTemplates = {
       - Price: ${data.price} RON
       
       If you have any questions or would like to reschedule, please contact us.
+      
+      Best regards,
+      Masaj by Melinda
+    `;
+    return { subject, html, text };
+  },
+
+  booking_cancelled_admin: (data: BookingNotificationData): { subject: string; html: string; text: string } => {
+    const subject = `Booking Cancelled by Admin - ${data.serviceName}`;
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #ef4444;">Booking Cancelled</h2>
+        <p>Dear ${data.userName},</p>
+        <p>Your booking has been cancelled by our staff.</p>
+        <div style="background-color: #fef2f2; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="margin-top: 0;">Cancelled Booking Details:</h3>
+          <p><strong>Service:</strong> ${data.serviceName}</p>
+          <p><strong>Date & Time:</strong> ${data.dateTime}</p>
+          <p><strong>Duration:</strong> ${data.duration} minutes</p>
+          <p><strong>Price:</strong> ${data.price} RON</p>
+        </div>
+        <p>If you have any questions about this cancellation, please contact us.</p>
+        <p>Best regards,<br>Masaj by Melinda</p>
+      </div>
+    `;
+    const text = `
+      Booking Cancelled by Admin
+      
+      Dear ${data.userName},
+      
+      Your booking has been cancelled by our staff.
+      
+      Cancelled Booking Details:
+      - Service: ${data.serviceName}
+      - Date & Time: ${data.dateTime}
+      - Duration: ${data.duration} minutes
+      - Price: ${data.price} RON
+      
+      If you have any questions about this cancellation, please contact us.
       
       Best regards,
       Masaj by Melinda
@@ -192,8 +272,8 @@ const getApiBaseUrl = (): string => {
   if (import.meta.env.DEV) {
     return 'http://localhost:3003';
   }
-  // In production, use the deployed API (you'll need to update this)
-  return 'https://your-api-domain.com';
+  // In production, use the Vercel API route
+  return 'https://masajbymelinda.ro';
 };
 
 /**

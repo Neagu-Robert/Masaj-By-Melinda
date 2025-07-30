@@ -73,7 +73,7 @@ export const useBookingNotifications = () => {
   }, []);
 
   /**
-   * Send a booking confirmation notification
+   * Send a booking confirmation notification (customer booking)
    */
   const sendBookingConfirmation = useCallback((bookingData: {
     bookingId: string;
@@ -91,13 +91,13 @@ export const useBookingNotifications = () => {
     notes?: string;
     status: string;
   }) => {
-    return sendBookingNotification('booking_created', bookingData);
+    return sendBookingNotification('booking_created_customer', bookingData);
   }, [sendBookingNotification]);
 
   /**
-   * Send a booking update notification
+   * Send a booking update notification (from profile page)
    */
-  const sendBookingUpdate = useCallback((bookingData: {
+  const sendBookingUpdateProfile = useCallback((bookingData: {
     bookingId: string;
     userId: string;
     userName: string;
@@ -113,13 +113,13 @@ export const useBookingNotifications = () => {
     notes?: string;
     status: string;
   }) => {
-    return sendBookingNotification('booking_updated', bookingData);
+    return sendBookingNotification('booking_updated_profile', bookingData);
   }, [sendBookingNotification]);
 
   /**
-   * Send a booking cancellation notification
+   * Send a booking cancellation notification (from profile page)
    */
-  const sendBookingCancellation = useCallback((bookingData: {
+  const sendBookingCancellationProfile = useCallback((bookingData: {
     bookingId: string;
     userId: string;
     userName: string;
@@ -135,7 +135,73 @@ export const useBookingNotifications = () => {
     notes?: string;
     status: string;
   }) => {
-    return sendBookingNotification('booking_cancelled', bookingData);
+    return sendBookingNotification('booking_cancelled_profile', bookingData);
+  }, [sendBookingNotification]);
+
+  /**
+   * Send a booking confirmation notification (admin booking)
+   */
+  const sendBookingConfirmationAdmin = useCallback((bookingData: {
+    bookingId: string;
+    userId: string;
+    userName: string;
+    userEmail: string;
+    userPhone?: string;
+    serviceName: string;
+    serviceProvider?: string;
+    bookingDate: string | Date;
+    bookingTime: string;
+    duration: number;
+    price: number;
+    location?: string;
+    notes?: string;
+    status: string;
+  }) => {
+    return sendBookingNotification('booking_created_admin', bookingData);
+  }, [sendBookingNotification]);
+
+  /**
+   * Send a booking update notification (admin update)
+   */
+  const sendBookingUpdateAdmin = useCallback((bookingData: {
+    bookingId: string;
+    userId: string;
+    userName: string;
+    userEmail: string;
+    userPhone?: string;
+    serviceName: string;
+    serviceProvider?: string;
+    bookingDate: string | Date;
+    bookingTime: string;
+    duration: number;
+    price: number;
+    location?: string;
+    notes?: string;
+    status: string;
+  }) => {
+    return sendBookingNotification('booking_updated_admin', bookingData);
+  }, [sendBookingNotification]);
+
+  /**
+   * Send a booking cancellation notification (admin cancellation)
+   */
+  const sendBookingCancellationAdmin = useCallback((bookingData: {
+    bookingId: string;
+    userId: string;
+    userName: string;
+    userEmail: string;
+    userPhone?: string;
+    serviceName: string;
+    serviceProvider?: string;
+    bookingDate: string | Date;
+    bookingTime: string;
+    duration: number;
+    price: number;
+    location?: string;
+    notes?: string;
+    status: string;
+  }) => {
+    return sendBookingNotification('booking_cancelled_admin', bookingData);
   }, [sendBookingNotification]);
 
   /**
@@ -163,8 +229,11 @@ export const useBookingNotifications = () => {
   return {
     sendBookingNotification,
     sendBookingConfirmation,
-    sendBookingUpdate,
-    sendBookingCancellation,
-    sendBookingReminder
+    sendBookingReminder,
+    sendBookingUpdateProfile,
+    sendBookingCancellationProfile,
+    sendBookingConfirmationAdmin,
+    sendBookingUpdateAdmin,
+    sendBookingCancellationAdmin
   };
 }; 

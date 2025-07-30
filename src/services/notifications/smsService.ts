@@ -12,35 +12,56 @@ import {
   BookingNotificationData 
 } from './types';
 import { logNotification } from './loggingService';
-import { supabase } from '../../integrations/supabase/client';
 
-// SMS templates
+// SMS templates - All SMS notifications are sent to admins only
 const smsTemplates = {
-  booking_created: (data: BookingNotificationData): string => {
-    return `Masaj by Melinda: Your booking for ${data.serviceName} on ${data.dateTime} has been confirmed. Duration: ${data.duration} min. Thank you!`;
+  // Customer creates booking - Admin receives SMS with customer info
+  booking_created_customer: (data: BookingNotificationData): string => {
+    return `Masaj by Melinda: New booking created by customer ${data.userName}. Service: ${data.serviceName}, Date: ${data.dateTime}, Duration: ${data.duration} min.`;
   },
 
-  booking_updated: (data: BookingNotificationData): string => {
-    return `Masaj by Melinda: Your booking has been updated. New details: ${data.serviceName} on ${data.dateTime}. Duration: ${data.duration} min.`;
+  // User updates booking from profile - Admin receives SMS with updated info
+  booking_updated_profile: (data: BookingNotificationData): string => {
+    return `Masaj by Melinda: Booking updated by ${data.userName}. New details: ${data.serviceName} on ${data.dateTime}, Duration: ${data.duration} min.`;
   },
 
-  booking_cancelled: (data: BookingNotificationData): string => {
-    return `Masaj by Melinda: Your booking for ${data.serviceName} on ${data.dateTime} has been cancelled. Please contact us if you have any questions.`;
+  // User cancels booking from profile - Admin receives SMS with cancellation info
+  booking_cancelled_profile: (data: BookingNotificationData): string => {
+    return `Masaj by Melinda: Booking cancelled by ${data.userName}. Cancelled booking: ${data.serviceName} on ${data.dateTime}.`;
   },
 
-  reminder: (data: BookingNotificationData): string => {
-    return `Masaj by Melinda: Reminder for your appointment tomorrow: ${data.serviceName} at ${data.dateTime}. We look forward to seeing you!`;
+  // Admin creates booking - Admin receives SMS with booking info
+  booking_created_admin: (data: BookingNotificationData): string => {
+    return `Masaj by Melinda: New booking created by admin. Customer: ${data.userName}, Service: ${data.serviceName}, Date: ${data.dateTime}, Duration: ${data.duration} min.`;
+  },
+
+  // Admin updates booking - Admin receives SMS with updated info
+  booking_updated_admin: (data: BookingNotificationData): string => {
+    return `Masaj by Melinda: Booking updated by admin. Customer: ${data.userName}, Service: ${data.serviceName}, Date: ${data.dateTime}, Duration: ${data.duration} min.`;
   }
+};
+
+/**
+ * Get the API base URL based on environment
+ */
+const getApiBaseUrl = (): string => {
+  // In development, use the Express server
+  if (import.meta.env.DEV) {
+    return 'http://localhost:3003';
+  }
+  // In production, use the Vercel API route
+  return 'https://masajbymelinda.ro';
 };
 
 /**
  * Check if SMS is properly configured
  */
 const isSmsConfigured = (): boolean => {
+  // For testing: Allow SMS if enabled, even without Infobip credentials
+  // The actual SMS sending is handled by the Vercel API route
   return !!(
-    SMS_NOTIFICATIONS_ENABLED &&
-    INFOBIP_API_KEY && 
-    INFOBIP_SENDER_NUMBER
+    SMS_NOTIFICATIONS_ENABLED
+    // && INFOBIP_API_KEY && INFOBIP_SENDER_NUMBER  // Commented out for testing
   );
 };
 
@@ -85,20 +106,27 @@ export const sendSmsNotification = async (
       ? payload.recipient.phone 
       : `+${payload.recipient.phone}`;
 
-    // Call the Supabase Edge Function
-    const { data, error } = await supabase.functions.invoke('send-sms', {
-      body: {
+    // Call the Vercel API route
+    const apiBaseUrl = getApiBaseUrl();
+    const response = await fetch(`${apiBaseUrl}/api/send-sms`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
         to: formattedPhone,
         message: smsContent
-      }
+      })
     });
 
-    if (error) {
-      throw new Error(`Edge Function error: ${error.message}`);
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || `HTTP ${response.status}: ${response.statusText}`);
     }
 
-    if (!data || !data.success) {
-      throw new Error(data?.error || 'Failed to send SMS');
+    if (!data.success) {
+      throw new Error(data.error || 'Failed to send SMS');
     }
 
     // Log the successful notification

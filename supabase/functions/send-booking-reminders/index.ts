@@ -26,16 +26,18 @@ const generateReminderEmailHtml = (booking: any) => {
   
   return `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h2>Appointment Reminder</h2>
-      <p>Hello ${fullName},</p>
-      <p>This is a friendly reminder of your upcoming appointment:</p>
-      <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 15px 0;">
+      <h2 style="color: #8b5cf6;">Appointment Reminder</h2>
+      <p>Dear ${fullName},</p>
+      <p>This is a friendly reminder about your upcoming appointment tomorrow.</p>
+      <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
+        <h3 style="margin-top: 0;">Appointment Details:</h3>
         <p><strong>Service:</strong> ${service_type}</p>
         <p><strong>Date & Time:</strong> ${booking_date} at ${booking_time}</p>
+        <p><strong>Duration:</strong> 60 minutes</p>
+        <p><strong>Price:</strong> 150 RON</p>
       </div>
-      <p>If you need to reschedule or cancel, please contact us as soon as possible.</p>
       <p>We look forward to seeing you!</p>
-      <p>Best regards,<br>The Masaj by Melinda Team</p>
+      <p>Best regards,<br>Masaj by Melinda</p>
     </div>
   `;
 };
@@ -47,19 +49,20 @@ const generateReminderEmailText = (booking: any) => {
   return `
     Appointment Reminder
     
-    Hello ${fullName},
+    Dear ${fullName},
     
-    This is a friendly reminder of your upcoming appointment:
+    This is a friendly reminder about your upcoming appointment tomorrow.
     
-    Service: ${service_type}
-    Date & Time: ${booking_date} at ${booking_time}
-    
-    If you need to reschedule or cancel, please contact us as soon as possible.
+    Appointment Details:
+    - Service: ${service_type}
+    - Date & Time: ${booking_date} at ${booking_time}
+    - Duration: 60 minutes
+    - Price: 150 RON
     
     We look forward to seeing you!
     
     Best regards,
-    The Masaj by Melinda Team
+    Masaj by Melinda
   `;
 };
 
