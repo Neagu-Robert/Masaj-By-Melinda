@@ -18,6 +18,7 @@ import Analytics from "./pages/admin/Analytics";
 import Users from "./pages/admin/Users";
 import AuditLogs from "./pages/admin/AuditLogs";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { ServicesProvider } from "./contexts/ServicesContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import NotAuthorized from "./pages/NotAuthorized";
 
@@ -45,37 +46,39 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<AuthPage />} />
-            <Route path="/home" element={<Index />} />
-            <Route path="/book" element={<BookingPage />} />
-            <Route path="/pachete" element={<PachetePage />} />
-            <Route path="/profile" element={
-              <ProtectedRoute allowedRoles={['admin', 'customer']}>
-                <ProfilePage />
-              </ProtectedRoute>
-            } />
-            <Route path="/admin" element={
-              <ProtectedRoute allowedRoles={["admin"]}>
-                <DashboardLayout />
-              </ProtectedRoute>
-            }>
-              <Route index element={<AdminHome />} />
-              <Route path="bookings" element={<Bookings />} />
-              <Route path="availabilities" element={<Availabilities />} />
-              <Route path="analytics" element={<Analytics />} />
-              <Route path="users" element={<Users />} />
-              <Route path="auditlogs" element={<AuditLogs />} />
-      
-            </Route>
-            <Route path="/not-authorized" element={<NotAuthorized />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
+        <ServicesProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<AuthPage />} />
+              <Route path="/home" element={<Index />} />
+              <Route path="/book" element={<BookingPage />} />
+              <Route path="/pachete" element={<PachetePage />} />
+              <Route path="/profile" element={
+                <ProtectedRoute allowedRoles={['admin', 'customer']}>
+                  <ProfilePage />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin" element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <DashboardLayout />
+                </ProtectedRoute>
+              }>
+                <Route index element={<AdminHome />} />
+                <Route path="bookings" element={<Bookings />} />
+                <Route path="availabilities" element={<Availabilities />} />
+                <Route path="analytics" element={<Analytics />} />
+                <Route path="users" element={<Users />} />
+                <Route path="auditlogs" element={<AuditLogs />} />
+        
+              </Route>
+              <Route path="/not-authorized" element={<NotAuthorized />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </ServicesProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );

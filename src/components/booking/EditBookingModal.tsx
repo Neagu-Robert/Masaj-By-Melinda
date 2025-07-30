@@ -12,57 +12,10 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { useAvailabilities } from "@/contexts/AvailabilitiesContext";
+import { useServices } from "@/contexts/ServicesContext";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from 'date-fns';
 import { useBookingNotifications } from "@/services/notifications/hooks";
-
-// Service durations in minutes (default if not specified)
-const SERVICE_DURATIONS = {
-  'Masaj de relaxare': 60,
-  'Masaj terapeutic': 60,
-  'Masaj de drenaj limfatic': 60,
-  'Masaj anticelulitic': 60,
-  'Masaj facial': 45,
-  'Masaj cu pietre vulcanice': 75,
-  'Masaj cu bete de bambus': 75,
-  'Termocuverta Treatment': 60,
-  '40Khz Cavitation Body Remodeling': 45,
-  'Electrostimulation Treatment': 45,
-  'TECAR Radiofrequency': 60,
-  // Default duration
-  'default': 60
-};
-
-// Service prices in RON (default if not specified)
-const SERVICE_PRICES = {
-  'Masaj de relaxare': 150,
-  'Masaj terapeutic': 170,
-  'Masaj de drenaj limfatic': 180,
-  'Masaj anticelulitic': 180,
-  'Masaj facial': 120,
-  'Masaj cu pietre vulcanice': 200,
-  'Masaj cu bete de bambus': 200,
-  'Termocuverta Treatment': 180,
-  '40Khz Cavitation Body Remodeling': 250,
-  'Electrostimulation Treatment': 200,
-  'TECAR Radiofrequency': 250,
-  // Default price
-  'default': 150
-};
-
-const allServices = [
-  "Masaj de relaxare",
-  "Masaj terapeutic",
-  "Masaj de drenaj limfatic",
-  "Masaj anticelulitic",
-  "Masaj facial",
-  "Masaj cu pietre vulcanice",
-  "Masaj cu bete de bambus",
-  "Termocuverta Treatment",
-  "40Khz Cavitation Body Remodeling",
-  "Electrostimulation Treatment",
-  "TECAR Radiofrequency"
-];
 
 const HOURS = [
   "08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "20:00"
@@ -78,6 +31,7 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
   const [userDetails, setUserDetails] = useState<{ email: string; phone: string; fullName: string } | null>(null);
 
   const { availabilities, fetchAvailabilities } = useAvailabilities();
+  const { services, getServiceByName } = useServices();
   const { sendBookingUpdateProfile } = useBookingNotifications();
 
   useEffect(() => {
@@ -101,127 +55,141 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
         if (profile) {
           setUserDetails({
             email: profile.email || '',
-            phone: booking.phone_number || profile.phone || '',
-            fullName: `${booking.first_name || ''} ${booking.last_name || ''}`.trim() || profile.full_name || ''
-          });
-        } else {
-          // If no profile found, use booking details
-          setUserDetails({
-            email: '',
-            phone: booking.phone_number || '',
-            fullName: `${booking.first_name || ''} ${booking.last_name || ''}`.trim()
+            phone: profile.phone || '',
+            fullName: profile.full_name || `${booking.first_name} ${booking.last_name}`
           });
         }
+      } else {
+        // For bookings without user_id, use booking data
+        setUserDetails({
+          email: '',
+          phone: booking?.phone_number || '',
+          fullName: `${booking?.first_name || ''} ${booking?.last_name || ''}`
+        });
       }
     };
 
-    if (booking) {
-      setServiceType(booking.service_type);
-      setBookingDate(new Date(booking.booking_date));
-      setBookingTime(booking.booking_time.slice(0, 5));
-      fetchUserDetails();
-    }
-
-    if (open) {
-      fetchAvailabilities(from, to);
-      fetchAllBookings();
-    }
-  }, [booking, open]);
+    fetchAllBookings();
+    fetchUserDetails();
+    fetchAvailabilities(from, to);
+  }, [booking, fetchAvailabilities]);
 
   useEffect(() => {
-    const newAvailMap: Record<string, Record<string, boolean>> = {};
-    availabilities.forEach((row) => {
-      const key = row.date;
-      if (!newAvailMap[key]) newAvailMap[key] = {};
-      newAvailMap[key][row.hour.slice(0,5)] = row.is_available;
+    if (booking) {
+      setServiceType(booking.service_type || "");
+      setBookingDate(booking.booking_date ? new Date(booking.booking_date) : undefined);
+      setBookingTime(booking.booking_time || "");
+    }
+  }, [booking]);
+
+  useEffect(() => {
+    // Create availability map
+    const map = {};
+    availabilities.forEach(availability => {
+      const key = `${availability.date}_${availability.hour}`;
+      map[key] = availability.is_available;
     });
-    setAvailabilityMap(newAvailMap);
+    setAvailabilityMap(map);
   }, [availabilities]);
 
   const handleSave = async () => {
-    setIsSaving(true);
-    
-    // Format date for DB
-    const formattedDate = bookingDate ? format(bookingDate, 'yyyy-MM-dd') : undefined;
-    
-    // Update booking in database
-    const { data: updatedBooking, error } = await supabase
-      .from("bookings")
-      .update({
-        service_type: serviceType,
-        booking_date: formattedDate,
-        booking_time: `${bookingTime}:00`,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", booking.id)
-      .select()
-      .single();
-    
-    if (error) {
-      console.error("Failed to update booking:", error);
-    } else {
-      // Send notification about the updated booking
-      if (userDetails && userDetails.email) {
-        try {
-          await sendBookingUpdateProfile({
-            bookingId: booking.id,
-            userId: booking.user_id || '',
-            userName: userDetails.fullName,
-            userEmail: userDetails.email,
-            userPhone: userDetails.phone,
-            serviceName: serviceType,
-            serviceProvider: 'Melinda', // Default provider
-            bookingDate: formattedDate || '',
-            bookingTime: `${bookingTime}:00`,
-            duration: SERVICE_DURATIONS[serviceType] || SERVICE_DURATIONS.default,
-            price: SERVICE_PRICES[serviceType] || SERVICE_PRICES.default,
-            status: 'updated'
-          });
-        } catch (notificationError) {
-          console.error('Error sending notification:', notificationError);
-          // Don't block the booking process if notification fails
-        }
-      }
-      
-      onBookingUpdated();
-      onClose();
+    if (!serviceType || !bookingDate || !bookingTime) {
+      alert("Please fill in all fields");
+      return;
     }
-    setIsSaving(false);
+
+    setIsSaving(true);
+    try {
+      // Get service details from the database
+      const serviceDetails = getServiceByName(serviceType);
+      const serviceId = serviceDetails?.id || null;
+
+      const formattedDate = format(bookingDate, 'yyyy-MM-dd');
+      
+      // Check if the new slot is available
+      const conflictingBookings = allBookings.filter(
+        b => b.booking_date === formattedDate && 
+             b.booking_time === bookingTime && 
+             b.id !== booking.id
+      );
+
+      if (conflictingBookings.length > 0) {
+        alert("This time slot is already booked. Please choose another time.");
+        setIsSaving(false);
+        return;
+      }
+
+      // Update the booking
+      const { error } = await supabase
+        .from('bookings')
+        .update({
+          service_type: serviceType,
+          service_id: serviceId, // Add service_id to the booking
+          booking_date: formattedDate,
+          booking_time: bookingTime,
+        })
+        .eq('id', booking.id);
+
+      if (error) {
+        console.error('Error updating booking:', error);
+        alert("Error updating booking");
+      } else {
+        // Send notification if user details are available
+        if (userDetails) {
+          try {
+            await sendBookingUpdateProfile({
+              bookingId: booking.id,
+              userId: booking.user_id || '',
+              userName: userDetails.fullName,
+              userEmail: userDetails.email,
+              userPhone: userDetails.phone,
+              serviceName: serviceType,
+              serviceId: serviceId,
+              serviceProvider: 'Melinda',
+              bookingDate: formattedDate,
+              bookingTime: bookingTime,
+              duration: serviceDetails?.duration || 60,
+              price: serviceDetails?.price || 140.00,
+              status: 'updated'
+            });
+          } catch (notificationError) {
+            console.error('Error sending notification:', notificationError);
+          }
+        }
+
+        onBookingUpdated();
+        onClose();
+      }
+    } catch (error) {
+      console.error('Error saving booking:', error);
+      alert("Error saving booking");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const isDayAvailable = (date: Date) => {
-    const key = format(date, "yyyy-MM-dd");
-    const dayAvail = availabilityMap[key];
-    if (!dayAvail) return true;
-    return HOURS.some(h => dayAvail[h] !== false);
+    const dayOfWeek = date.getDay();
+    return dayOfWeek >= 1 && dayOfWeek <= 6; // Monday to Saturday
   };
 
   const getScheduledHoursForDate = (date: Date) => {
-    const key = format(date, "yyyy-MM-dd");
-    const dayAvail = availabilityMap[key];
-    if (!dayAvail) return HOURS; // If no specific availability, all hours are considered available
-    return HOURS.filter(h => dayAvail[h] !== false);
+    const formattedDate = format(date, 'yyyy-MM-dd');
+    return allBookings
+      .filter(b => b.booking_date === formattedDate && b.id !== booking?.id)
+      .map(b => b.booking_time);
   };
 
   const getAvailableHoursForDate = (date: Date | undefined) => {
     if (!date) return [];
-    const scheduledHours = getScheduledHoursForDate(date);
-    const dateStr = format(date, 'yyyy-MM-dd');
     
-    const bookedHours = allBookings
-      .filter(b => b.booking_date === dateStr && b.id !== booking.id) // Exclude current booking
-      .map(b => b.booking_time.slice(0, 5));
-
-    return scheduledHours.filter(h => !bookedHours.includes(h));
+    const scheduledHours = getScheduledHoursForDate(date);
+    return HOURS.filter(hour => !scheduledHours.includes(hour));
   };
-  
-  const availableHours = getAvailableHoursForDate(bookingDate);
-
-  if (!booking) return null;
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px] bg-gray-800 text-white border-gray-700">
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Edit Booking</DialogTitle>
           <DialogDescription>
@@ -230,57 +198,56 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="service-type" className="text-right">Service</Label>
+            <Label htmlFor="service" className="text-right">
+              Service
+            </Label>
             <Select value={serviceType} onValueChange={setServiceType}>
-              <SelectTrigger className="col-span-3 bg-gray-700 border-gray-600">
+              <SelectTrigger className="col-span-3">
                 <SelectValue placeholder="Select a service" />
               </SelectTrigger>
-              <SelectContent className="bg-gray-800 text-white border-gray-600">
-                {allServices.map(service => (
-                  <SelectItem key={service} value={service} className="hover:bg-gray-700">{service}</SelectItem>
+              <SelectContent>
+                {services.filter(service => service.is_active).map((service) => (
+                  <SelectItem key={service.id} value={service.name}>
+                    {service.name} - {service.duration}min - {service.price} RON
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="booking-date" className="text-right">Date</Label>
-            <Calendar
-              mode="single"
-              selected={bookingDate}
-              onSelect={(date) => {
-                setBookingDate(date);
-                setBookingTime(""); // Reset time when date changes
-              }}
-              className="col-span-3 rounded-md border"
-              disabled={(date) => {
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                if (date < today) return true;
-                
-                // A day is only available if it has at least one open slot
-                const hours = getAvailableHoursForDate(date);
-                return hours.length === 0;
-              }}
-            />
+            <Label className="text-right">Date</Label>
+            <div className="col-span-3">
+              <Calendar
+                mode="single"
+                selected={bookingDate}
+                onSelect={setBookingDate}
+                disabled={(date) => !isDayAvailable(date)}
+                className="rounded-md border"
+              />
+            </div>
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="booking-time" className="text-right">Time</Label>
-            <Select value={bookingTime} onValueChange={setBookingTime} disabled={!bookingDate}>
-              <SelectTrigger className="col-span-3 bg-gray-700 border-gray-600">
-                <SelectValue placeholder="Select a time" />
+            <Label className="text-right">Time</Label>
+            <Select value={bookingTime} onValueChange={setBookingTime}>
+              <SelectTrigger className="col-span-3">
+                <SelectValue placeholder="Select time" />
               </SelectTrigger>
-              <SelectContent className="bg-gray-800 text-white border-gray-600">
-                {availableHours.map(hour => (
-                  <SelectItem key={hour} value={hour} className="hover:bg-gray-700">{hour}</SelectItem>
+              <SelectContent>
+                {bookingDate && getAvailableHoursForDate(bookingDate).map((hour) => (
+                  <SelectItem key={hour} value={hour}>
+                    {hour}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
         </div>
         <DialogFooter>
-          <Button variant="ghost" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSave} disabled={isSaving}>
-            {isSaving ? "Saving..." : "Save Changes"}
+          <Button type="button" variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="button" onClick={handleSave} disabled={isSaving}>
+            {isSaving ? "Saving..." : "Save changes"}
           </Button>
         </DialogFooter>
       </DialogContent>

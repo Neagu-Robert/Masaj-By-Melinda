@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useServices } from '@/contexts/ServicesContext';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, User, Calendar, Phone, LogOut, Edit, Trash2 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -13,6 +14,7 @@ import { toast } from '@/components/ui/use-toast';
 
 function ProfilePageContent() {
   const { user, role } = useAuth();
+  const { getServiceByName } = useServices();
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [bookings, setBookings] = useState([]);
@@ -81,6 +83,10 @@ function ProfilePageContent() {
     }
 
     try {
+      // Get service details from the database
+      const serviceDetails = getServiceByName(booking.service_type);
+      const serviceId = serviceDetails?.id || null;
+
       // Delete the booking from the database
       const { error } = await supabase
         .from('bookings')
@@ -100,11 +106,12 @@ function ProfilePageContent() {
           userEmail: profile?.email || '',
           userPhone: booking.phone_number,
           serviceName: booking.service_type,
+          serviceId: serviceId,
           serviceProvider: 'Melinda',
           bookingDate: booking.booking_date,
           bookingTime: booking.booking_time,
-          duration: 60, // Default duration
-          price: 150, // Default price
+          duration: serviceDetails?.duration || 60,
+          price: serviceDetails?.price || 140.00,
           status: 'cancelled'
         });
       } catch (notificationError) {

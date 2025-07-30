@@ -23,6 +23,7 @@ export const useBookingNotifications = () => {
       userEmail: string;
       userPhone?: string;
       serviceName: string;
+      serviceId?: number | null; // New field for services table reference
       serviceProvider?: string;
       bookingDate: string | Date;
       bookingTime: string;
@@ -53,6 +54,7 @@ export const useBookingNotifications = () => {
         userEmail: bookingData.userEmail,
         userPhone: bookingData.userPhone,
         serviceName: bookingData.serviceName,
+        serviceId: bookingData.serviceId, // Include service ID
         serviceProvider: bookingData.serviceProvider,
         dateTime,
         duration: bookingData.duration,
@@ -82,6 +84,7 @@ export const useBookingNotifications = () => {
     userEmail: string;
     userPhone?: string;
     serviceName: string;
+    serviceId?: number | null;
     serviceProvider?: string;
     bookingDate: string | Date;
     bookingTime: string;
@@ -104,6 +107,7 @@ export const useBookingNotifications = () => {
     userEmail: string;
     userPhone?: string;
     serviceName: string;
+    serviceId?: number | null;
     serviceProvider?: string;
     bookingDate: string | Date;
     bookingTime: string;
@@ -126,6 +130,7 @@ export const useBookingNotifications = () => {
     userEmail: string;
     userPhone?: string;
     serviceName: string;
+    serviceId?: number | null;
     serviceProvider?: string;
     bookingDate: string | Date;
     bookingTime: string;
@@ -148,6 +153,7 @@ export const useBookingNotifications = () => {
     userEmail: string;
     userPhone?: string;
     serviceName: string;
+    serviceId?: number | null;
     serviceProvider?: string;
     bookingDate: string | Date;
     bookingTime: string;
@@ -170,6 +176,7 @@ export const useBookingNotifications = () => {
     userEmail: string;
     userPhone?: string;
     serviceName: string;
+    serviceId?: number | null;
     serviceProvider?: string;
     bookingDate: string | Date;
     bookingTime: string;
@@ -192,6 +199,7 @@ export const useBookingNotifications = () => {
     userEmail: string;
     userPhone?: string;
     serviceName: string;
+    serviceId?: number | null;
     serviceProvider?: string;
     bookingDate: string | Date;
     bookingTime: string;
@@ -214,6 +222,7 @@ export const useBookingNotifications = () => {
     userEmail: string;
     userPhone?: string;
     serviceName: string;
+    serviceId?: number | null;
     serviceProvider?: string;
     bookingDate: string | Date;
     bookingTime: string;

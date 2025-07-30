@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useBookings } from "../../contexts/BookingsContext";
+import { useServices } from "../../contexts/ServicesContext";
 import { toast } from "@/components/ui/use-toast";
 import BookingFormModal from "@/components/admin/BookingFormModal";
 import { useAuth } from "@/contexts/AuthContext";
@@ -9,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export default function Bookings() {
   const { bookings, loading, addBooking, updateBooking, deleteBooking } = useBookings();
+  const { getServiceByName } = useServices();
   const { user: adminUser } = useAuth();
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
@@ -31,6 +33,10 @@ export default function Bookings() {
     try {
       // Get booking details before deletion
       const bookingToDelete = bookings.find(b => b.id === id);
+      
+      // Get service details from the database
+      const serviceDetails = getServiceByName(bookingToDelete?.service_type);
+      const serviceId = serviceDetails?.id || null;
       
       // Delete the booking
       await deleteBooking(id);
@@ -63,11 +69,12 @@ export default function Bookings() {
               userEmail: userData.email,
               userPhone: bookingToDelete.phone_number,
               serviceName: bookingToDelete.service_type,
+              serviceId: serviceId,
               serviceProvider: 'Melinda',
               bookingDate: bookingToDelete.booking_date,
               bookingTime: bookingToDelete.booking_time,
-              duration: 60, // Default duration
-              price: 150, // Default price
+              duration: serviceDetails?.duration || 60,
+              price: serviceDetails?.price || 140.00,
               status: 'cancelled'
             });
           }

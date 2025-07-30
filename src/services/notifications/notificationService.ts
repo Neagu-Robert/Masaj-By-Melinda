@@ -41,6 +41,54 @@ const getUserPreferences = async (userId: string | null): Promise<NotificationPr
 };
 
 /**
+ * Get service details from database
+ */
+const getServiceDetails = async (serviceId: number | null, serviceName: string): Promise<{ duration: number; price: number }> => {
+  try {
+    let service = null;
+
+    // Try to get service by ID first
+    if (serviceId) {
+      const { data, error } = await supabase
+        .from('services')
+        .select('duration, price')
+        .eq('id', serviceId)
+        .single();
+
+      if (!error && data) {
+        service = data;
+      }
+    }
+
+    // If not found by ID, try by name
+    if (!service) {
+      const { data, error } = await supabase
+        .from('services')
+        .select('duration, price')
+        .eq('name', serviceName)
+        .eq('is_active', true)
+        .single();
+
+      if (!error && data) {
+        service = data;
+      }
+    }
+
+    // Return service details or defaults
+    return {
+      duration: service?.duration || 60,
+      price: service?.price || 140.00
+    };
+  } catch (error) {
+    console.error('Error fetching service details:', error);
+    return {
+      duration: 60,
+      price: 140.00
+    };
+  }
+};
+
+/**
  * Send SMS notifications to all admin numbers
  */
 const sendAdminSmsNotifications = async (
@@ -48,6 +96,16 @@ const sendAdminSmsNotifications = async (
   bookingData: any
 ): Promise<NotificationResult[]> => {
   const results: NotificationResult[] = [];
+  
+  // Get service details for accurate duration and price
+  const serviceDetails = await getServiceDetails(bookingData.serviceId, bookingData.serviceName);
+  
+  // Update booking data with service details
+  const enrichedBookingData = {
+    ...bookingData,
+    duration: serviceDetails.duration,
+    price: serviceDetails.price
+  };
   
   // Send SMS to all admin numbers using the notification type as template
   for (const adminPhone of ADMIN_PHONE_NUMBERS) {
@@ -60,7 +118,7 @@ const sendAdminSmsNotifications = async (
           phone: adminPhone,
           name: 'Admin'
         },
-        data: bookingData
+        data: enrichedBookingData
       };
 
       const smsResult = await sendSmsNotification(adminPayload);
@@ -92,13 +150,26 @@ export const sendNotification = async (payload: NotificationPayload): Promise<No
   const shouldSendEmail = !preferences || preferences.emailEnabled;
   const shouldSendSMS = !preferences || preferences.smsEnabled;
 
+  // Get service details for accurate duration and price
+  const serviceDetails = await getServiceDetails(payload.data.serviceId, payload.data.serviceName);
+  
+  // Update payload data with service details
+  const enrichedPayload = {
+    ...payload,
+    data: {
+      ...payload.data,
+      duration: serviceDetails.duration,
+      price: serviceDetails.price
+    }
+  };
+
   // Handle different notification types according to new specifications
   switch (payload.type) {
     case 'booking_created_customer':
       // Send email to customer and SMS to admins
       if (shouldSendEmail && payload.recipient.email) {
         try {
-          const emailResult = await sendEmailNotification(payload);
+          const emailResult = await sendEmailNotification(enrichedPayload);
           results.push(emailResult);
         } catch (error) {
           console.error('Error sending email notification:', error);
@@ -112,7 +183,7 @@ export const sendNotification = async (payload: NotificationPayload): Promise<No
       }
       
       // Send SMS to admins
-      const adminSmsResults = await sendAdminSmsNotifications(payload.type, payload.data);
+      const adminSmsResults = await sendAdminSmsNotifications(payload.type, enrichedPayload.data);
       results.push(...adminSmsResults);
       break;
 
@@ -121,7 +192,7 @@ export const sendNotification = async (payload: NotificationPayload): Promise<No
       // Send email to customer and SMS to admins
       if (shouldSendEmail && payload.recipient.email) {
         try {
-          const emailResult = await sendEmailNotification(payload);
+          const emailResult = await sendEmailNotification(enrichedPayload);
           results.push(emailResult);
         } catch (error) {
           console.error('Error sending email notification:', error);
@@ -135,13 +206,13 @@ export const sendNotification = async (payload: NotificationPayload): Promise<No
       }
       
       // Send SMS to admins
-      const adminSmsResults2 = await sendAdminSmsNotifications(payload.type, payload.data);
+      const adminSmsResults2 = await sendAdminSmsNotifications(payload.type, enrichedPayload.data);
       results.push(...adminSmsResults2);
       break;
 
     case 'booking_created_admin':
       // Only send SMS to admins
-      const adminSmsResults3 = await sendAdminSmsNotifications(payload.type, payload.data);
+      const adminSmsResults3 = await sendAdminSmsNotifications(payload.type, enrichedPayload.data);
       results.push(...adminSmsResults3);
       break;
 
@@ -149,7 +220,7 @@ export const sendNotification = async (payload: NotificationPayload): Promise<No
       // Send email to customer and SMS to admins
       if (shouldSendEmail && payload.recipient.email) {
         try {
-          const emailResult = await sendEmailNotification(payload);
+          const emailResult = await sendEmailNotification(enrichedPayload);
           results.push(emailResult);
         } catch (error) {
           console.error('Error sending email notification:', error);
@@ -163,7 +234,7 @@ export const sendNotification = async (payload: NotificationPayload): Promise<No
       }
       
       // Send SMS to admins
-      const adminSmsResults4 = await sendAdminSmsNotifications(payload.type, payload.data);
+      const adminSmsResults4 = await sendAdminSmsNotifications(payload.type, enrichedPayload.data);
       results.push(...adminSmsResults4);
       break;
 
@@ -171,7 +242,7 @@ export const sendNotification = async (payload: NotificationPayload): Promise<No
       // Only send email to customer (no SMS to admins)
       if (shouldSendEmail && payload.recipient.email) {
         try {
-          const emailResult = await sendEmailNotification(payload);
+          const emailResult = await sendEmailNotification(enrichedPayload);
           results.push(emailResult);
         } catch (error) {
           console.error('Error sending email notification:', error);
@@ -189,7 +260,7 @@ export const sendNotification = async (payload: NotificationPayload): Promise<No
       // Send reminder email to customer only (no SMS)
       if (shouldSendEmail && payload.recipient.email) {
         try {
-          const emailResult = await sendEmailNotification(payload);
+          const emailResult = await sendEmailNotification(enrichedPayload);
           results.push(emailResult);
         } catch (error) {
           console.error('Error sending email notification:', error);
@@ -208,7 +279,7 @@ export const sendNotification = async (payload: NotificationPayload): Promise<No
       // Send email notification
       if (shouldSendEmail && payload.recipient.email) {
         try {
-          const emailResult = await sendEmailNotification(payload);
+          const emailResult = await sendEmailNotification(enrichedPayload);
           results.push(emailResult);
         } catch (error) {
           console.error('Error sending email notification:', error);
@@ -224,7 +295,7 @@ export const sendNotification = async (payload: NotificationPayload): Promise<No
       // Send SMS notification
       if (shouldSendSMS && payload.recipient.phone) {
         try {
-          const smsResult = await sendSmsNotification(payload);
+          const smsResult = await sendSmsNotification(enrichedPayload);
           results.push(smsResult);
         } catch (error) {
           console.error('Error sending SMS notification:', error);

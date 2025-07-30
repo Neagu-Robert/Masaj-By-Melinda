@@ -12,42 +12,9 @@ import DateTimeSelection from '@/components/booking/DateTimeSelection';
 import BookingSummary from '@/components/booking/BookingSummary';
 import { AvailabilitiesProvider } from '@/contexts/AvailabilitiesContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useServices } from '@/contexts/ServicesContext';
 import { logAdminAction } from '@/lib/audit-logger';
 import { useBookingNotifications } from '@/services/notifications/hooks';
-
-// Service durations in minutes (default if not specified)
-const SERVICE_DURATIONS = {
-  'Masaj de relaxare': 60,
-  'Masaj terapeutic': 60,
-  'Masaj de drenaj limfatic': 60,
-  'Masaj anticelulitic': 60,
-  'Masaj facial': 45,
-  'Masaj cu pietre vulcanice': 75,
-  'Masaj cu bete de bambus': 75,
-  'Termocuverta Treatment': 60,
-  '40Khz Cavitation Body Remodeling': 45,
-  'Electrostimulation Treatment': 45,
-  'TECAR Radiofrequency': 60,
-  // Default duration
-  'default': 60
-};
-
-// Service prices in RON (default if not specified)
-const SERVICE_PRICES = {
-  'Masaj de relaxare': 150,
-  'Masaj terapeutic': 170,
-  'Masaj de drenaj limfatic': 180,
-  'Masaj anticelulitic': 180,
-  'Masaj facial': 120,
-  'Masaj cu pietre vulcanice': 200,
-  'Masaj cu bete de bambus': 200,
-  'Termocuverta Treatment': 180,
-  '40Khz Cavitation Body Remodeling': 250,
-  'Electrostimulation Treatment': 200,
-  'TECAR Radiofrequency': 250,
-  // Default price
-  'default': 150
-};
 
 const BookingPage = () => {
   const navigate = useNavigate();
@@ -63,6 +30,7 @@ const BookingPage = () => {
     }
   });
   const { user } = useAuth();
+  const { services, getServiceByName } = useServices();
   const [profileInfo, setProfileInfo] = useState<{ fullName: string; phoneNumber: string | null } | null>(null);
   const [useProfileName, setUseProfileName] = useState(false);
   const [useProfilePhone, setUseProfilePhone] = useState(false);
@@ -149,6 +117,10 @@ const BookingPage = () => {
       const { data: userData } = await supabase.auth.getUser();
       const userId = userData?.user?.id;
 
+      // Get service details from the database
+      const serviceDetails = getServiceByName(selectedService);
+      const serviceId = serviceDetails?.id || null;
+
       // Insert booking data into Supabase and get the new record back
       const { data: newBooking, error } = await supabase
         .from('bookings')
@@ -157,6 +129,7 @@ const BookingPage = () => {
           last_name: lastName,
           phone_number: data.phoneNumber,
           service_type: selectedService,
+          service_id: serviceId, // Add service_id to the booking
           booking_date: formattedDate,
           booking_time: selectedTime,
           user_id: userId,
@@ -205,11 +178,12 @@ const BookingPage = () => {
             userEmail: userEmail,
             userPhone: data.phoneNumber,
             serviceName: selectedService,
+            serviceId: serviceId, // Include service_id in notification data
             serviceProvider: 'Melinda', // Default provider
             bookingDate: formattedDate,
             bookingTime: selectedTime,
-            duration: SERVICE_DURATIONS[selectedService] || SERVICE_DURATIONS.default,
-            price: SERVICE_PRICES[selectedService] || SERVICE_PRICES.default,
+            duration: serviceDetails?.duration || 60,
+            price: serviceDetails?.price || 140.00,
             status: 'confirmed'
           });
         } catch (notificationError) {

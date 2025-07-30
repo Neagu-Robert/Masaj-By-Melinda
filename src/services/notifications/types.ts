@@ -33,6 +33,7 @@ export interface BookingNotificationData {
   userEmail: string;
   userPhone: string;
   serviceName: string;
+  serviceId?: number | null; // New field for services table reference
   dateTime: string;
   duration: number;
   price: number;
