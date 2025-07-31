@@ -17,10 +17,10 @@
     }
   ],
   "env": {
-    "SENDGRID_API_KEY": "@sendgrid_api_key",
-    "SENDGRID_FROM_EMAIL": "@sendgrid_from_email",
-    "SENDGRID_FROM_NAME": "@sendgrid_from_name",
-    "INFOBIP_API_KEY": "@infobip_api_key",
-    "INFOBIP_SENDER_NUMBER": "@infobip_sender_number"
+    "SENDGRID_API_KEY": "SENDGRID_API_KEY",
+    "SENDGRID_FROM_EMAIL": "SENDGRID_FROM_EMAIL", 
+    "SENDGRID_FROM_NAME": "SENDGRID_FROM_NAME",
+    "INFOBIP_API_KEY": "INFOBIP_API_KEY",
+    "INFOBIP_SENDER_NUMBER": "INFOBIP_SENDER_NUMBER"
   }
 } 
