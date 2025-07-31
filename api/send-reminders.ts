@@ -3,26 +3,52 @@ import sgMail from '@sendgrid/mail';
 import { createClient } from '@supabase/supabase-js';
 import { format, addDays } from 'date-fns';
 
+// Type definitions
+interface Booking {
+  id: string;
+  first_name: string;
+  last_name: string;
+  service_type: string;
+  booking_date: string;
+  booking_time: string;
+  user_id?: string;
+  service_id?: number | null;
+  profiles?: {
+    email: string;
+  };
+}
+
+interface ServiceDetails {
+  duration: number;
+  price: number;
+}
+
+interface ReminderResult {
+  id: string;
+  success: boolean;
+  reason?: string;
+}
+
 // Initialize SendGrid
-const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY || '';
-const SENDGRID_FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL || 'masajbymelinda@gmail.com';
-const SENDGRID_FROM_NAME = process.env.SENDGRID_FROM_NAME || 'Masaj by Melinda';
+const SENDGRID_API_KEY: string = process.env.SENDGRID_API_KEY || '';
+const SENDGRID_FROM_EMAIL: string = process.env.SENDGRID_FROM_EMAIL || 'masajbymelinda@gmail.com';
+const SENDGRID_FROM_NAME: string = process.env.SENDGRID_FROM_NAME || 'Masaj by Melinda';
 
 if (SENDGRID_API_KEY) {
   sgMail.setApiKey(SENDGRID_API_KEY);
 }
 
 // Create Supabase client
-const supabaseUrl = process.env.SUPABASE_URL || '';
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+const supabaseUrl: string = process.env.SUPABASE_URL || '';
+const supabaseServiceKey: string = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 // Email template for booking reminders
-const generateReminderEmailHtml = (booking: any, serviceDetails: any) => {
+const generateReminderEmailHtml = (booking: Booking, serviceDetails: ServiceDetails): string => {
   const { first_name, last_name, service_type, booking_date, booking_time } = booking;
   const fullName = `${first_name} ${last_name}`.trim();
-  const duration = serviceDetails?.duration || 60;
-  const price = serviceDetails?.price || 140.00;
+  const duration = serviceDetails.duration;
+  const price = serviceDetails.price;
   
   return `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -42,11 +68,11 @@ const generateReminderEmailHtml = (booking: any, serviceDetails: any) => {
   `;
 };
 
-const generateReminderEmailText = (booking: any, serviceDetails: any) => {
+const generateReminderEmailText = (booking: Booking, serviceDetails: ServiceDetails): string => {
   const { first_name, last_name, service_type, booking_date, booking_time } = booking;
   const fullName = `${first_name} ${last_name}`.trim();
-  const duration = serviceDetails?.duration || 60;
-  const price = serviceDetails?.price || 140.00;
+  const duration = serviceDetails.duration;
+  const price = serviceDetails.price;
   
   return `
     Appointment Reminder
@@ -69,7 +95,7 @@ const generateReminderEmailText = (booking: any, serviceDetails: any) => {
 };
 
 // Send reminder email
-const sendReminderEmail = async (booking: any, userEmail: string, serviceDetails: any) => {
+const sendReminderEmail = async (booking: Booking, userEmail: string, serviceDetails: ServiceDetails): Promise<boolean> => {
   if (!SENDGRID_API_KEY) {
     console.error('SendGrid API key is not configured');
     return false;
@@ -101,7 +127,7 @@ const sendReminderEmail = async (booking: any, userEmail: string, serviceDetails
     });
     
     return true;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error sending email notification:', error);
     
     // Log the failed notification
@@ -121,9 +147,9 @@ const sendReminderEmail = async (booking: any, userEmail: string, serviceDetails
 };
 
 // Get service details from services table
-const getServiceDetails = async (serviceId: number | null, serviceName: string) => {
+const getServiceDetails = async (serviceId: number | null, serviceName: string): Promise<ServiceDetails> => {
   try {
-    let service: { duration: number; price: number } | null = null;
+    let service: ServiceDetails | null = null;
 
     // Try to get service by ID first
     if (serviceId) {
@@ -134,7 +160,7 @@ const getServiceDetails = async (serviceId: number | null, serviceName: string) 
         .single();
 
       if (!error && data) {
-        service = data;
+        service = data as ServiceDetails;
       }
     }
 
@@ -148,7 +174,7 @@ const getServiceDetails = async (serviceId: number | null, serviceName: string) 
         .single();
 
       if (!error && data) {
-        service = data;
+        service = data as ServiceDetails;
       }
     }
 
@@ -157,7 +183,7 @@ const getServiceDetails = async (serviceId: number | null, serviceName: string) 
       duration: service?.duration || 60,
       price: service?.price || 140.00
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching service details:', error);
     return {
       duration: 60,
@@ -166,7 +192,7 @@ const getServiceDetails = async (serviceId: number | null, serviceName: string) 
   }
 };
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   // Enable CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -180,7 +206,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // Only allow POST requests
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    res.status(405).json({ error: 'Method not allowed' });
+    return;
   }
 
   try {
@@ -204,11 +231,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       throw new Error(`Error fetching bookings: ${bookingsError.message}`);
     }
     
-    console.log(`Found ${bookings.length} bookings for tomorrow`);
+    console.log(`Found ${bookings?.length || 0} bookings for tomorrow`);
     
     // Send reminder emails for each booking
-    const results = await Promise.all(
-      bookings.map(async (booking) => {
+    const results: ReminderResult[] = await Promise.all(
+      (bookings || []).map(async (booking: Booking) => {
         // Skip if no user email
         if (!booking.profiles?.email) {
           console.log(`No email found for booking ${booking.id}`);
@@ -217,7 +244,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         
         // Get service details
         const serviceDetails = await getServiceDetails(
-          booking.service_id, 
+          booking.service_id || null, 
           booking.service_type
         );
         
@@ -231,15 +258,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const successful = results.filter(r => r.success).length;
     const failed = results.length - successful;
     
-    return res.status(200).json({
+    res.status(200).json({
       success: true,
       message: `Processed ${results.length} reminders. ${successful} sent successfully, ${failed} failed.`,
       results
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error processing reminders:', error);
     
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
       message: error.message
     });
