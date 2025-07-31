@@ -2,7 +2,7 @@
 
 // SendGrid configuration
 export const SENDGRID_API_KEY = import.meta.env.VITE_SENDGRID_API_KEY || '';
-export const SENDGRID_FROM_EMAIL = import.meta.env.VITE_SENDGRID_FROM_EMAIL || 'noreply@masajbymelinda.com';
+export const SENDGRID_FROM_EMAIL = import.meta.env.VITE_SENDGRID_FROM_EMAIL || 'masajbymelinda@gmail.com';
 export const SENDGRID_FROM_NAME = import.meta.env.VITE_SENDGRID_FROM_NAME || 'Masaj by Melinda';
 
 // Infobip configuration

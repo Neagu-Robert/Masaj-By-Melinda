@@ -5,7 +5,7 @@ import { format, addDays } from 'date-fns';
 
 // Initialize SendGrid
 const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY || '';
-const SENDGRID_FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL || 'noreply@masajbymelinda.com';
+const SENDGRID_FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL || 'masajbymelinda@gmail.com';
 const SENDGRID_FROM_NAME = process.env.SENDGRID_FROM_NAME || 'Masaj by Melinda';
 
 if (SENDGRID_API_KEY) {

@@ -29,7 +29,7 @@ There are two ways to provide the SendGrid API key:
    ```
    # SendGrid (Email Notifications)
    VITE_SENDGRID_API_KEY=your_sendgrid_api_key
-   VITE_SENDGRID_FROM_EMAIL=noreply@masajbymelinda.com
+   VITE_SENDGRID_FROM_EMAIL=masajbymelinda@gmail.com
    VITE_SENDGRID_FROM_NAME=Masaj by Melinda
 
    # Infobip (SMS Notifications)
