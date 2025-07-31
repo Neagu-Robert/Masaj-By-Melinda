@@ -25,60 +25,98 @@ app.use(cors(corsOptions));
 // Parse JSON bodies
 app.use(express.json());
 
-// Load SendGrid API key from sendgrid.env
-const loadSendGridApiKey = () => {
+// Load environment variables from .env.local
+const loadEnvVariables = () => {
   try {
-    const envPath = path.join(__dirname, 'src', 'sendgrid.env');
+    const envPath = path.join(__dirname, '.env.local');
     if (fs.existsSync(envPath)) {
       const envContent = fs.readFileSync(envPath, 'utf8');
-      const apiKeyMatch = envContent.match(/SENDGRID_API_KEY=['"]([^'"]+)['"]/);
-      if (apiKeyMatch) {
-        return apiKeyMatch[1];
-      }
+      const envVars = {};
+      
+      // Parse each line
+      envContent.split('\n').forEach(line => {
+        line = line.trim();
+        if (line && !line.startsWith('#')) {
+          const [key, ...valueParts] = line.split('=');
+          if (key && valueParts.length > 0) {
+            const value = valueParts.join('=').replace(/^["']|["']$/g, ''); // Remove quotes
+            envVars[key] = value;
+          }
+        }
+      });
+      
+      return envVars;
     }
   } catch (error) {
-    console.error('Error loading SendGrid API key from file:', error);
+    console.error('Error loading .env.local file:', error);
   }
   
-  // Fallback to environment variable
+  return {};
+};
+
+// Load environment variables
+const envVars = loadEnvVariables();
+
+// Load SendGrid API key
+const loadSendGridApiKey = () => {
+  // First try .env.local with VITE_ prefix
+  if (envVars.VITE_SENDGRID_API_KEY) {
+    return envVars.VITE_SENDGRID_API_KEY;
+  }
+  
+  // Then try .env.local without prefix
+  if (envVars.SENDGRID_API_KEY) {
+    return envVars.SENDGRID_API_KEY;
+  }
+  
+  // Fallback to environment variable with VITE_ prefix
+  if (process.env.VITE_SENDGRID_API_KEY) {
+    return process.env.VITE_SENDGRID_API_KEY;
+  }
+  
+  // Fallback to environment variable without prefix
   return process.env.SENDGRID_API_KEY || '';
 };
 
-// Load Infobip API key from infobip.env
+// Load Infobip API key
 const loadInfobipApiKey = () => {
-  try {
-    const envPath = path.join(__dirname, 'src', 'infobip.env');
-    if (fs.existsSync(envPath)) {
-      const envContent = fs.readFileSync(envPath, 'utf8');
-      const apiKeyMatch = envContent.match(/infobip_api_key=([^\s]+)/);
-      if (apiKeyMatch) {
-        return apiKeyMatch[1];
-      }
-    }
-  } catch (error) {
-    console.error('Error loading Infobip API key from file:', error);
+  // First try .env.local with VITE_ prefix
+  if (envVars.VITE_INFOBIP_API_KEY) {
+    return envVars.VITE_INFOBIP_API_KEY;
   }
   
-  // Fallback to environment variable
+  // Then try .env.local without prefix
+  if (envVars.INFOBIP_API_KEY) {
+    return envVars.INFOBIP_API_KEY;
+  }
+  
+  // Fallback to environment variable with VITE_ prefix
+  if (process.env.VITE_INFOBIP_API_KEY) {
+    return process.env.VITE_INFOBIP_API_KEY;
+  }
+  
+  // Fallback to environment variable without prefix
   return process.env.INFOBIP_API_KEY || '';
 };
 
-// Load Infobip sender number from infobip.env
+// Load Infobip sender number
 const loadInfobipSenderNumber = () => {
-  try {
-    const envPath = path.join(__dirname, 'src', 'infobip.env');
-    if (fs.existsSync(envPath)) {
-      const envContent = fs.readFileSync(envPath, 'utf8');
-      const senderMatch = envContent.match(/infobip_sender_number=([^\s]+)/);
-      if (senderMatch) {
-        return senderMatch[1];
-      }
-    }
-  } catch (error) {
-    console.error('Error loading Infobip sender number from file:', error);
+  // First try .env.local with VITE_ prefix
+  if (envVars.VITE_INFOBIP_SENDER_NUMBER) {
+    return envVars.VITE_INFOBIP_SENDER_NUMBER;
   }
   
-  // Fallback to environment variable
+  // Then try .env.local without prefix
+  if (envVars.INFOBIP_SENDER_NUMBER) {
+    return envVars.INFOBIP_SENDER_NUMBER;
+  }
+  
+  // Fallback to environment variable with VITE_ prefix
+  if (process.env.VITE_INFOBIP_SENDER_NUMBER) {
+    return process.env.VITE_INFOBIP_SENDER_NUMBER;
+  }
+  
+  // Fallback to environment variable without prefix
   return process.env.INFOBIP_SENDER_NUMBER || '';
 };
 

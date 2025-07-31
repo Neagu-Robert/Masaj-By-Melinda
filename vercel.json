@@ -22,5 +22,10 @@
     "SENDGRID_FROM_NAME": "SENDGRID_FROM_NAME",
     "INFOBIP_API_KEY": "INFOBIP_API_KEY",
     "INFOBIP_SENDER_NUMBER": "INFOBIP_SENDER_NUMBER"
+  },
+  "build": {
+    "env": {
+      "NODE_OPTIONS": "--max-old-space-size=4096"
+    }
   }
 } 

@@ -11,12 +11,23 @@ export type NotificationType =
 
 export type NotificationChannel = 'email' | 'sms';
 
+// New interface for database preferences
+export interface NotificationPreferences {
+  id: string;
+  user_id: string;
+  booking_creation_enabled: boolean;
+  booking_update_enabled: boolean;
+  booking_cancellation_enabled: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+// Updated interface for application use
 export interface NotificationPreference {
   userId: string;
-  emailEnabled: boolean;
-  smsEnabled: boolean;
-  emailTypes: NotificationType[];
-  smsTypes: NotificationType[];
+  bookingCreationEnabled: boolean;
+  bookingUpdateEnabled: boolean;
+  bookingCancellationEnabled: boolean;
 }
 
 export interface NotificationRecipient {

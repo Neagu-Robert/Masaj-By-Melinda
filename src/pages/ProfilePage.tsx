@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import EditBookingModal from '@/components/booking/EditBookingModal';
 import { AvailabilitiesProvider } from "@/contexts/AvailabilitiesContext";
 import EditProfileModal from '@/components/profile/EditProfileModal';
+import NotificationPreferences from '@/components/profile/NotificationPreferences';
 import { useBookingNotifications } from '@/services/notifications/hooks';
 import { toast } from '@/components/ui/use-toast';
 
@@ -213,7 +214,7 @@ function ProfilePageContent() {
                   <Edit className="h-5 w-5" />
                 </Button>
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 bg-gray-800/50 p-6 rounded-lg">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 bg-gray-800/50 p-6 rounded-lg mb-6">
                 <div>
                   <label className="text-sm font-medium text-gray-400">Full Name</label>
                   <p className="text-lg mt-1">{profile.full_name || 'Not provided'}</p>
@@ -231,6 +232,13 @@ function ProfilePageContent() {
                   <p className="text-lg mt-1 capitalize">{role}</p>
                 </div>
               </div>
+              
+              {/* Notification Preferences */}
+              <NotificationPreferences 
+                userId={user.id} 
+                userRole={role} 
+              />
+              
               <EditProfileModal
                 open={isEditProfileOpen}
                 onClose={() => setIsEditProfileOpen(false)}

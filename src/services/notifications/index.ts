@@ -7,6 +7,12 @@ export {
   sendNotification
 } from './notificationService';
 
+// Export preferences service
+export {
+  getNotificationPreferences,
+  saveNotificationPreferences
+} from './preferencesService';
+
 // Export logging service
 export {
   logNotification,

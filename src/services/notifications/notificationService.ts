@@ -33,7 +33,12 @@ const getUserPreferences = async (userId: string | null): Promise<NotificationPr
       return null;
     }
 
-    return data;
+    return {
+      userId: data.user_id,
+      bookingCreationEnabled: data.booking_creation_enabled,
+      bookingUpdateEnabled: data.booking_update_enabled,
+      bookingCancellationEnabled: data.booking_cancellation_enabled
+    };
   } catch (error) {
     console.error('Error fetching user preferences:', error);
     return null;
@@ -217,28 +222,57 @@ export const sendNotification = async (payload: NotificationPayload): Promise<No
   // Get user preferences (skip for demo users)
   const preferences = await getUserPreferences(payload.recipient.userId);
   
-  // For demo users or when no preferences exist, send both email and SMS
-  const shouldSendEmail = !preferences || preferences.emailEnabled;
-  const shouldSendSMS = !preferences || preferences.smsEnabled;
+  // Get user role to determine channel (customers get email, admins get SMS)
+  let userRole = 'customer'; // Default
+  if (payload.recipient.userId) {
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', payload.recipient.userId)
+        .single();
+      userRole = profile?.role || 'customer';
+    } catch (error) {
+      console.error('Error fetching user role:', error);
+    }
+  }
 
   // Get service details for accurate duration and price
   const serviceDetails = await getServiceDetails(payload.data.serviceId, payload.data.serviceName);
   
-        // Update payload data with service details
-      const enrichedPayload = {
-        ...payload,
-        data: {
-          ...payload.data,
-          duration: serviceDetails.duration,
-          price: serviceDetails.price,
-        }
-      };
+  // Update payload data with service details
+  const enrichedPayload = {
+    ...payload,
+    data: {
+      ...payload.data,
+      duration: serviceDetails.duration,
+      price: serviceDetails.price,
+    }
+  };
+
+  // Determine if customer notifications should be sent based on preferences
+  const shouldSendCustomerNotification = (notificationType: string): boolean => {
+    if (!preferences) return true; // Default to sending if no preferences
+    
+    switch (notificationType) {
+      case 'booking_created_customer':
+        return preferences.bookingCreationEnabled;
+      case 'booking_updated_profile':
+      case 'booking_updated_admin':
+        return preferences.bookingUpdateEnabled;
+      case 'booking_cancelled_profile':
+      case 'booking_cancelled_admin':
+        return preferences.bookingCancellationEnabled;
+      default:
+        return true;
+    }
+  };
 
   // Handle different notification types according to new specifications
   switch (payload.type) {
     case 'booking_created_customer':
-      // Send email to customer and SMS to admins
-      if (shouldSendEmail && payload.recipient.email) {
+      // Send email to customer (check customer preferences)
+      if (shouldSendCustomerNotification(payload.type) && payload.recipient.email) {
         try {
           const emailResult = await sendEmailNotification(enrichedPayload);
           results.push(emailResult);
@@ -253,15 +287,15 @@ export const sendNotification = async (payload: NotificationPayload): Promise<No
         }
       }
       
-      // Send SMS to admins
+      // Send SMS to admins (admin preferences don't affect customer notifications)
       const adminSmsResults = await sendAdminSmsNotifications(payload.type, enrichedPayload.data);
       results.push(...adminSmsResults);
       break;
 
     case 'booking_updated_profile':
     case 'booking_cancelled_profile':
-      // Send email to customer and SMS to admins
-      if (shouldSendEmail && payload.recipient.email) {
+      // Send email to customer (check customer preferences)
+      if (shouldSendCustomerNotification(payload.type) && payload.recipient.email) {
         try {
           const emailResult = await sendEmailNotification(enrichedPayload);
           results.push(emailResult);
@@ -276,20 +310,21 @@ export const sendNotification = async (payload: NotificationPayload): Promise<No
         }
       }
       
-      // Send SMS to admins
+      // Send SMS to admins (admin preferences don't affect customer notifications)
       const adminSmsResults2 = await sendAdminSmsNotifications(payload.type, enrichedPayload.data);
       results.push(...adminSmsResults2);
       break;
 
     case 'booking_created_admin':
-      // Only send SMS to admins
+      // Only send SMS to admins (check admin preferences)
+      // For now, always send admin notifications since we don't have admin preference checking
       const adminSmsResults3 = await sendAdminSmsNotifications(payload.type, enrichedPayload.data);
       results.push(...adminSmsResults3);
       break;
 
     case 'booking_updated_admin':
-      // Send email to customer and SMS to admins
-      if (shouldSendEmail && payload.recipient.email) {
+      // Send email to customer (check customer preferences)
+      if (shouldSendCustomerNotification(payload.type) && payload.recipient.email) {
         try {
           const emailResult = await sendEmailNotification(enrichedPayload);
           results.push(emailResult);
@@ -304,14 +339,14 @@ export const sendNotification = async (payload: NotificationPayload): Promise<No
         }
       }
       
-      // Send SMS to admins
+      // Send SMS to admins (admin preferences don't affect customer notifications)
       const adminSmsResults4 = await sendAdminSmsNotifications(payload.type, enrichedPayload.data);
       results.push(...adminSmsResults4);
       break;
 
     case 'booking_cancelled_admin':
-      // Only send email to customer (no SMS to admins)
-      if (shouldSendEmail && payload.recipient.email) {
+      // Only send email to customer (check customer preferences)
+      if (shouldSendCustomerNotification(payload.type) && payload.recipient.email) {
         try {
           const emailResult = await sendEmailNotification(enrichedPayload);
           results.push(emailResult);
@@ -328,8 +363,8 @@ export const sendNotification = async (payload: NotificationPayload): Promise<No
       break;
 
     case 'reminder':
-      // Send reminder email to customer only (no SMS)
-      if (shouldSendEmail && payload.recipient.email) {
+      // Send reminder email to customer only (check customer preferences)
+      if (shouldSendCustomerNotification(payload.type) && payload.recipient.email) {
         try {
           const emailResult = await sendEmailNotification(enrichedPayload);
           results.push(emailResult);
@@ -347,8 +382,8 @@ export const sendNotification = async (payload: NotificationPayload): Promise<No
 
     default:
       // Default behavior for other notification types
-      // Send email notification
-      if (shouldSendEmail && payload.recipient.email) {
+      // Send email notification (check customer preferences)
+      if (shouldSendCustomerNotification(payload.type) && payload.recipient.email) {
         try {
           const emailResult = await sendEmailNotification(enrichedPayload);
           results.push(emailResult);
@@ -363,8 +398,8 @@ export const sendNotification = async (payload: NotificationPayload): Promise<No
         }
       }
 
-      // Send SMS notification
-      if (shouldSendSMS && payload.recipient.phone) {
+      // Send SMS notification (for admin notifications)
+      if (payload.recipient.phone) {
         try {
           const smsResult = await sendSmsNotification(enrichedPayload);
           results.push(smsResult);
