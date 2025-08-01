@@ -52,6 +52,9 @@ const SENDGRID_FROM_EMAIL: string = process.env.SENDGRID_FROM_EMAIL || 'masajbym
 const SENDGRID_FROM_NAME: string = process.env.SENDGRID_FROM_NAME || 'Masaj by Melinda';
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
+  // DYNAMIC IMPORT for SendGrid
+  const sgMail = (await import('@sendgrid/mail')).default;
+
   // Handle CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
