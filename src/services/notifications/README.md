@@ -17,42 +17,24 @@ This module provides a comprehensive notification system for Masaj by Melinda, s
 
 ### API Keys
 
-There are two ways to provide the SendGrid API key:
+The notification system uses Supabase Edge Functions for secure API key handling. The following environment variables need to be set in your Supabase project secrets:
 
-1. **Using a sendgrid.env file:**
-   Create a `sendgrid.env` file in the `src` directory with the following content:
-   ```
-   SENDGRID_API_KEY='your_sendgrid_api_key'
-   ```
+```
+# SendGrid (Email Notifications)
+SENDGRID_API_KEY=your_sendgrid_api_key
+SENDGRID_FROM_EMAIL=masajbymelinda@gmail.com
+SENDGRID_FROM_NAME=Masaj by Melinda
 
-2. **Using environment variables:**
-   Add the following environment variables to your `.env` file:
-
-   ```
-   # SendGrid (Email Notifications)
-   VITE_SENDGRID_API_KEY=your_sendgrid_api_key
-   VITE_SENDGRID_FROM_EMAIL=masajbymelinda@gmail.com
-   VITE_SENDGRID_FROM_NAME=Masaj by Melinda
-
-   # Infobip (SMS Notifications)
-   VITE_INFOBIP_API_KEY=your_infobip_api_key
-   VITE_INFOBIP_SENDER_NUMBER=your_infobip_sender_number
-
-   # Notification Settings
-   VITE_EMAIL_NOTIFICATIONS_ENABLED=true
-   VITE_SMS_NOTIFICATIONS_ENABLED=true
-   VITE_NOTIFICATION_QUEUE_ENABLED=true
-   VITE_MAX_RETRY_ATTEMPTS=3
-   VITE_RETRY_DELAY_MS=5000
-   ```
-
-> **Note**: The system will first check for a SendGrid API key in the `sendgrid.env` file, and if not found, it will fall back to the `VITE_SENDGRID_API_KEY` environment variable. Similarly, it will check for Infobip credentials in the `infobip.env` file.
+# Infobip (SMS Notifications)
+INFOBIP_API_KEY=your_infobip_api_key
+INFOBIP_SENDER_NUMBER=your_infobip_sender_number
+```
 
 ### Email Implementation
 
-The email functionality is implemented via Vercel API routes that use the SendGrid API. This approach keeps your SendGrid credentials secure on the backend while allowing email notifications from the frontend.
+The email functionality is implemented via Supabase Edge Functions that use the SendGrid API. This approach keeps your SendGrid credentials secure on the backend while allowing email notifications from the frontend.
 
-The Vercel API route is located at `api/send-email.ts` and handles:
+The Supabase Edge Function is located at `supabase/functions/send-email/index.ts` and handles:
 - Email message sending via SendGrid API
 - HTML and plain text email templates
 - Error handling and response formatting
@@ -60,31 +42,30 @@ The Vercel API route is located at `api/send-email.ts` and handles:
 
 ### SMS Implementation
 
-The SMS functionality is implemented via Vercel API routes that use the Infobip API. This approach keeps your Infobip credentials secure on the backend while allowing SMS notifications from the frontend.
+The SMS functionality is implemented via Supabase Edge Functions that use the Infobip API. This approach keeps your Infobip credentials secure on the backend while allowing SMS notifications from the frontend.
 
-The Vercel API route is located at `api/send-sms.ts` and handles:
+The Supabase Edge Function is located at `supabase/functions/send-sms/index.ts` and handles:
 - SMS message sending via Infobip API
 - Error handling and response formatting
 - CORS handling for cross-origin requests
 
-### Running the Vercel API Routes
+### Running the Supabase Edge Functions
 
-The Vercel API routes are automatically deployed when you deploy your application to Vercel. The routes are available at:
+The Supabase Edge Functions are automatically deployed when you deploy your Supabase project. The functions are available at:
 
-- Email: `https://masajbymelinda.ro/api/send-email`
-- SMS: `https://masajbymelinda.ro/api/send-sms`
+- Email: `https://dgzmqlwqlfmdbnwqjjjr.functions.supabase.co/send-email`
+- SMS: `https://dgzmqlwqlfmdbnwqjjjr.functions.supabase.co/send-sms`
+- Reminders: `https://dgzmqlwqlfmdbnwqjjjr.functions.supabase.co/send-reminders`
 
-For local development, you can still use the Express server by running:
+For local development, you can run the Supabase CLI to test the functions locally:
 
 ```bash
-# Run the Express server only
-npm run server
+# Start Supabase locally
+supabase start
 
-# Run both the Vite dev server and Express server concurrently
-npm run dev:full
+# Test the functions
+supabase functions serve
 ```
-
-The Express server will be available at `http://localhost:3003` and provides the `/api/send-email` endpoint for local development.
 
 ### Database Setup
 
@@ -93,7 +74,6 @@ In `supabase/migrations/20250724_notification_tables.sql` there's a sql code tha
 - `notification_logs` - Records of all notification attempts
 - `notification_preferences` - User preferences for notifications. In the profile page, the users will be able to edit notification preferencies to change what type of notification they can recieve.
 
-
 ### Basic Usage
 
 ```tsx
@@ -101,7 +81,7 @@ import { notify } from '@/services/notifications';
 
 // Send a notification
 await notify({
-  type: 'booking_created',
+  type: 'booking_created_customer',
   recipient: {
     userId: 'user-uuid',
     email: 'user@example.com',
@@ -155,27 +135,31 @@ function BookingComponent() {
 
 ## Notification Types
 
-- `booking_created` - Sent when a new booking is created
-- `booking_updated` - Sent when a booking is updated
-- `booking_cancelled` - Sent when a booking is cancelled
+- `booking_created_customer` - Sent when a customer creates a new booking
+- `booking_updated_profile` - Sent when a user updates their booking from profile
+- `booking_cancelled_profile` - Sent when a user cancels their booking from profile
+- `booking_created_admin` - Sent when an admin creates a booking
+- `booking_updated_admin` - Sent when an admin updates a booking
+- `booking_cancelled_admin` - Sent when an admin cancels a booking
 - `reminder` - Sent as a reminder for upcoming bookings
 
 ## Automated Reminders
 
-to be implemented 
+The reminder system is implemented via a Supabase Edge Function (`supabase/functions/send-reminders/index.ts`) that runs on a cron schedule to send reminder emails to customers one day before their appointments.
 
 ## Architecture
 
 - `config.ts` - Configuration settings and environment variables
 - `types.ts` - TypeScript interfaces and types
-- `emailService.ts` - Vercel API route integration for email notifications
-- `smsService.ts` - Vercel API route integration for SMS notifications
+- `emailService.ts` - Supabase Edge Function integration for email notifications
+- `smsService.ts` - Supabase Edge Function integration for SMS notifications
 - `loggingService.ts` - Notification logging functionality
 - `notificationService.ts` - Core notification service with queue
 - `hooks.ts` - React hooks for using notifications in components
 - `index.ts` - Main exports
-- `api/send-email.ts` - Vercel API route for email notifications
-- `api/send-sms.ts` - Vercel API route for SMS notifications 
+- `supabase/functions/send-email/index.ts` - Supabase Edge Function for email notifications
+- `supabase/functions/send-sms/index.ts` - Supabase Edge Function for SMS notifications
+- `supabase/functions/send-reminders/index.ts` - Supabase Edge Function for reminder notifications
 
 ## Notification implementations
 - `booking_created_customer` - When booked from the customer's booking page, will send and email to the logged in customers and an sms to the admin numbers responsible with booking handleing (booking responsible admins to be implemented)

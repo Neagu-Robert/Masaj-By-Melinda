@@ -1,28 +1,4 @@
 {
-  "functions": {
-    "api/send-email.ts": {
-      "maxDuration": 30
-    },
-    "api/send-sms.ts": {
-      "maxDuration": 30
-    },
-    "api/send-reminders.ts": {
-      "maxDuration": 60
-    }
-  },
-  "crons": [
-    {
-      "path": "/api/send-reminders",
-      "schedule": "0 0 * * *"
-    }
-  ],
-  "env": {
-    "SENDGRID_API_KEY": "SENDGRID_API_KEY",
-    "SENDGRID_FROM_EMAIL": "SENDGRID_FROM_EMAIL", 
-    "SENDGRID_FROM_NAME": "SENDGRID_FROM_NAME",
-    "INFOBIP_API_KEY": "INFOBIP_API_KEY",
-    "INFOBIP_SENDER_NUMBER": "INFOBIP_SENDER_NUMBER"
-  },
   "build": {
     "env": {
       "NODE_OPTIONS": "--max-old-space-size=4096"
