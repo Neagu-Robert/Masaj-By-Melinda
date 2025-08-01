@@ -21,7 +21,7 @@ export const MAX_RETRY_ATTEMPTS = parseInt(import.meta.env.VITE_MAX_RETRY_ATTEMP
 export const RETRY_DELAY_MS = parseInt(import.meta.env.VITE_RETRY_DELAY_MS || '5000', 10);
 
 // Feature flags - enable SMS by default if Infobip is configured
-export const EMAIL_NOTIFICATIONS_ENABLED = import.meta.env.VITE_EMAIL_NOTIFICATIONS_ENABLED !== 'false';
+export const EMAIL_NOTIFICATIONS_ENABLED = import.meta.env.VITE_EMAIL_NOTIFICATIONS_ENABLED !== 'false'; // Temporarily disabled for testing
 // For testing: Enable SMS even without Infobip credentials since we use Vercel API routes
 export const SMS_NOTIFICATIONS_ENABLED = import.meta.env.VITE_SMS_NOTIFICATIONS_ENABLED !== 'false' || (INFOBIP_API_KEY && INFOBIP_SENDER_NUMBER);
 

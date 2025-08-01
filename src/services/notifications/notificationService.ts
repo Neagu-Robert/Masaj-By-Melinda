@@ -100,16 +100,16 @@ const sendReminderNotifications = async (): Promise<NotificationResult[]> => {
   const results: NotificationResult[] = [];
   
   try {
-    // Get the API base URL based on environment
-    const apiBaseUrl = import.meta.env.DEV 
-      ? 'http://localhost:3003' 
-      : 'https://masajbymelinda.ro';
+    // Replace getApiBaseUrl with Supabase Edge Function URL
+    const getSupabaseFunctionUrl = (fn) =>
+      `https://dgzmqlwqlfmdbnwqjjjr.functions.supabase.co/${fn}`;
     
     // Call the Vercel API route for reminders
-    const response = await fetch(`${apiBaseUrl}/api/send-reminders`, {
+    const response = await fetch(getSupabaseFunctionUrl('send-reminders'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRnem1xbHdxbGZtZGJud3FqampyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU2ODcxNDYsImV4cCI6MjA2MTI2MzE0Nn0.Y7sKLnfvQh3t6hoH_TyTVxojWUuKhgwW965Q9cE8pZs',
       }
     });
 

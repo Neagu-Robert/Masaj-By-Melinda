@@ -264,17 +264,9 @@ const isEmailConfigured = (): boolean => {
   );
 };
 
-/**
- * Get the API base URL based on environment
- */
-const getApiBaseUrl = (): string => {
-  // In development, use the Express server
-  if (import.meta.env.DEV) {
-    return 'http://localhost:3003';
-  }
-  // In production, use the Vercel API route
-  return 'https://masajbymelinda.ro';
-};
+// Replace getApiBaseUrl with Supabase Edge Function URL
+const getSupabaseFunctionUrl = (fn) =>
+  `https://dgzmqlwqlfmdbnwqjjjr.functions.supabase.co/${fn}`;
 
 /**
  * Send an email notification via Express API server
@@ -313,11 +305,11 @@ export const sendEmailNotification = async (
     const emailContent = templateFn(payload.data as BookingNotificationData);
 
     // Call the Express API server
-    const apiBaseUrl = getApiBaseUrl();
-    const response = await fetch(`${apiBaseUrl}/api/send-email`, {
+    const response = await fetch(getSupabaseFunctionUrl('send-email'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRnem1xbHdxbGZtZGJud3FqampyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU2ODcxNDYsImV4cCI6MjA2MTI2MzE0Nn0.Y7sKLnfvQh3t6hoH_TyTVxojWUuKhgwW965Q9cE8pZs',
       },
       body: JSON.stringify({
         to: payload.recipient.email,

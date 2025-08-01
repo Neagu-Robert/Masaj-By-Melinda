@@ -44,14 +44,8 @@ const smsTemplates = {
 /**
  * Get the API base URL based on environment
  */
-const getApiBaseUrl = (): string => {
-  // In development, use the Express server
-  if (import.meta.env.DEV) {
-    return 'http://localhost:3003';
-  }
-  // In production, use the Vercel API route
-  return 'https://masajbymelinda.ro';
-};
+const getSupabaseFunctionUrl = (fn) =>
+  `https://dgzmqlwqlfmdbnwqjjjr.functions.supabase.co/${fn}`;
 
 /**
  * Check if SMS is properly configured
@@ -107,11 +101,11 @@ export const sendSmsNotification = async (
       : `+${payload.recipient.phone}`;
 
     // Call the Vercel API route
-    const apiBaseUrl = getApiBaseUrl();
-    const response = await fetch(`${apiBaseUrl}/api/send-sms`, {
+    const response = await fetch(getSupabaseFunctionUrl('send-sms'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRnem1xbHdxbGZtZGJud3FqampyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU2ODcxNDYsImV4cCI6MjA2MTI2MzE0Nn0.Y7sKLnfvQh3t6hoH_TyTVxojWUuKhgwW965Q9cE8pZs',
       },
       body: JSON.stringify({
         to: formattedPhone,
@@ -138,14 +132,19 @@ export const sendSmsNotification = async (
       success: true,
       messageId: data.messageId,
       sentAt: new Date().toISOString(),
-      data: payload.data
+      data: {
+        ...payload.data,
+        smsDetails: data.details, // Include Infobip response details
+        smsStatus: data.status
+      }
     });
 
     return {
       success: true,
       channel: 'sms',
       messageId: data.messageId,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      details: data.details // Include additional details for debugging
     };
 
   } catch (error) {
@@ -194,5 +193,18 @@ export const retrySmsNotification = async (
   await new Promise(resolve => setTimeout(resolve, delay));
 
   console.log(`Retrying SMS notification (attempt ${retryCount + 1}/${MAX_RETRY_ATTEMPTS})`);
-  return sendSmsNotification(payload);
+  
+  try {
+    const result = await sendSmsNotification(payload);
+    
+    // If SMS was accepted but we want to be extra sure, we could add additional verification
+    if (result.success && result.details) {
+      console.log('SMS retry successful with details:', result.details);
+    }
+    
+    return result;
+  } catch (error) {
+    console.error(`SMS retry ${retryCount + 1} failed:`, error);
+    return retrySmsNotification(payload, retryCount + 1);
+  }
 }; 

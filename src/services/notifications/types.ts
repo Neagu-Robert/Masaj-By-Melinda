@@ -65,6 +65,7 @@ export interface NotificationResult {
   messageId?: string;
   error?: Error;
   timestamp: number;
+  details?: any; // Additional details for debugging
 }
 
 export interface NotificationLogEntry {
