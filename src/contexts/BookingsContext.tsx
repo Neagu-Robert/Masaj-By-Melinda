@@ -42,7 +42,7 @@ export const BookingsProvider = ({ children }: { children: ReactNode }) => {
     setError(null);
     const { error } = await supabase.from('bookings').insert([data]);
     if (error) setError(error.message);
-    // fetchBookings(); // Real-time will update
+    // Real-time will update the list
   };
 
   // Update booking
@@ -50,7 +50,7 @@ export const BookingsProvider = ({ children }: { children: ReactNode }) => {
     setError(null);
     const { error } = await supabase.from('bookings').update(updates).eq('id', id);
     if (error) setError(error.message);
-    // fetchBookings(); // Real-time will update
+    // Real-time will update the list
   };
 
   // Delete booking
@@ -58,22 +58,22 @@ export const BookingsProvider = ({ children }: { children: ReactNode }) => {
     setError(null);
     const { error } = await supabase.from('bookings').delete().eq('id', id);
     if (error) setError(error.message);
-    // fetchBookings(); // Real-time will update
+    // Real-time will update the list
   };
 
   // Manual refresh
   const refreshBookings = fetchBookings;
 
-  // Real-time subscription
+  // Initialize and set up real-time subscription
   useEffect(() => {
     fetchBookings();
+    
     const channel = supabase
       .channel('bookings-changes')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'bookings' },
         (payload) => {
-          // Handle insert, update, delete
           if (payload.eventType === 'INSERT') {
             setBookings((prev) => [...prev, payload.new as Booking]);
           } else if (payload.eventType === 'UPDATE') {
@@ -84,10 +84,10 @@ export const BookingsProvider = ({ children }: { children: ReactNode }) => {
         }
       )
       .subscribe();
+
     return () => {
       supabase.removeChannel(channel);
     };
-    // eslint-disable-next-line
   }, []);
 
   return (

@@ -21,8 +21,8 @@ export default function DashboardLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   return (
-    <AvailabilitiesProvider>
-      <BookingsProvider>
+    <BookingsProvider>
+      <AvailabilitiesProvider>
         <div className="flex h-screen bg-background text-foreground">
           {/* Sidebar */}
           <aside className="w-64 bg-sidebar text-sidebar-foreground border-r border-border flex flex-col">
@@ -85,7 +85,7 @@ export default function DashboardLayout() {
             </main>
           </div>
         </div>
-      </BookingsProvider>
-    </AvailabilitiesProvider>
+      </AvailabilitiesProvider>
+    </BookingsProvider>
   );
 } 

@@ -41,7 +41,7 @@ export const AvailabilitiesProvider = ({ children }: { children: ReactNode }) =>
     setError(null);
     const { error } = await supabase.from('availabilities').upsert(rows, { onConflict: 'date,hour' });
     if (error) setError(error.message);
-    // fetchAvailabilities should be called after to refresh, or rely on real-time
+    // Real-time will update the list
   };
 
   // Delete an availability by id
@@ -49,10 +49,10 @@ export const AvailabilitiesProvider = ({ children }: { children: ReactNode }) =>
     setError(null);
     const { error } = await supabase.from('availabilities').delete().eq('id', id);
     if (error) setError(error.message);
-    // fetchAvailabilities should be called after to refresh, or rely on real-time
+    // Real-time will update the list
   };
 
-  // Real-time subscription
+  // Set up real-time subscription
   useEffect(() => {
     const channel = supabase
       .channel('availabilities-changes')
@@ -60,25 +60,24 @@ export const AvailabilitiesProvider = ({ children }: { children: ReactNode }) =>
         'postgres_changes',
         { event: '*', schema: 'public', table: 'availabilities' },
         (payload) => {
-          setAvailabilities((prev) => {
-            if (payload.eventType === 'INSERT') {
-              // Add or replace
+          if (payload.eventType === 'INSERT') {
+            setAvailabilities((prev) => {
               const exists = prev.find(a => a.id === payload.new.id);
               if (exists) {
                 return prev.map(a => a.id === payload.new.id ? payload.new as Availability : a);
               } else {
                 return [...prev, payload.new as Availability];
               }
-            } else if (payload.eventType === 'UPDATE') {
-              return prev.map(a => a.id === payload.new.id ? payload.new as Availability : a);
-            } else if (payload.eventType === 'DELETE') {
-              return prev.filter(a => a.id !== payload.old.id);
-            }
-            return prev;
-          });
+            });
+          } else if (payload.eventType === 'UPDATE') {
+            setAvailabilities((prev) => prev.map(a => a.id === payload.new.id ? payload.new as Availability : a));
+          } else if (payload.eventType === 'DELETE') {
+            setAvailabilities((prev) => prev.filter(a => a.id !== payload.old.id));
+          }
         }
       )
       .subscribe();
+
     return () => {
       supabase.removeChannel(channel);
     };

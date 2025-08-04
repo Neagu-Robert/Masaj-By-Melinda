@@ -26,23 +26,25 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
   const [bookingDate, setBookingDate] = useState<Date | undefined>();
   const [bookingTime, setBookingTime] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-  const [availabilityMap, setAvailabilityMap] = useState({});
-  const [allBookings, setAllBookings] = useState([]);
+  const [bookedTimeSlots, setBookedTimeSlots] = useState<string[]>([]);
   const [userDetails, setUserDetails] = useState<{ email: string; phone: string; fullName: string } | null>(null);
 
   const { availabilities, fetchAvailabilities } = useAvailabilities();
   const { services, getServiceByName } = useServices();
   const { sendBookingUpdateProfile } = useBookingNotifications();
 
+  // Helper function to format date correctly
+  const formatDateForDB = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   useEffect(() => {
     const from = format(new Date(), 'yyyy-MM-dd');
     const to = format(new Date(new Date().setMonth(new Date().getMonth() + 1)), 'yyyy-MM-dd');
     
-    const fetchAllBookings = async () => {
-      const { data } = await supabase.from('bookings').select('*').gte('booking_date', from).lte('booking_date', to);
-      if (data) setAllBookings(data);
-    };
-
     const fetchUserDetails = async () => {
       if (booking?.user_id) {
         // Get user profile
@@ -69,7 +71,6 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
       }
     };
 
-    fetchAllBookings();
     fetchUserDetails();
     fetchAvailabilities(from, to);
   }, [booking, fetchAvailabilities]);
@@ -82,15 +83,39 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
     }
   }, [booking]);
 
+  // Fetch booked slots each time bookingDate changes
   useEffect(() => {
-    // Create availability map
-    const map = {};
-    availabilities.forEach(availability => {
-      const key = `${availability.date}_${availability.hour}`;
-      map[key] = availability.is_available;
-    });
-    setAvailabilityMap(map);
-  }, [availabilities]);
+    const fetchBookedTimeSlots = async () => {
+      if (!bookingDate) {
+        setBookedTimeSlots([]);
+        return;
+      }
+      const formattedDate = formatDateForDB(bookingDate);
+      try {
+        const { data, error } = await supabase
+          .from('bookings')
+          .select('booking_time')
+          .eq('booking_date', formattedDate);
+        if (error) {
+          console.error('Error fetching booked time slots:', error);
+          setBookedTimeSlots([]);
+          return;
+        }
+        const booked = (data ?? []).map(booking => {
+          return (booking.booking_time || "").toString().slice(0, 5);
+        });
+        setBookedTimeSlots(booked);
+        // If current selected time is now booked, reset it
+        if (bookingTime && booked.includes(bookingTime)) {
+          setBookingTime('');
+        }
+      } catch (error) {
+        console.error('Error in fetching booked slots:', error);
+        setBookedTimeSlots([]);
+      }
+    };
+    fetchBookedTimeSlots();
+  }, [bookingDate, bookingTime]);
 
   const handleSave = async () => {
     if (!serviceType || !bookingDate || !bookingTime) {
@@ -98,24 +123,19 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
       return;
     }
 
-    setIsSaving(true);
     try {
-      // Get service details from the database
+      setIsSaving(true);
+
+      // Get service details
       const serviceDetails = getServiceByName(serviceType);
       const serviceId = serviceDetails?.id || null;
 
-      const formattedDate = format(bookingDate, 'yyyy-MM-dd');
-      
-      // Check if the new slot is available
-      const conflictingBookings = allBookings.filter(
-        b => b.booking_date === formattedDate && 
-             b.booking_time === bookingTime && 
-             b.id !== booking.id
-      );
+      // Check for double booking (excluding current booking)
+      const formattedDate = formatDateForDB(bookingDate);
+      const conflictingBooking = bookedTimeSlots.includes(bookingTime);
 
-      if (conflictingBookings.length > 0) {
-        alert("This time slot is already booked. Please choose another time.");
-        setIsSaving(false);
+      if (conflictingBooking) {
+        alert("This time slot is already booked. Please choose a different time.");
         return;
       }
 
@@ -124,7 +144,7 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
         .from('bookings')
         .update({
           service_type: serviceType,
-          service_id: serviceId, // Add service_id to the booking
+          service_id: serviceId,
           booking_date: formattedDate,
           booking_time: bookingTime,
         })
@@ -133,33 +153,34 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
       if (error) {
         console.error('Error updating booking:', error);
         alert("Error updating booking");
-      } else {
-        // Send notification if user details are available
-        if (userDetails) {
-          try {
-            await sendBookingUpdateProfile({
-              bookingId: booking.id,
-              userId: booking.user_id || '',
-              userName: userDetails.fullName,
-              userEmail: userDetails.email,
-              userPhone: userDetails.phone,
-              serviceName: serviceType,
-              serviceId: serviceId,
-              serviceProvider: 'Melinda',
-              bookingDate: formattedDate,
-              bookingTime: bookingTime,
-              duration: serviceDetails?.duration || 60,
-              price: serviceDetails?.price || 140.00,
-              status: 'updated'
-            });
-          } catch (notificationError) {
-            console.error('Error sending notification:', notificationError);
-          }
-        }
-
-        onBookingUpdated();
-        onClose();
+        return;
       }
+
+      // Send notification if user details are available
+      if (userDetails) {
+        try {
+          await sendBookingUpdateProfile({
+            bookingId: booking.id,
+            userId: booking.user_id || '',
+            userName: userDetails.fullName,
+            userEmail: userDetails.email,
+            userPhone: userDetails.phone,
+            serviceName: serviceType,
+            serviceId: serviceId,
+            serviceProvider: 'Melinda',
+            bookingDate: formattedDate,
+            bookingTime: bookingTime,
+            duration: serviceDetails?.duration || 60,
+            price: serviceDetails?.price || 140.00,
+            status: 'confirmed'
+          });
+        } catch (notificationError) {
+          console.error('Error sending notification:', notificationError);
+        }
+      }
+
+      onBookingUpdated();
+      onClose();
     } catch (error) {
       console.error('Error saving booking:', error);
       alert("Error saving booking");
@@ -173,18 +194,27 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
     return dayOfWeek >= 1 && dayOfWeek <= 6; // Monday to Saturday
   };
 
-  const getScheduledHoursForDate = (date: Date) => {
-    const formattedDate = format(date, 'yyyy-MM-dd');
-    return allBookings
-      .filter(b => b.booking_date === formattedDate && b.id !== booking?.id)
-      .map(b => b.booking_time);
-  };
-
   const getAvailableHoursForDate = (date: Date | undefined) => {
     if (!date) return [];
     
-    const scheduledHours = getScheduledHoursForDate(date);
-    return HOURS.filter(hour => !scheduledHours.includes(hour));
+    const formattedDate = formatDateForDB(date);
+    
+    // Get unavailable hours from availabilities context
+    const unavailableHours = availabilities
+      .filter(a => a.date === formattedDate && !a.is_available)
+      .map(a => a.hour.slice(0, 5)); // Convert HH:MM:SS to HH:MM
+    
+    // Filter out both booked and unavailable hours
+    return HOURS.filter(hour => 
+      !bookedTimeSlots.includes(hour) && 
+      !unavailableHours.includes(hour)
+    );
+  };
+
+  // Get original booking time for display
+  const getOriginalBookingTime = () => {
+    if (!booking) return '';
+    return booking.booking_time || '';
   };
 
   return (
@@ -227,7 +257,14 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
             </div>
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label className="text-right">Time</Label>
+            <Label className="text-right">
+              Time
+              {getOriginalBookingTime() && (
+                <span className="block text-xs text-gray-500 font-normal">
+                  Original: {getOriginalBookingTime()}
+                </span>
+              )}
+            </Label>
             <Select value={bookingTime} onValueChange={setBookingTime}>
               <SelectTrigger className="col-span-3">
                 <SelectValue placeholder="Select time" />

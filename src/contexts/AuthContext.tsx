@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, useRef } from "react";
 import { supabase } from "../integrations/supabase/client";
 
 const AuthContext = createContext(null);
@@ -9,6 +9,46 @@ export function AuthProvider({ children }) {
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [initialized, setInitialized] = useState(false);
+  
+  // Refs to track state and prevent unnecessary re-fetches
+  const currentUserId = useRef(null);
+  const isFetchingProfile = useRef(false);
+  const lastProfileFetch = useRef(0);
+
+  // Helper function to fetch user profile
+  const fetchUserProfile = async (userId: string) => {
+    if (isFetchingProfile.current) return;
+    
+    // Debounce profile fetches - don't fetch more than once per second
+    const now = Date.now();
+    if (now - lastProfileFetch.current < 1000) return;
+    
+    isFetchingProfile.current = true;
+    lastProfileFetch.current = now;
+    
+    try {
+      const { data: profile, error } = await supabase
+        .from("profiles")
+        .select("role, status")
+        .eq("id", userId)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching profile:', error);
+        setRole(null);
+        setStatus(null);
+      } else {
+        setRole(profile?.role || null);
+        setStatus(profile?.status || null);
+      }
+    } catch (error) {
+      console.error('Error in fetchUserProfile:', error);
+      setRole(null);
+      setStatus(null);
+    } finally {
+      isFetchingProfile.current = false;
+    }
+  };
 
   useEffect(() => {
     let ignore = false;
@@ -23,25 +63,10 @@ export function AuthProvider({ children }) {
         if (ignore) return;
         
         setUser(session?.user ?? null);
+        currentUserId.current = session?.user?.id || null;
         
         if (session?.user) {
-          // Fetch user profile
-          const { data: profile, error } = await supabase
-            .from("profiles")
-            .select("role, status")
-            .eq("id", session.user.id)
-            .single();
-          
-          if (ignore) return;
-          
-          if (error) {
-            console.error('Error fetching profile:', error);
-            setRole(null);
-            setStatus(null);
-          } else {
-            setRole(profile?.role || null);
-            setStatus(profile?.status || null);
-          }
+          await fetchUserProfile(session.user.id);
         } else {
           setRole(null);
           setStatus(null);
@@ -52,6 +77,7 @@ export function AuthProvider({ children }) {
           setUser(null);
           setRole(null);
           setStatus(null);
+          currentUserId.current = null;
         }
       } finally {
         if (!ignore) {
@@ -85,30 +111,23 @@ export function AuthProvider({ children }) {
       
       console.log('Auth state change:', event);
       
-      // Update user immediately
-      setUser(session?.user ?? null);
+      const newUserId = session?.user?.id || null;
       
-      if (session?.user) {
-        // Fetch user profile
-        const { data: profile, error } = await supabase
-          .from("profiles")
-          .select("role, status")
-          .eq("id", session.user.id)
-          .single();
+      // Only update if the user actually changed
+      if (currentUserId.current !== newUserId) {
+        setUser(session?.user ?? null);
+        currentUserId.current = newUserId;
         
-        if (ignore) return;
-        
-        if (error) {
-          console.error('Error fetching profile:', error);
+        if (session?.user) {
+          await fetchUserProfile(session.user.id);
+        } else {
           setRole(null);
           setStatus(null);
-        } else {
-          setRole(profile?.role || null);
-          setStatus(profile?.status || null);
         }
-      } else {
-        setRole(null);
-        setStatus(null);
+      } else if (session?.user && event === 'SIGNED_IN') {
+        // If same user but SIGNED_IN event, just ensure profile is up to date
+        // but don't trigger a full re-fetch unless necessary
+        console.log('User already signed in, ensuring profile is current');
       }
     });
 
@@ -125,6 +144,7 @@ export function AuthProvider({ children }) {
       setUser(null);
       setRole(null);
       setStatus(null);
+      currentUserId.current = null;
     }
   }, [status, user, loading]);
 

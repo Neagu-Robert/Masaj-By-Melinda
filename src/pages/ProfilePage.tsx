@@ -4,10 +4,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useServices } from '@/contexts/ServicesContext';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, User, Calendar, Phone, LogOut, Edit, Trash2 } from 'lucide-react';
+import { ArrowLeft, User, Calendar, LogOut, Edit, Trash2 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import EditBookingModal from '@/components/booking/EditBookingModal';
 import { AvailabilitiesProvider } from "@/contexts/AvailabilitiesContext";
+import { BookingsProvider } from "@/contexts/BookingsContext";
 import EditProfileModal from '@/components/profile/EditProfileModal';
 import NotificationPreferences from '@/components/profile/NotificationPreferences';
 import PasswordChangeModal from '@/components/profile/PasswordChangeModal';
@@ -25,7 +26,7 @@ function ProfilePageContent() {
   const [activeView, setActiveView] = useState('details');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState(null);
-  const [_, setForceUpdate] = useState(0);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [isPasswordChangeOpen, setIsPasswordChangeOpen] = useState(false);
   const { sendBookingCancellationProfile } = useBookingNotifications();
@@ -73,7 +74,7 @@ function ProfilePageContent() {
       setLoading(false);
     }
     return () => { isMounted = false; };
-  }, [user, _]);
+  }, [user, refreshTrigger]);
 
   const handleEditClick = (booking) => {
     setSelectedBooking(booking);
@@ -100,14 +101,17 @@ function ProfilePageContent() {
         throw error;
       }
 
+      // Remove the booking from the local state
+      setBookings(prev => prev.filter(b => b.id !== booking.id));
+
       // Send cancellation notification
       try {
         await sendBookingCancellationProfile({
           bookingId: booking.id,
-          userId: booking.user_id || '',
-          userName: `${booking.first_name} ${booking.last_name}`,
-          userEmail: profile?.email || '',
-          userPhone: booking.phone_number,
+          userId: user.id,
+          userName: profile?.full_name || user.email,
+          userEmail: user.email,
+          userPhone: profile?.phone_number || '',
           serviceName: booking.service_type,
           serviceId: serviceId,
           serviceProvider: 'Melinda',
@@ -119,28 +123,37 @@ function ProfilePageContent() {
         });
       } catch (notificationError) {
         console.error('Error sending cancellation notification:', notificationError);
-        // Don't block the cancellation process if notification fails
       }
 
-      // Update local state
-      setBookings(bookings.filter(b => b.id !== booking.id));
       toast({
-        title: "Booking cancelled",
-        description: "Your booking has been cancelled successfully."
+        title: "Booking Cancelled",
+        description: "Your booking has been cancelled successfully.",
       });
     } catch (error) {
       console.error('Error cancelling booking:', error);
       toast({
         title: "Error",
         description: "Failed to cancel booking. Please try again.",
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate('/');
+    try {
+      await supabase.auth.signOut();
+      navigate('/');
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
+  const handleBackClick = () => {
+    if (role === 'admin') {
+      navigate('/admin');
+    } else {
+      navigate('/home');
+    }
   };
 
   if (loading) {
@@ -172,9 +185,9 @@ function ProfilePageContent() {
             <span>Profile Details</span>
           </button>
           <button
-            onClick={() => setActiveView('history')}
+            onClick={() => setActiveView('bookings')}
             className={`flex items-center space-x-3 text-lg rounded-md p-2 transition-colors ${
-              activeView === 'history' ? 'bg-violet-600/50 text-white' : 'hover:bg-gray-700'
+              activeView === 'bookings' ? 'bg-violet-600/50 text-white' : 'hover:bg-gray-700'
             }`}
           >
             <Calendar />
@@ -193,7 +206,7 @@ function ProfilePageContent() {
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
         <header className="h-16 bg-gray-800 border-b border-gray-700 flex items-center px-6 justify-between">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+          <Button variant="ghost" size="icon" onClick={handleBackClick}>
             <ArrowLeft className="h-6 w-6" />
           </Button>
           <h1 className="text-2xl font-semibold">Profile Overview</h1>
@@ -227,7 +240,7 @@ function ProfilePageContent() {
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-400">Phone Number</label>
-                  <p className="text-lg mt-1 text-gray-500">{profile.phone || 'Not provided'}</p>
+                  <p className="text-lg mt-1 text-gray-500">{profile.phone_number || 'Not provided'}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-400">Account Role</label>
@@ -263,9 +276,9 @@ function ProfilePageContent() {
                 onClose={() => setIsEditProfileOpen(false)}
                 userId={user.id}
                 currentName={profile.full_name || ''}
-                currentPhone={profile.phone || ''}
+                currentPhone={profile.phone_number || ''}
                 onSuccess={(newName, newPhone) => {
-                  setProfile((prev) => ({ ...prev, full_name: newName, phone: newPhone }));
+                  setProfile((prev) => ({ ...prev, full_name: newName, phone_number: newPhone }));
                 }}
               />
               
@@ -276,7 +289,7 @@ function ProfilePageContent() {
             </section>
           )}
 
-          {activeView === 'history' && (
+          {activeView === 'bookings' && (
             <section id="booking-history">
               <h2 className="text-3xl font-bold mb-6 text-violet-300 border-b border-gray-700 pb-2">Bookings</h2>
               {(() => {
@@ -412,7 +425,7 @@ function ProfilePageContent() {
           open={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           booking={selectedBooking}
-          onBookingUpdated={() => setForceUpdate(c => c + 1)}
+          onBookingUpdated={() => setRefreshTrigger(c => c + 1)}
         />
       </div>
     </div>
@@ -421,8 +434,10 @@ function ProfilePageContent() {
 
 export default function ProfilePage() {
   return (
-    <AvailabilitiesProvider>
-      <ProfilePageContent />
-    </AvailabilitiesProvider>
+    <BookingsProvider>
+      <AvailabilitiesProvider>
+        <ProfilePageContent />
+      </AvailabilitiesProvider>
+    </BookingsProvider>
   );
 } 
