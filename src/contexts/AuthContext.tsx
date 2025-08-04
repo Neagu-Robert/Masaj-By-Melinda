@@ -6,71 +6,127 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [role, setRole] = useState(null);
-  const [status, setStatus] = useState(null); // NEW
+  const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
     let ignore = false;
-    async function getSessionAndRole() {
-      setLoading(true); // Start loading
-      const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user ?? null);
 
-      if (session?.user) {
-        // Fetch role and status from profiles table
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("role, status")
-          .eq("id", session.user.id)
-          .single();
-        setRole(profile?.role || null);
-        setStatus(profile?.status || null); // NEW
-      } else {
-        setRole(null);
-        setStatus(null); // NEW
-      }
-      setLoading(false); // Finish loading
-    }
-    getSessionAndRole();
-
-    // Listen for auth state changes
-    const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setLoading(true); // Start loading on auth change
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        supabase
-          .from("profiles")
-          .select("role, status")
-          .eq("id", session.user.id)
-          .single()
-          .then(({ data: profile }) => {
+    async function loadUserData() {
+      try {
+        setLoading(true);
+        
+        // Get current session
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (ignore) return;
+        
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          // Fetch user profile
+          const { data: profile, error } = await supabase
+            .from("profiles")
+            .select("role, status")
+            .eq("id", session.user.id)
+            .single();
+          
+          if (ignore) return;
+          
+          if (error) {
+            console.error('Error fetching profile:', error);
+            setRole(null);
+            setStatus(null);
+          } else {
             setRole(profile?.role || null);
-            setStatus(profile?.status || null); // NEW
-          });
-      } else {
-        setRole(null);
-        setStatus(null); // NEW
+            setStatus(profile?.status || null);
+          }
+        } else {
+          setRole(null);
+          setStatus(null);
+        }
+      } catch (error) {
+        console.error('Error loading user data:', error);
+        if (!ignore) {
+          setUser(null);
+          setRole(null);
+          setStatus(null);
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+          setInitialized(true);
+        }
       }
-      setLoading(false); // Finish loading
-    });
+    }
+
+    // Load initial data
+    loadUserData();
 
     return () => {
-      listener?.subscription.unsubscribe();
       ignore = true;
     };
   }, []);
 
-  // Auto-logout if banned
+  // Set up auth state listener only after initial load is complete
   useEffect(() => {
-    if (status === 'banned' && user) {
+    if (!initialized) return;
+
+    let ignore = false;
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (ignore) return;
+      
+      // Only process actual auth changes, not initial session
+      if (event === 'INITIAL_SESSION') {
+        return;
+      }
+      
+      console.log('Auth state change:', event);
+      
+      // Update user immediately
+      setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        // Fetch user profile
+        const { data: profile, error } = await supabase
+          .from("profiles")
+          .select("role, status")
+          .eq("id", session.user.id)
+          .single();
+        
+        if (ignore) return;
+        
+        if (error) {
+          console.error('Error fetching profile:', error);
+          setRole(null);
+          setStatus(null);
+        } else {
+          setRole(profile?.role || null);
+          setStatus(profile?.status || null);
+        }
+      } else {
+        setRole(null);
+        setStatus(null);
+      }
+    });
+
+    return () => {
+      ignore = true;
+      subscription?.unsubscribe();
+    };
+  }, [initialized]);
+
+  // Simplified banned user effect to prevent re-render loops
+  useEffect(() => {
+    if (status === 'banned' && user && !loading) {
       supabase.auth.signOut();
       setUser(null);
       setRole(null);
       setStatus(null);
-      // Optionally, you can redirect to a banned page or show a toast here
-      // For now, just log out
     }
-  }, [status, user]);
+  }, [status, user, loading]);
 
   return (
     <AuthContext.Provider value={{ user, role, status, loading }}>

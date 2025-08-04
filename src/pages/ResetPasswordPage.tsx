@@ -18,9 +18,15 @@ export default function ResetPasswordPage() {
   const [success, setSuccess] = useState('');
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
-  // Note: Supabase handles password reset authentication internally
-  // The session is managed by Supabase, so we don't need to validate URL parameters
-  // The resetPassword function will work correctly when called
+  // Check if we have the necessary parameters from the reset link
+  useEffect(() => {
+    const accessToken = searchParams.get('access_token');
+    const refreshToken = searchParams.get('refresh_token');
+    
+    if (!accessToken || !refreshToken) {
+      setError('Invalid password reset link. Please request a new one.');
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

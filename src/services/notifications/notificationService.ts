@@ -388,8 +388,8 @@ export const sendNotification = async (payload: NotificationPayload): Promise<No
       break;
 
     case 'password_changed':
-      // Send password change notification email to user (check customer preferences)
-      if (shouldSendCustomerNotification(payload.type) && payload.recipient.email) {
+      // Send password change notification email to user
+      if (payload.recipient.email) {
         try {
           const emailResult = await sendEmailNotification(enrichedPayload);
           results.push(emailResult);

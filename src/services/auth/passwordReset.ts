@@ -17,13 +17,13 @@ export interface PasswordChangeResult {
  * Get the correct redirect URL based on environment
  */
 const getRedirectUrl = (): string => {
-  // In development, use localhost with the correct port
+  // In development, use localhost with port 8080
   if (import.meta.env.DEV) {
     return 'http://localhost:8080/reset-password';
   }
   
   // In production, use the current origin (should be your domain)
-  return `https://masajbymelinda.ro/reset-password`;
+  return `${window.location.origin}/reset-password`;
 };
 
 /**
@@ -68,8 +68,6 @@ export const sendPasswordResetEmail = async (email: string): Promise<PasswordRes
  */
 export const resetPassword = async (newPassword: string): Promise<PasswordResetResult> => {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    
     const { error } = await supabase.auth.updateUser({
       password: newPassword,
     });
@@ -80,37 +78,6 @@ export const resetPassword = async (newPassword: string): Promise<PasswordResetR
         message: 'Failed to reset password',
         error: error.message,
       };
-    }
-
-    // Send password reset notification
-    if (user) {
-      try {
-        await notify({
-          type: 'password_changed',
-          recipient: {
-            userId: user.id,
-            email: user.email!,
-            phone: '',
-            name: user.user_metadata?.full_name || user.email!
-          },
-          data: {
-            bookingId: '',
-            userId: user.id,
-            userName: user.user_metadata?.full_name || user.email!,
-            userEmail: user.email!,
-            userPhone: '',
-            serviceName: '',
-            serviceId: null,
-            dateTime: new Date().toISOString(),
-            duration: 0,
-            price: 0,
-            status: 'completed'
-          }
-        });
-      } catch (notificationError) {
-        console.error('Error sending password reset notification:', notificationError);
-        // Don't fail the password reset if notification fails
-      }
     }
 
     return {
