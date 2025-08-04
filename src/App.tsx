@@ -10,6 +10,8 @@ import NotFound from "./pages/NotFound";
 import BookingPage from "./pages/BookingPage";
 import PachetePage from "./pages/PachetePage";
 import ProfilePage from "./pages/ProfilePage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import DashboardLayout from "./pages/admin/DashboardLayout";
 import AdminHome from "./pages/admin/AdminHome";
 import Bookings from "./pages/admin/Bookings";
@@ -52,6 +54,8 @@ function App() {
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<AuthPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
               <Route path="/home" element={<Index />} />
               <Route path="/book" element={<BookingPage />} />
               <Route path="/pachete" element={<PachetePage />} />

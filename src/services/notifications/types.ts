@@ -7,7 +7,8 @@ export type NotificationType =
   | 'booking_cancelled_profile'
   | 'booking_created_admin'
   | 'booking_updated_admin'
-  | 'booking_cancelled_admin';
+  | 'booking_cancelled_admin'
+  | 'password_changed';
 
 export type NotificationChannel = 'email' | 'sms';
 
@@ -28,6 +29,7 @@ export interface NotificationPreference {
   bookingCreationEnabled: boolean;
   bookingUpdateEnabled: boolean;
   bookingCancellationEnabled: boolean;
+  passwordChangeEnabled: boolean;
 }
 
 export interface NotificationRecipient {

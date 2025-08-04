@@ -1,0 +1,104 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ArrowLeft, Mail } from 'lucide-react';
+import { sendPasswordResetEmail } from '@/services/auth/passwordReset';
+
+export default function ForgotPasswordPage() {
+  const navigate = useNavigate();
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    setLoading(true);
+
+    const result = await sendPasswordResetEmail(email);
+
+    if (result.success) {
+      setSuccess(result.message);
+      setEmail('');
+    } else {
+      setError(result.error || result.message);
+    }
+
+    setLoading(false);
+  };
+
+  const handleBackToLogin = () => {
+    navigate('/');
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-900">
+      <Card className="bg-gray-800 border-gray-700 w-full max-w-md">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl font-bold text-violet-400">
+            Reset Password
+          </CardTitle>
+          <p className="text-gray-400 mt-2">
+            Enter your email address and we'll send you a link to reset your password.
+          </p>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <label htmlFor="email" className="text-sm font-medium text-gray-200">
+                Email Address
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="pl-10 bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 focus:border-[#7E69AB]"
+                  required
+                  disabled={loading}
+                />
+              </div>
+            </div>
+
+            {error && (
+              <div className="text-red-400 text-sm bg-red-900/20 border border-red-800 rounded p-3">
+                {error}
+              </div>
+            )}
+
+            {success && (
+              <div className="text-green-400 text-sm bg-green-900/20 border border-green-800 rounded p-3">
+                {success}
+              </div>
+            )}
+
+            <Button
+              type="submit"
+              className="w-full bg-violet-600 hover:bg-violet-700 text-white"
+              disabled={loading}
+            >
+              {loading ? 'Sending...' : 'Send Reset Link'}
+            </Button>
+
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={handleBackToLogin}
+              className="w-full text-violet-400 hover:text-violet-300 hover:bg-violet-900/20"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Login
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  );
+} 

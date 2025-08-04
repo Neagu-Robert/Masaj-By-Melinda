@@ -250,6 +250,41 @@ const emailTemplates = {
       Masaj by Melinda
     `;
     return { subject, html, text };
+  },
+
+  password_changed: (data: BookingNotificationData): { subject: string; html: string; text: string } => {
+    const subject = `Password Changed Successfully`;
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #10b981;">Password Changed</h2>
+        <p>Dear ${data.userName},</p>
+        <p>Your password has been successfully changed.</p>
+        <div style="background-color: #f0fdf4; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="margin-top: 0;">Account Security Update:</h3>
+          <p><strong>Account:</strong> ${data.userEmail}</p>
+          <p><strong>Change Date:</strong> ${data.dateTime}</p>
+        </div>
+        <p>If you did not make this change, please contact us immediately for assistance.</p>
+        <p>Best regards,<br>Masaj by Melinda</p>
+      </div>
+    `;
+    const text = `
+      Password Changed Successfully
+      
+      Dear ${data.userName},
+      
+      Your password has been successfully changed.
+      
+      Account Security Update:
+      - Account: ${data.userEmail}
+      - Change Date: ${data.dateTime}
+      
+      If you did not make this change, please contact us immediately for assistance.
+      
+      Best regards,
+      Masaj by Melinda
+    `;
+    return { subject, html, text };
   }
 };
 

@@ -156,6 +156,15 @@ export default function AuthPage() {
         >
           {isLogin ? "Don't have an account? Register" : "Already have an account? Login"}
         </button>
+        {isLogin && (
+          <button
+            type="button"
+            className="w-full mt-2 text-sm text-violet-400 underline"
+            onClick={() => navigate('/forgot-password')}
+          >
+            Forgot your password?
+          </button>
+        )}
       </form>
     </div>
   );

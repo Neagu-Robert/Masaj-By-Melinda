@@ -10,6 +10,7 @@ import EditBookingModal from '@/components/booking/EditBookingModal';
 import { AvailabilitiesProvider } from "@/contexts/AvailabilitiesContext";
 import EditProfileModal from '@/components/profile/EditProfileModal';
 import NotificationPreferences from '@/components/profile/NotificationPreferences';
+import PasswordChangeModal from '@/components/profile/PasswordChangeModal';
 import { useBookingNotifications } from '@/services/notifications/hooks';
 import { toast } from '@/components/ui/use-toast';
 
@@ -26,6 +27,7 @@ function ProfilePageContent() {
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [_, setForceUpdate] = useState(0);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const [isPasswordChangeOpen, setIsPasswordChangeOpen] = useState(false);
   const { sendBookingCancellationProfile } = useBookingNotifications();
 
   useEffect(() => {
@@ -233,6 +235,23 @@ function ProfilePageContent() {
                 </div>
               </div>
               
+              {/* Password Change Section */}
+              <div className="bg-gray-800/50 p-6 rounded-lg mb-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-violet-300">Password</h3>
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsPasswordChangeOpen(true)}
+                    className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                  >
+                    Change Password
+                  </Button>
+                </div>
+                <p className="text-gray-400 text-sm">
+                  Keep your account secure by regularly updating your password.
+                </p>
+              </div>
+              
               {/* Notification Preferences */}
               <NotificationPreferences 
                 userId={user.id} 
@@ -248,6 +267,11 @@ function ProfilePageContent() {
                 onSuccess={(newName, newPhone) => {
                   setProfile((prev) => ({ ...prev, full_name: newName, phone: newPhone }));
                 }}
+              />
+              
+              <PasswordChangeModal
+                open={isPasswordChangeOpen}
+                onClose={() => setIsPasswordChangeOpen(false)}
               />
             </section>
           )}

@@ -37,7 +37,8 @@ const getUserPreferences = async (userId: string | null): Promise<NotificationPr
       userId: data.user_id,
       bookingCreationEnabled: data.booking_creation_enabled,
       bookingUpdateEnabled: data.booking_update_enabled,
-      bookingCancellationEnabled: data.booking_cancellation_enabled
+      bookingCancellationEnabled: data.booking_cancellation_enabled,
+      passwordChangeEnabled: data.password_change_enabled
     };
   } catch (error) {
     console.error('Error fetching user preferences:', error);
@@ -65,8 +66,8 @@ const getServiceDetails = async (serviceId: number | null, serviceName: string):
       }
     }
 
-    // If not found by ID, try by name
-    if (!service) {
+    // If not found by ID, try by name (only if serviceName is not empty)
+    if (!service && serviceName && serviceName.trim() !== '') {
       const { data, error } = await supabase
         .from('services')
         .select('duration, price')
@@ -237,18 +238,22 @@ export const sendNotification = async (payload: NotificationPayload): Promise<No
     }
   }
 
-  // Get service details for accurate duration and price
-  const serviceDetails = await getServiceDetails(payload.data.serviceId, payload.data.serviceName);
+  // Get service details for accurate duration and price (skip for password changes)
+  let enrichedPayload = payload;
   
-  // Update payload data with service details
-  const enrichedPayload = {
-    ...payload,
-    data: {
-      ...payload.data,
-      duration: serviceDetails.duration,
-      price: serviceDetails.price,
-    }
-  };
+  if (payload.type !== 'password_changed') {
+    const serviceDetails = await getServiceDetails(payload.data.serviceId, payload.data.serviceName);
+    
+    // Update payload data with service details
+    enrichedPayload = {
+      ...payload,
+      data: {
+        ...payload.data,
+        duration: serviceDetails.duration,
+        price: serviceDetails.price,
+      }
+    };
+  }
 
   // Determine if customer notifications should be sent based on preferences
   const shouldSendCustomerNotification = (notificationType: string): boolean => {
@@ -263,6 +268,8 @@ export const sendNotification = async (payload: NotificationPayload): Promise<No
       case 'booking_cancelled_profile':
       case 'booking_cancelled_admin':
         return preferences.bookingCancellationEnabled;
+      case 'password_changed':
+        return preferences.passwordChangeEnabled;
       default:
         return true;
     }
@@ -370,6 +377,24 @@ export const sendNotification = async (payload: NotificationPayload): Promise<No
           results.push(emailResult);
         } catch (error) {
           console.error('Error sending email notification:', error);
+          results.push({
+            success: false,
+            channel: 'email',
+            error: error as Error,
+            timestamp: Date.now()
+          });
+        }
+      }
+      break;
+
+    case 'password_changed':
+      // Send password change notification email to user (check customer preferences)
+      if (shouldSendCustomerNotification(payload.type) && payload.recipient.email) {
+        try {
+          const emailResult = await sendEmailNotification(enrichedPayload);
+          results.push(emailResult);
+        } catch (error) {
+          console.error('Error sending password change notification:', error);
           results.push({
             success: false,
             channel: 'email',

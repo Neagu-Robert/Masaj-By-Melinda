@@ -22,7 +22,8 @@ export const getNotificationPreferences = async (userId: string): Promise<Notifi
       userId: data.user_id,
       bookingCreationEnabled: data.booking_creation_enabled,
       bookingUpdateEnabled: data.booking_update_enabled,
-      bookingCancellationEnabled: data.booking_cancellation_enabled
+      bookingCancellationEnabled: data.booking_cancellation_enabled,
+      passwordChangeEnabled: data.password_change_enabled
     };
   } catch (error) {
     console.error('Error fetching notification preferences:', error);
@@ -36,6 +37,7 @@ export const saveNotificationPreferences = async (
     bookingCreationEnabled: boolean;
     bookingUpdateEnabled: boolean;
     bookingCancellationEnabled: boolean;
+    passwordChangeEnabled: boolean;
   }
 ): Promise<boolean> => {
   try {
@@ -54,6 +56,7 @@ export const saveNotificationPreferences = async (
           booking_creation_enabled: preferences.bookingCreationEnabled,
           booking_update_enabled: preferences.bookingUpdateEnabled,
           booking_cancellation_enabled: preferences.bookingCancellationEnabled,
+          password_change_enabled: preferences.passwordChangeEnabled,
           updated_at: new Date().toISOString()
         })
         .eq('user_id', userId);
@@ -70,7 +73,8 @@ export const saveNotificationPreferences = async (
           user_id: userId,
           booking_creation_enabled: preferences.bookingCreationEnabled,
           booking_update_enabled: preferences.bookingUpdateEnabled,
-          booking_cancellation_enabled: preferences.bookingCancellationEnabled
+          booking_cancellation_enabled: preferences.bookingCancellationEnabled,
+          password_change_enabled: preferences.passwordChangeEnabled
         });
 
       if (error) {

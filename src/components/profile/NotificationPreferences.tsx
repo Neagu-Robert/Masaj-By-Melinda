@@ -15,7 +15,8 @@ export default function NotificationPreferences({ userId, userRole }: Notificati
   const [preferences, setPreferences] = useState({
     bookingCreationEnabled: true,
     bookingUpdateEnabled: true,
-    bookingCancellationEnabled: true
+    bookingCancellationEnabled: true,
+    passwordChangeEnabled: true
   });
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -29,7 +30,8 @@ export default function NotificationPreferences({ userId, userRole }: Notificati
           setPreferences({
             bookingCreationEnabled: userPreferences.bookingCreationEnabled,
             bookingUpdateEnabled: userPreferences.bookingUpdateEnabled,
-            bookingCancellationEnabled: userPreferences.bookingCancellationEnabled
+            bookingCancellationEnabled: userPreferences.bookingCancellationEnabled,
+            passwordChangeEnabled: userPreferences.passwordChangeEnabled
           });
         }
       } catch (error) {
@@ -120,6 +122,19 @@ export default function NotificationPreferences({ userId, userRole }: Notificati
           />
           <Label htmlFor="booking-cancellation" className="text-white">
             Booking cancellation
+          </Label>
+        </div>
+        
+        <div className="flex items-center space-x-3">
+          <Checkbox
+            id="password-change"
+            checked={preferences.passwordChangeEnabled}
+            onCheckedChange={(checked) => 
+              setPreferences(prev => ({ ...prev, passwordChangeEnabled: !!checked }))
+            }
+          />
+          <Label htmlFor="password-change" className="text-white">
+            Password changes
           </Label>
         </div>
         
