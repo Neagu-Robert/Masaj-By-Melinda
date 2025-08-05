@@ -163,35 +163,34 @@ export default function Users() {
   };
 
   if (loading) {
-    return <div className="flex justify-center items-center h-full">Loading users...</div>;
+    return <div className="flex justify-center items-center h-full bg-gray-900 text-violet-400">Loading users...</div>;
   }
 
   if (error) {
-    return <div className="text-red-500 text-center">{error}</div>;
+    return <div className="text-red-500 text-center bg-gray-900">{error}</div>;
   }
 
   return (
-    <div className="p-6">
-      <h2 className="text-2xl font-bold mb-6">User Management</h2>
-      
-      <div className="rounded-md border">
+    <div className="p-6 bg-gray-900 min-h-screen">
+      <h2 className="text-2xl font-bold mb-6 text-violet-400">User Management</h2>
+      <div className="rounded-lg border border-gray-800 bg-gray-800/50 shadow-lg">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Created At</TableHead>
-              <TableHead>Actions</TableHead>
+              <TableHead className="text-white">Name</TableHead>
+              <TableHead className="text-white">Email</TableHead>
+              <TableHead className="text-white">Role</TableHead>
+              <TableHead className="text-white">Status</TableHead>
+              <TableHead className="text-white">Created At</TableHead>
+              <TableHead className="text-white">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {users.map((user) => (
-              <TableRow key={user.id}>
-                <TableCell>{user.full_name}</TableCell>
-                <TableCell>{user.email}</TableCell>
-                <TableCell>{user.role}</TableCell>
+              <TableRow key={user.id} className="border-b border-gray-700">
+                <TableCell className="text-gray-300">{user.full_name}</TableCell>
+                <TableCell className="text-gray-300">{user.email}</TableCell>
+                <TableCell className="text-gray-300">{user.role}</TableCell>
                 <TableCell>
                   <span className={`px-2 py-1 rounded-full text-xs ${
                     user.status === 'banned' 
@@ -201,7 +200,7 @@ export default function Users() {
                     {user.status || 'active'}
                   </span>
                 </TableCell>
-                <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
+                <TableCell className="text-gray-400">{new Date(user.created_at).toLocaleDateString()}</TableCell>
                 <TableCell>
                   {user.role === 'customer' && (
                     <div className="flex gap-2">
@@ -216,7 +215,7 @@ export default function Users() {
                             {user.status === 'banned' ? 'Unban' : 'Ban'}
                           </Button>
                         </AlertDialogTrigger>
-                        <AlertDialogContent>
+                        <AlertDialogContent className="bg-gray-800/90 text-white">
                           <AlertDialogHeader>
                             <AlertDialogTitle>
                               {user.status === 'banned' ? 'Unban User' : 'Ban User'}
@@ -249,7 +248,7 @@ export default function Users() {
                             Delete
                           </Button>
                         </AlertDialogTrigger>
-                        <AlertDialogContent>
+                        <AlertDialogContent className="bg-gray-800/90 text-white">
                           <AlertDialogHeader>
                             <AlertDialogTitle>Delete User</AlertDialogTitle>
                             <AlertDialogDescription>

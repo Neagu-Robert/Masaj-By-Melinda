@@ -4,7 +4,7 @@
 			"command": "npx",
 			"args": ["-y", "--package=task-master-ai", "task-master-ai"],
 			"env": {
-				"ANTHROPIC_API_KEY": "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",
+				"ANTHROPIC_API_KEY": "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",
 				"MAX_TOKENS": "120000",
 				"TEMPERATURE": "0.2",
 				"VITE_SUPABASE_URL": "https://dgzmqlwqlfmdbnwqjjjr.supabase.co",

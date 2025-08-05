@@ -169,6 +169,25 @@ function ProfilePageContent() {
     );
   }
 
+  // Helper to format date and time as 'HH:mm | DD/MM/YYYY'
+  function formatBookingDateTime(dateStr: string, timeStr: string) {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    // If timeStr is present, use it; otherwise fallback to 00:00
+    const [hour, minute] = (timeStr || '00:00').split(':');
+    date.setHours(Number(hour), Number(minute));
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    return `${pad(date.getHours())}:${pad(date.getMinutes())} | ${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()}`;
+  }
+
+  // Helper to format just a datetime string as 'HH:mm | DD/MM/YYYY'
+  function formatDateTime(dateStr: string) {
+    if (!dateStr) return '—';
+    const date = new Date(dateStr);
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    return `${pad(date.getHours())}:${pad(date.getMinutes())} | ${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()}`;
+  }
+
   return (
     <div className="flex h-screen bg-gray-900 text-white">
       {/* Sidebar */}
@@ -329,9 +348,9 @@ function ProfilePageContent() {
                           {future.length > 0 ? future.map((booking) => (
                             <TableRow key={booking.id} className="border-b-gray-800">
                               <TableCell>{booking.service_type}</TableCell>
-                              <TableCell>{new Date(booking.booking_date).toLocaleDateString()}</TableCell>
-                              <TableCell>{booking.created_at ? new Date(booking.created_at).toLocaleString() : '—'}</TableCell>
-                              <TableCell>{booking.updated_at ? new Date(booking.updated_at).toLocaleString() : '—'}</TableCell>
+                              <TableCell>{formatBookingDateTime(booking.booking_date, booking.booking_time)}</TableCell>
+                              <TableCell>{formatDateTime(booking.created_at)}</TableCell>
+                              <TableCell>{booking.updated_at ? formatDateTime(booking.updated_at) : '—'}</TableCell>
                               <TableCell>
                                 <div className="flex space-x-2">
                                   <Button variant="ghost" size="icon" onClick={() => handleEditClick(booking)}>
@@ -370,9 +389,9 @@ function ProfilePageContent() {
                           {todayBookings.length > 0 ? todayBookings.map((booking) => (
                             <TableRow key={booking.id} className="border-b-gray-800">
                               <TableCell>{booking.service_type}</TableCell>
-                              <TableCell>{new Date(booking.booking_date).toLocaleDateString()}</TableCell>
-                              <TableCell>{booking.created_at ? new Date(booking.created_at).toLocaleString() : '—'}</TableCell>
-                              <TableCell>{booking.updated_at ? new Date(booking.updated_at).toLocaleString() : '—'}</TableCell>
+                              <TableCell>{formatBookingDateTime(booking.booking_date, booking.booking_time)}</TableCell>
+                              <TableCell>{formatDateTime(booking.created_at)}</TableCell>
+                              <TableCell>{booking.updated_at ? formatDateTime(booking.updated_at) : '—'}</TableCell>
                             </TableRow>
                           )) : (
                             <TableRow>
@@ -401,9 +420,9 @@ function ProfilePageContent() {
                           {past.length > 0 ? past.map((booking) => (
                             <TableRow key={booking.id} className="border-b-gray-800">
                               <TableCell>{booking.service_type}</TableCell>
-                              <TableCell>{new Date(booking.booking_date).toLocaleDateString()}</TableCell>
-                              <TableCell>{booking.created_at ? new Date(booking.created_at).toLocaleString() : '—'}</TableCell>
-                              <TableCell>{booking.updated_at ? new Date(booking.updated_at).toLocaleString() : '—'}</TableCell>
+                              <TableCell>{formatBookingDateTime(booking.booking_date, booking.booking_time)}</TableCell>
+                              <TableCell>{formatDateTime(booking.created_at)}</TableCell>
+                              <TableCell>{booking.updated_at ? formatDateTime(booking.updated_at) : '—'}</TableCell>
                             </TableRow>
                           )) : (
                             <TableRow>

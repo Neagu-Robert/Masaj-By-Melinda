@@ -38,8 +38,8 @@ export default function AuditLogs() {
   const [error, setError] = useState<string | null>(null);
 
   // Filter states
-  const [actionFilter, setActionFilter] = useState<string | undefined>(undefined);
-  const [targetTypeFilter, setTargetTypeFilter] = useState<string | undefined>(undefined);
+  const [actionFilter, setActionFilter] = useState<string>("all");
+  const [targetTypeFilter, setTargetTypeFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
 
   // Fetch audit logs
@@ -77,8 +77,8 @@ export default function AuditLogs() {
 
   // Filter logs
   const filteredLogs = logs.filter(log => {
-    const matchesAction = !actionFilter || log.action === actionFilter;
-    const matchesTargetType = !targetTypeFilter || log.target_type === targetTypeFilter;
+    const matchesAction = actionFilter === "all" || log.action === actionFilter;
+    const matchesTargetType = targetTypeFilter === "all" || log.target_type === targetTypeFilter;
     const matchesSearch = !searchQuery || 
       log.details.toLowerCase().includes(searchQuery.toLowerCase()) ||
       log.profiles.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -88,97 +88,84 @@ export default function AuditLogs() {
   });
 
   return (
-    <div className="p-6">
-      <h2 className="text-2xl font-bold mb-6">Audit Logs</h2>
-
-      {/* Notification System Status */}
-      <div className="mb-8">
-        <h3 className="text-xl font-semibold mb-4">Notification System Status</h3>
-
-      </div>
-
+    <div className="max-w-4xl mx-auto p-4 bg-gray-900 min-h-screen">
+      <h2 className="text-2xl font-bold mb-6 text-violet-400">Audit Logs</h2>
       {/* Filters */}
       <div className="grid grid-cols-3 gap-4 mb-6">
         <div>
           <Select
             value={actionFilter}
-            onValueChange={v => setActionFilter(v === "" ? undefined : v)}
+            onValueChange={setActionFilter}
           >
-            <SelectTrigger>
+            <SelectTrigger className="bg-gray-800/50 text-white border-gray-700">
               <SelectValue placeholder="All Actions" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-gray-800/90 text-white">
+              <SelectItem value="all">All Actions</SelectItem>
               {uniqueActions.map(action => (
                 <SelectItem key={action} value={action}>{action}</SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
-
         <div>
           <Select
             value={targetTypeFilter}
-            onValueChange={v => setTargetTypeFilter(v === "" ? undefined : v)}
+            onValueChange={setTargetTypeFilter}
           >
-            <SelectTrigger>
+            <SelectTrigger className="bg-gray-800/50 text-white border-gray-700">
               <SelectValue placeholder="All Types" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-gray-800/90 text-white">
+              <SelectItem value="all">All Types</SelectItem>
               {uniqueTargetTypes.map(type => (
                 <SelectItem key={type} value={type}>{type}</SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
-
         <div>
           <Input
             placeholder="Search in details or user..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            className="bg-gray-800/50 text-white border-gray-700"
           />
         </div>
       </div>
-
       {/* Logs Table */}
       {loading ? (
-        <div className="text-center py-8">Loading audit logs...</div>
+        <div className="text-center py-8 text-gray-400">Loading audit logs...</div>
       ) : error ? (
         <div className="text-red-500 text-center py-8">{error}</div>
       ) : (
-        <div className="rounded-md border">
+        <div className="rounded-lg border border-gray-800 bg-gray-800/50 shadow-lg">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Admin</TableHead>
-                <TableHead>Action</TableHead>
-                <TableHead>Target Type</TableHead>
-                <TableHead>Target ID</TableHead>
-                <TableHead>Details</TableHead>
+                <TableHead className="text-white w-1/4">Date</TableHead>
+                <TableHead className="text-white w-1/4">Admin</TableHead>
+                <TableHead className="text-white w-1/4">Action</TableHead>
+                <TableHead className="text-white w-1/4">Target Type</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredLogs.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-4">
+                  <TableCell colSpan={4} className="text-center py-4 text-gray-400">
                     No audit logs found
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredLogs.map((log) => (
-                  <TableRow key={log.id}>
-                    <TableCell>
-                      {new Date(log.created_at).toLocaleString()}
-                    </TableCell>
-                    <TableCell>
+                  <TableRow key={log.id} className="border-b border-gray-700">
+                    <TableCell className="text-gray-300">{new Date(log.created_at).toLocaleString()}</TableCell>
+                    <TableCell className="text-gray-300">
                       <div>{log.profiles.full_name}</div>
                       <div className="text-sm text-gray-500">{log.profiles.email}</div>
                     </TableCell>
-                    <TableCell>{log.action}</TableCell>
-                    <TableCell>{log.target_type}</TableCell>
-                    <TableCell className="font-mono text-sm">{log.target_id}</TableCell>
-                    <TableCell>{log.details}</TableCell>
+                    <TableCell className="text-gray-300">{log.action}</TableCell>
+                    <TableCell className="text-gray-300">{log.target_type}</TableCell>
                   </TableRow>
                 ))
               )}

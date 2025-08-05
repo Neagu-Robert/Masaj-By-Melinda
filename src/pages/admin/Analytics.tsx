@@ -155,12 +155,12 @@ export default function Analytics() {
   }, []);
 
   return (
-    <div className="max-w-4xl mx-auto p-4">
+    <div className="max-w-4xl mx-auto p-4 bg-gray-900 min-h-screen">
       <h2 className="text-2xl font-bold mb-6 text-violet-400">Analytics</h2>
-      <div className="bg-card rounded-lg shadow-lg p-6 mb-8">
-        <h3 className="text-lg font-semibold mb-4 text-foreground">Bookings per Service (Last 30 Days)</h3>
+      <div className="bg-gray-800/50 rounded-lg shadow-lg p-6 mb-8">
+        <h3 className="text-lg font-semibold mb-4 text-violet-300">Bookings per Service (Last 30 Days)</h3>
         {loading ? (
-          <p>Loading analytics...</p>
+          <p className="text-gray-400">Loading analytics...</p>
         ) : error ? (
           <p className="text-red-500">Error: {error}</p>
         ) : (
@@ -175,11 +175,10 @@ export default function Analytics() {
           </ResponsiveContainer>
         )}
       </div>
-      {/* Next: Add heatmap/grouped bar chart for bookings by day/hour */}
-      <div className="bg-card rounded-lg shadow-lg p-6 mb-8">
-        <h3 className="text-lg font-semibold mb-4 text-foreground">Bookings by Day of Week & Hour (Last 30 Days)</h3>
+      <div className="bg-gray-800/50 rounded-lg shadow-lg p-6 mb-8">
+        <h3 className="text-lg font-semibold mb-4 text-violet-300">Bookings by Day of Week & Hour (Last 30 Days)</h3>
         {loading ? (
-          <p>Loading analytics...</p>
+          <p className="text-gray-400">Loading analytics...</p>
         ) : error ? (
           <p className="text-red-500">Error: {error}</p>
         ) : (
@@ -197,10 +196,10 @@ export default function Analytics() {
           </ResponsiveContainer>
         )}
       </div>
-      <div className="bg-card rounded-lg shadow-lg p-6 mb-8">
-        <h3 className="text-lg font-semibold mb-4 text-foreground">Bookings Over Time (Last 30 Days)</h3>
+      <div className="bg-gray-800/50 rounded-lg shadow-lg p-6 mb-8">
+        <h3 className="text-lg font-semibold mb-4 text-violet-300">Bookings Over Time (Last 30 Days)</h3>
         {loading ? (
-          <p>Loading analytics...</p>
+          <p className="text-gray-400">Loading analytics...</p>
         ) : error ? (
           <p className="text-red-500">Error: {error}</p>
         ) : (
@@ -215,10 +214,10 @@ export default function Analytics() {
           </ResponsiveContainer>
         )}
       </div>
-      <div className="bg-card rounded-lg shadow-lg p-6 mb-8">
-        <h3 className="text-lg font-semibold mb-4 text-foreground">Booking Distribution by Service (Last 30 Days)</h3>
+      <div className="bg-gray-800/50 rounded-lg shadow-lg p-6 mb-8">
+        <h3 className="text-lg font-semibold mb-4 text-violet-300">Booking Distribution by Service (Last 30 Days)</h3>
         {loading ? (
-          <p>Loading analytics...</p>
+          <p className="text-gray-400">Loading analytics...</p>
         ) : error ? (
           <p className="text-red-500">Error: {error}</p>
         ) : (

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { logAdminAction } from "@/lib/audit-logger";
+import { Eye, EyeOff } from 'lucide-react';
 
 export default function AuthPage() {
   const { user, role, loading: authLoading } = useAuth();
@@ -16,6 +17,7 @@ export default function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
   const [isBanned, setIsBanned] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     // This effect handles redirection after a successful login
@@ -120,15 +122,27 @@ export default function AuthPage() {
           required
           disabled={isBanned}
         />
-        <input
-          className="w-full mb-3 p-2 rounded bg-gray-700 text-white disabled:opacity-50"
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={e => setPassword(e.target.value)}
-          required
-          disabled={isBanned}
-        />
+        <div className="relative mb-3">
+          <input
+            className="w-full p-2 rounded bg-gray-700 text-white disabled:opacity-50 pr-10"
+            type={showPassword ? 'text' : 'password'}
+            placeholder="Password"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            required
+            disabled={isBanned}
+          />
+          <button
+            type="button"
+            tabIndex={-1}
+            onClick={() => setShowPassword((prev) => !prev)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200"
+            aria-label={showPassword ? 'Hide password' : 'Show password'}
+            disabled={isBanned}
+          >
+            {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+          </button>
+        </div>
         {!isLogin && (
           <input
             className="w-full mb-3 p-2 rounded bg-gray-700 text-white disabled:opacity-50"

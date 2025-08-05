@@ -2,7 +2,8 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, Package, Calendar, Menu, X } from 'lucide-react';
+import { Home, Package, Calendar, Menu, X, User } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 const HOME_PATH = '/home';
 
@@ -10,6 +11,7 @@ const BookingHeader = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { user, role } = useAuth();
   
   const handleLogoClick = () => {
     setIsMobileMenuOpen(false);
@@ -63,7 +65,7 @@ const BookingHeader = () => {
             Masaj by Melinda
           </div>
           {/* Desktop Navigation */}
-          <div className="hidden md:flex space-x-6">
+          <div className="hidden md:flex space-x-6 items-center">
             <Button 
               variant={isActive(HOME_PATH) ? "default" : "ghost"}
               className={isActive(HOME_PATH) 
@@ -90,6 +92,16 @@ const BookingHeader = () => {
             >
               <Calendar className="mr-1" /> Rezerva acum
             </Button>
+            {user && role !== 'admin' && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="rounded-full bg-[#9b87f5] text-white hover:bg-[#7E69AB]"
+                onClick={() => handleNavigation('/profile')}
+              >
+                <User className="h-6 w-6" />
+              </Button>
+            )}
           </div>
           {/* Mobile Menu Button */}
           <Button
@@ -131,6 +143,14 @@ const BookingHeader = () => {
               >
                 <Calendar className="mr-2 h-5 w-5" /> Rezerva acum
               </Button>
+              {user && role !== 'admin' && (
+                <Button
+                  className="w-full justify-start h-12 bg-[#9b87f5] text-white hover:bg-[#7E69AB]"
+                  onClick={() => handleNavigation('/profile')}
+                >
+                  <User className="mr-2 h-5 w-5" /> Profile
+                </Button>
+              )}
             </div>
           </div>
         )}
