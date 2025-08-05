@@ -50,6 +50,9 @@ export const sendPasswordResetEmail = async (email: string): Promise<PasswordRes
     }
 
     // Send notification email about password reset request
+    // Note: We don't send notifications for password reset requests since we don't have user preferences
+    // and it could be spam. Users will get the actual reset email from Supabase.
+    /*
     try {
       await notify({
         type: 'password_reset_requested',
@@ -77,6 +80,7 @@ export const sendPasswordResetEmail = async (email: string): Promise<PasswordRes
       console.error('Error sending password reset notification:', notificationError);
       // Don't fail the password reset if notification fails
     }
+    */
 
     return {
       success: true,

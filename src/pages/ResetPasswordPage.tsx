@@ -21,7 +21,19 @@ export default function ResetPasswordPage() {
   // Check if we have the necessary parameters from the reset link
   useEffect(() => {
     // Supabase handles token verification automatically
-    // No need to manually check for tokens
+    // But we need to handle hash fragments that might be present
+    const hash = window.location.hash;
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    // Check if we have tokens in either search params or hash
+    const hasTokens = urlParams.get('access_token') || hash.includes('access_token');
+    
+    if (hasTokens) {
+      console.log('Password reset link with tokens detected');
+      // Supabase will handle the authentication automatically
+    } else {
+      console.log('No tokens found in URL - this might be a direct visit');
+    }
   }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
