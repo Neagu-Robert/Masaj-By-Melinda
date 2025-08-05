@@ -6,32 +6,20 @@
   },
   "routes": [
     {
-      "src": "/reset-password",
-      "dest": "/index.html"
+      "src": "/assets/(.*)",
+      "dest": "/assets/$1"
     },
     {
-      "src": "/admin(.*)",
-      "dest": "/index.html"
+      "src": "/(.*\\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|webp))",
+      "dest": "/$1"
     },
     {
-      "src": "/profile",
-      "dest": "/index.html"
+      "src": "/favicon.ico",
+      "dest": "/favicon.ico"
     },
     {
-      "src": "/home",
-      "dest": "/index.html"
-    },
-    {
-      "src": "/book",
-      "dest": "/index.html"
-    },
-    {
-      "src": "/pachete",
-      "dest": "/index.html"
-    },
-    {
-      "src": "/forgot-password",
-      "dest": "/index.html"
+      "src": "/robots.txt",
+      "dest": "/robots.txt"
     },
     {
       "src": "/(.*)",
