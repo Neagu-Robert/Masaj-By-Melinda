@@ -223,7 +223,7 @@ export const sendNotification = async (payload: NotificationPayload): Promise<No
   // Get user preferences (skip for demo users)
   const preferences = await getUserPreferences(payload.recipient.userId);
   
-  // Get user role to determine channel (customers get email, admins get SMS)
+  // Get user role (used for logging purposes)
   let userRole = 'customer'; // Default
   if (payload.recipient.userId) {
     try {
@@ -255,10 +255,10 @@ export const sendNotification = async (payload: NotificationPayload): Promise<No
     };
   }
 
-  // Determine if customer notifications should be sent based on preferences
-  const shouldSendCustomerNotification = (notificationType: string): boolean => {
+  // Determine if email notifications should be sent based on preferences
+  const shouldSendEmailNotification = (notificationType: string): boolean => {
     if (!preferences) {
-      console.log(`No preferences found for user ${payload.recipient.userId}, defaulting to send notification for ${notificationType}`);
+      console.log(`No preferences found for user ${payload.recipient.userId}, defaulting to send email notification for ${notificationType}`);
       return true; // Default to sending if no preferences
     }
     
@@ -283,15 +283,15 @@ export const sendNotification = async (payload: NotificationPayload): Promise<No
         shouldSend = true;
     }
     
-    console.log(`Notification preference check for ${notificationType}: ${shouldSend} (user: ${payload.recipient.userId})`);
+    console.log(`Email notification preference check for ${notificationType}: ${shouldSend} (user: ${payload.recipient.userId})`);
     return shouldSend;
   };
 
   // Handle different notification types according to new specifications
   switch (payload.type) {
     case 'booking_created_customer':
-      // Send email to customer (check customer preferences)
-      if (shouldSendCustomerNotification(payload.type) && payload.recipient.email) {
+      // Send email to customer (check email preferences)
+      if (shouldSendEmailNotification(payload.type) && payload.recipient.email) {
         try {
           const emailResult = await sendEmailNotification(enrichedPayload);
           results.push(emailResult);
@@ -306,15 +306,15 @@ export const sendNotification = async (payload: NotificationPayload): Promise<No
         }
       }
       
-      // Send SMS to admins (admin preferences don't affect customer notifications)
+      // Always send SMS to admins (no preference check)
       const adminSmsResults = await sendAdminSmsNotifications(payload.type, enrichedPayload.data);
       results.push(...adminSmsResults);
       break;
 
     case 'booking_updated_profile':
     case 'booking_cancelled_profile':
-      // Send email to customer (check customer preferences)
-      if (shouldSendCustomerNotification(payload.type) && payload.recipient.email) {
+      // Send email to customer (check email preferences)
+      if (shouldSendEmailNotification(payload.type) && payload.recipient.email) {
         try {
           const emailResult = await sendEmailNotification(enrichedPayload);
           results.push(emailResult);
@@ -329,21 +329,20 @@ export const sendNotification = async (payload: NotificationPayload): Promise<No
         }
       }
       
-      // Send SMS to admins (admin preferences don't affect customer notifications)
+      // Always send SMS to admins (no preference check)
       const adminSmsResults2 = await sendAdminSmsNotifications(payload.type, enrichedPayload.data);
       results.push(...adminSmsResults2);
       break;
 
     case 'booking_created_admin':
-      // Only send SMS to admins (check admin preferences)
-      // For now, always send admin notifications since we don't have admin preference checking
+      // Always send SMS to admins (no preference check)
       const adminSmsResults3 = await sendAdminSmsNotifications(payload.type, enrichedPayload.data);
       results.push(...adminSmsResults3);
       break;
 
     case 'booking_updated_admin':
-      // Send email to customer (check customer preferences)
-      if (shouldSendCustomerNotification(payload.type) && payload.recipient.email) {
+      // Send email to customer (check email preferences)
+      if (shouldSendEmailNotification(payload.type) && payload.recipient.email) {
         try {
           const emailResult = await sendEmailNotification(enrichedPayload);
           results.push(emailResult);
@@ -358,14 +357,14 @@ export const sendNotification = async (payload: NotificationPayload): Promise<No
         }
       }
       
-      // Send SMS to admins (admin preferences don't affect customer notifications)
+      // Always send SMS to admins (no preference check)
       const adminSmsResults4 = await sendAdminSmsNotifications(payload.type, enrichedPayload.data);
       results.push(...adminSmsResults4);
       break;
 
     case 'booking_cancelled_admin':
-      // Only send email to customer (check customer preferences)
-      if (shouldSendCustomerNotification(payload.type) && payload.recipient.email) {
+      // Only send email to customer (check email preferences)
+      if (shouldSendEmailNotification(payload.type) && payload.recipient.email) {
         try {
           const emailResult = await sendEmailNotification(enrichedPayload);
           results.push(emailResult);
@@ -382,8 +381,8 @@ export const sendNotification = async (payload: NotificationPayload): Promise<No
       break;
 
     case 'reminder':
-      // Send reminder email to customer only (check customer preferences)
-      if (shouldSendCustomerNotification(payload.type) && payload.recipient.email) {
+      // Send reminder email to customer only (check email preferences)
+      if (shouldSendEmailNotification(payload.type) && payload.recipient.email) {
         try {
           const emailResult = await sendEmailNotification(enrichedPayload);
           results.push(emailResult);
@@ -400,8 +399,8 @@ export const sendNotification = async (payload: NotificationPayload): Promise<No
       break;
 
     case 'password_changed':
-      // Send password change notification email to user (check customer preferences)
-      if (shouldSendCustomerNotification(payload.type) && payload.recipient.email) {
+      // Send password change notification email to user (check email preferences)
+      if (shouldSendEmailNotification(payload.type) && payload.recipient.email) {
         try {
           const emailResult = await sendEmailNotification(enrichedPayload);
           results.push(emailResult);
@@ -418,8 +417,8 @@ export const sendNotification = async (payload: NotificationPayload): Promise<No
       break;
 
     case 'password_reset_requested':
-      // Send password reset request notification email to user (check customer preferences)
-      if (shouldSendCustomerNotification(payload.type) && payload.recipient.email) {
+      // Send password reset request notification email to user (check email preferences)
+      if (shouldSendEmailNotification(payload.type) && payload.recipient.email) {
         try {
           const emailResult = await sendEmailNotification(enrichedPayload);
           results.push(emailResult);
@@ -437,8 +436,8 @@ export const sendNotification = async (payload: NotificationPayload): Promise<No
 
     default:
       // Default behavior for other notification types
-      // Send email notification (check customer preferences)
-      if (shouldSendCustomerNotification(payload.type) && payload.recipient.email) {
+      // Send email notification (check email preferences)
+      if (shouldSendEmailNotification(payload.type) && payload.recipient.email) {
         try {
           const emailResult = await sendEmailNotification(enrichedPayload);
           results.push(emailResult);
@@ -453,7 +452,7 @@ export const sendNotification = async (payload: NotificationPayload): Promise<No
         }
       }
 
-      // Send SMS notification (for admin notifications)
+      // Send SMS notification (always sent to admins regardless of preferences)
       if (payload.recipient.phone) {
         try {
           const smsResult = await sendSmsNotification(enrichedPayload);

@@ -358,6 +358,14 @@ function ProfilePageContent() {
                 userId={user.id} 
                 userRole={role} 
               />
+              {role === 'admin' && (
+                <div className="bg-blue-900/20 border border-blue-700/50 rounded-lg p-4 mt-4">
+                  <p className="text-blue-300 text-sm">
+                    <strong>Note:</strong> SMS notifications are always sent to the Head admin regardless of preferences. 
+                    Email preferences only control email notifications.
+                  </p>
+                </div>
+              )}
               
               <EditProfileModal
                 open={isEditProfileOpen}

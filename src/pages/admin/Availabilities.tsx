@@ -151,18 +151,19 @@ export default function Availabilities() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-6">
-      <h2 className="text-2xl font-bold mb-6">Manage Availabilities</h2>
-      <div className="flex items-center justify-between mb-4">
-        <button onClick={() => setCurrentMonth(subMonths(currentMonth, 1))} className="px-3 py-1 bg-gray-700 rounded">Prev</button>
-        <span className="text-xl font-semibold">{monthStr}</span>
-        <button onClick={() => setCurrentMonth(addMonths(currentMonth, 1))} className="px-3 py-1 bg-gray-700 rounded">Next</button>
+    <div className="min-h-screen bg-gray-900 text-white p-4 md:p-6">
+      <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-violet-400">Manage Availabilities</h2>
+      <div className="flex items-center justify-between mb-4 md:mb-6">
+        <button onClick={() => setCurrentMonth(subMonths(currentMonth, 1))} className="px-3 py-2 bg-gray-700 rounded hover:bg-gray-600 transition-colors">Prev</button>
+        <span className="text-lg md:text-xl font-semibold">{monthStr}</span>
+        <button onClick={() => setCurrentMonth(addMonths(currentMonth, 1))} className="px-3 py-2 bg-gray-700 rounded hover:bg-gray-600 transition-colors">Next</button>
       </div>
       {loading && <div className="mb-4 text-violet-400">Loading...</div>}
+      
       {/* Calendar grid */}
       <div className="grid grid-cols-7 gap-2 mb-6">
         {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(d => (
-          <div key={d} className="text-center text-gray-400">{d}</div>
+          <div key={d} className="text-center text-gray-400 text-sm md:text-base font-medium">{d}</div>
         ))}
         {days.map(day => {
           const isPast = day < today;
@@ -174,7 +175,7 @@ export default function Availabilities() {
               key={day.toISOString()}
               onClick={() => !isPast && setSelectedDay(day)}
               disabled={isPast}
-              className={`aspect-square w-10 rounded flex items-center justify-center border transition-colors
+              className={`aspect-square w-10 md:w-12 rounded flex items-center justify-center border transition-colors text-sm md:text-base font-medium
                 ${isPast ? "bg-gray-800 text-gray-700 cursor-not-allowed" : ""}
                 ${!isPast && !isCurrentMonth ? "bg-gray-800 text-gray-600" : ""}
                 ${!isPast && isCurrentMonth && (allOff ? "bg-gray-700 text-gray-500" : "bg-violet-400 text-gray-900")}
@@ -186,27 +187,30 @@ export default function Availabilities() {
           );
         })}
       </div>
+      
       {/* Hours section */}
       {selectedDay && (
-        <div className="bg-gray-800 rounded p-4 mb-4">
-          <div className="flex items-center mb-2">
-            <span className="text-lg font-semibold mr-4">{format(selectedDay, "PPP")}</span>
+        <div className="bg-gray-800 rounded p-4 md:p-6 mb-4 md:mb-6">
+          <div className="flex flex-col md:flex-row md:items-center mb-4 md:mb-6">
+            <span className="text-lg md:text-xl font-semibold mb-2 md:mb-0">{format(selectedDay, "PPP")}</span>
             <button
               onClick={() => toggleWholeDay(selectedDay)}
               disabled={selectedDay < today}
-              className={`ml-auto px-3 py-1 rounded bg-gray-700 hover:bg-gray-600 ${selectedDay < today ? "cursor-not-allowed opacity-50" : ""}`}
+              className={`md:ml-auto px-4 py-2 rounded bg-gray-700 hover:bg-gray-600 transition-colors w-full md:w-auto ${selectedDay < today ? "cursor-not-allowed opacity-50" : ""}`}
             >
               Toggle whole day {isDayAllOff(selectedDay) ? "on" : "off"}
             </button>
           </div>
-          <div className="grid grid-cols-5 gap-2">
+          
+          {/* Hours Grid - More vertical spacing */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
             {HOURS.map(hour => (
               <button
                 key={hour}
                 onClick={() => toggleHour(selectedDay, hour)}
                 disabled={selectedDay < today}
-                className={`px-3 py-2 rounded font-mono transition-colors
-                  ${selectedDay < today ? "bg-gray-700/50 text-gray-500 cursor-not-allowed" : isHourAvailable(selectedDay, hour) ? "bg-violet-400 text-gray-900" : "bg-gray-700 text-gray-400"}
+                className={`px-4 py-3 md:py-4 rounded font-mono transition-colors text-sm md:text-base font-medium
+                  ${selectedDay < today ? "bg-gray-700/50 text-gray-500 cursor-not-allowed" : isHourAvailable(selectedDay, hour) ? "bg-violet-400 text-gray-900 hover:bg-violet-300" : "bg-gray-700 text-gray-400 hover:bg-gray-600"}
                 `}
               >
                 {hour}
@@ -215,10 +219,11 @@ export default function Availabilities() {
           </div>
         </div>
       )}
+      
       <button
         onClick={handleSave}
         disabled={!dirty || loading}
-        className={`mt-4 px-6 py-2 rounded bg-violet-400 text-gray-900 font-bold transition-opacity ${dirty && !loading ? "opacity-100" : "opacity-50 cursor-not-allowed"}`}
+        className={`mt-4 md:mt-6 px-6 py-3 md:py-4 rounded bg-violet-400 text-gray-900 font-bold transition-opacity text-base md:text-lg w-full md:w-auto ${dirty && !loading ? "opacity-100 hover:bg-violet-300" : "opacity-50 cursor-not-allowed"}`}
       >
         {loading ? "Saving..." : "Save"}
       </button>

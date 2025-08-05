@@ -66,6 +66,15 @@ const BookingHeader = () => {
           </div>
           {/* Desktop Navigation */}
           <div className="hidden md:flex space-x-6 items-center">
+            {role === 'admin' && (
+              <Button
+                variant="ghost"
+                className="text-gray-300 hover:text-white hover:bg-white/10"
+                onClick={() => handleNavigation('/admin')}
+              >
+                Back to Dashboard
+              </Button>
+            )}
             <Button 
               variant={isActive(HOME_PATH) ? "default" : "ghost"}
               className={isActive(HOME_PATH) 
@@ -117,6 +126,15 @@ const BookingHeader = () => {
         {isMobileMenuOpen && (
           <div className="md:hidden mt-4 pb-4 border-t border-gray-700">
             <div className="flex flex-col space-y-2 pt-4">
+              {role === 'admin' && (
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start h-12 text-gray-300 hover:text-white hover:bg-white/10"
+                  onClick={() => handleNavigation('/admin')}
+                >
+                  Back to Dashboard
+                </Button>
+              )}
               <Button 
                 variant={isActive(HOME_PATH) ? "default" : "ghost"}
                 className={`w-full justify-start h-12 ${isActive(HOME_PATH) 

@@ -2,11 +2,17 @@ import React, { useState } from "react";
 import { useBookings } from "../../contexts/BookingsContext";
 import { useServices } from "../../contexts/ServicesContext";
 import { toast } from "@/components/ui/use-toast";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import BookingFormModal from "@/components/admin/BookingFormModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { logAdminAction } from "@/lib/audit-logger";
 import { useBookingNotifications } from "@/services/notifications/hooks";
 import { supabase } from "@/integrations/supabase/client";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Edit, Trash2, Plus } from "lucide-react";
 
 export default function Bookings() {
   const { bookings, loading, addBooking, updateBooking, deleteBooking } = useBookings();
@@ -20,7 +26,7 @@ export default function Bookings() {
   const [searchName, setSearchName] = useState("");
   const [searchEmail, setSearchEmail] = useState("");
   const [searchDate, setSearchDate] = useState("");
-  const [searchService, setSearchService] = useState("");
+  const [searchService, setSearchService] = useState("all");
 
   // Handlers for CRUD
   const handleEdit = (booking: any) => {
@@ -123,7 +129,7 @@ export default function Bookings() {
     // Date filter
     const matchesDate = !searchDate || b.booking_date === searchDate;
     // Service filter
-    const matchesService = !searchService || b.service_type === searchService;
+    const matchesService = !searchService || searchService === "all" || b.service_type === searchService;
     return matchesName && matchesEmail && matchesDate && matchesService;
   });
 
@@ -131,83 +137,151 @@ export default function Bookings() {
   const serviceTypes = Array.from(new Set(bookings.map((b: any) => b.service_type).filter(Boolean)));
 
   return (
-    <div>
-      <h2 className="text-xl font-bold mb-4">Bookings</h2>
+    <div className="max-w-6xl mx-auto p-4 bg-gray-900 min-h-screen">
+      <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-violet-400">Bookings</h2>
+      
       {/* Filter/Search UI */}
-      <div className="flex flex-wrap gap-4 mb-4">
-        <input
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-3 md:gap-4 mb-4 md:mb-6">
+        <Input
           type="text"
           placeholder="Search by name"
           value={searchName}
           onChange={e => setSearchName(e.target.value)}
-          className="px-2 py-1 rounded bg-gray-700 text-white"
+          className="bg-gray-800/50 text-white border-gray-700 h-10 md:h-9"
         />
-        <input
+        <Input
           type="text"
           placeholder="Search by email"
           value={searchEmail}
           onChange={e => setSearchEmail(e.target.value)}
-          className="px-2 py-1 rounded bg-gray-700 text-white"
+          className="bg-gray-800/50 text-white border-gray-700 h-10 md:h-9"
         />
-        <input
+        <Input
           type="date"
           value={searchDate}
           onChange={e => setSearchDate(e.target.value)}
-          className="px-2 py-1 rounded bg-gray-700 text-white"
+          className="bg-gray-800/50 text-white border-gray-700 h-10 md:h-9"
         />
-        <select
-          value={searchService}
-          onChange={e => setSearchService(e.target.value)}
-          className="px-2 py-1 rounded bg-gray-700 text-white"
-        >
-          <option value="">All Services</option>
-          {serviceTypes.map((type: string) => (
-            <option key={type} value={type}>{type}</option>
-          ))}
-        </select>
+        <Select value={searchService} onValueChange={setSearchService}>
+          <SelectTrigger className="bg-gray-800/50 text-white border-gray-700 h-10 md:h-9">
+            <SelectValue placeholder="All Services" />
+          </SelectTrigger>
+          <SelectContent className="bg-gray-800/90 text-white">
+            <SelectItem value="all">All Services</SelectItem>
+            {serviceTypes.map((type: string) => (
+              <SelectItem key={type} value={type}>{type}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
-      <button onClick={handleCreate} className="mb-4 px-4 py-2 bg-violet-600 text-white rounded hover:bg-violet-700">Add Booking</button>
-      <div className="overflow-x-auto">
-        <table className="min-w-full bg-gray-800 text-white rounded shadow">
-          <thead>
-            <tr>
-              <th className="px-4 py-2">Name</th>
-              <th className="px-4 py-2">Email</th>
-              <th className="px-4 py-2">Phone</th>
-              <th className="px-4 py-2">Service</th>
-              <th className="px-4 py-2">Date</th>
-              <th className="px-4 py-2">Time</th>
-              <th className="px-4 py-2">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
+      
+      <Button onClick={handleCreate} className="mb-4 md:mb-6 bg-violet-600 hover:bg-violet-700 text-white h-10 md:h-9 w-full md:w-auto">
+        <Plus className="h-4 w-4 mr-2" />
+        Add Booking
+      </Button>
+      
+      {/* Desktop Table View */}
+      <div className="hidden md:block rounded-lg border border-gray-800 bg-gray-800/50 shadow-lg">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="text-white">Name</TableHead>
+              <TableHead className="text-white">Email</TableHead>
+              <TableHead className="text-white">Phone</TableHead>
+              <TableHead className="text-white">Service</TableHead>
+              <TableHead className="text-white">Date</TableHead>
+              <TableHead className="text-white">Time</TableHead>
+              <TableHead className="text-white">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {loading ? (
-              <tr>
-                <td colSpan={7} className="text-center py-8">Loading...</td>
-              </tr>
+              <TableRow>
+                <TableCell colSpan={7} className="text-center py-8 text-gray-400">Loading...</TableCell>
+              </TableRow>
             ) : filteredBookings.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="text-center py-8">No bookings found.</td>
-              </tr>
+              <TableRow>
+                <TableCell colSpan={7} className="text-center py-8 text-gray-400">No bookings found.</TableCell>
+              </TableRow>
             ) : (
               filteredBookings.map((b: any) => (
-                <tr key={b.id} className="border-b border-gray-700">
-                  <td className="px-4 py-2">{b.first_name} {b.last_name}</td>
-                  <td className="px-4 py-2">{b.profiles?.email || '-'}</td>
-                  <td className="px-4 py-2">{b.phone_number}</td>
-                  <td className="px-4 py-2">{b.service_type}</td>
-                  <td className="px-4 py-2">{b.booking_date}</td>
-                  <td className="px-4 py-2">{b.booking_time}</td>
-                  <td className="px-4 py-2 space-x-2">
-                    <button onClick={() => handleEdit(b)} className="px-2 py-1 bg-blue-600 rounded hover:bg-blue-700">Edit</button>
-                    <button onClick={() => handleDelete(b.id)} className="px-2 py-1 bg-red-600 rounded hover:bg-red-700">Delete</button>
-                  </td>
-                </tr>
+                <TableRow key={b.id} className="border-b border-gray-700">
+                  <TableCell className="text-gray-300">{b.first_name} {b.last_name}</TableCell>
+                  <TableCell className="text-gray-300">{b.profiles?.email || '-'}</TableCell>
+                  <TableCell className="text-gray-300">{b.phone_number}</TableCell>
+                  <TableCell className="text-gray-300">{b.service_type}</TableCell>
+                  <TableCell className="text-gray-300">{b.booking_date}</TableCell>
+                  <TableCell className="text-gray-300">{b.booking_time}</TableCell>
+                  <TableCell>
+                    <div className="flex space-x-2">
+                      <Button variant="ghost" size="icon" onClick={() => handleEdit(b)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleDelete(b.id)} className="text-red-400 hover:text-red-300">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
               ))
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
+
+      {/* Mobile Card View */}
+      <div className="md:hidden space-y-3">
+        {loading ? (
+          <div className="text-center py-8 text-gray-400">Loading...</div>
+        ) : filteredBookings.length === 0 ? (
+          <div className="text-center py-8 text-gray-400">No bookings found.</div>
+        ) : (
+          filteredBookings.map((b: any) => (
+            <Card key={b.id} className="bg-gray-800/50 border-gray-700">
+              <CardContent className="p-4 space-y-3">
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <div className="text-sm text-gray-400 mb-1">Name</div>
+                    <div className="text-white font-medium">{b.first_name} {b.last_name}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm text-gray-400 mb-1">Date & Time</div>
+                    <div className="text-white text-sm">{b.booking_date} at {b.booking_time}</div>
+                  </div>
+                </div>
+                
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <div className="text-sm text-gray-400 mb-1">Email</div>
+                    <div className="text-white text-sm">{b.profiles?.email || '-'}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm text-gray-400 mb-1">Phone</div>
+                    <div className="text-white text-sm">{b.phone_number}</div>
+                  </div>
+                </div>
+                
+                <div>
+                  <div className="text-sm text-gray-400 mb-1">Service</div>
+                  <div className="text-violet-300 font-medium">{b.service_type}</div>
+                </div>
+                
+                                 <div className="flex justify-end space-x-2 pt-2 border-t border-gray-700">
+                   <Button variant="ghost" size="sm" onClick={() => handleEdit(b)} className="text-white hover:text-gray-300">
+                     <Edit className="h-4 w-4 mr-1" />
+                     Edit
+                   </Button>
+                   <Button variant="ghost" size="sm" onClick={() => handleDelete(b.id)} className="text-red-400 hover:text-red-300">
+                     <Trash2 className="h-4 w-4 mr-1" />
+                     Delete
+                   </Button>
+                 </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
+      
       <BookingFormModal open={modalOpen} onClose={handleModalClose} booking={selectedBooking} />
     </div>
   );

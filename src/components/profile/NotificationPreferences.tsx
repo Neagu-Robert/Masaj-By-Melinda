@@ -72,9 +72,7 @@ export default function NotificationPreferences({ userId, userRole }: Notificati
     }
   };
 
-  const getChannelLabel = () => {
-    return userRole === 'admin' ? 'SMS' : 'Email';
-  };
+
 
   if (loading) {
     return <div className="text-gray-400">Loading notification preferences...</div>;
@@ -83,7 +81,7 @@ export default function NotificationPreferences({ userId, userRole }: Notificati
   return (
     <div className="bg-gray-800/50 p-6 rounded-lg">
       <h3 className="text-xl font-semibold mb-4 text-violet-300">
-        Notification Preferences ({getChannelLabel()})
+        Email Notification Preferences
       </h3>
       <div className="space-y-4">
         <div className="flex items-center space-x-3">
