@@ -42,36 +42,36 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onClose, user
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
-      <div className="bg-gray-900 p-8 rounded-lg shadow-lg w-full max-w-md">
-        <h2 className="text-2xl font-bold mb-6 text-violet-400 text-center">Edit Profile</h2>
-        <form onSubmit={handleSubmit} className="space-y-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 p-4">
+      <div className="bg-gray-900 p-6 md:p-8 rounded-lg shadow-lg w-full max-w-md">
+        <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-violet-400 text-center">Edit Profile</h2>
+        <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
           <div>
-            <label className="block text-gray-300 mb-1">Full Name</label>
+            <label className="block text-gray-300 mb-2 text-sm md:text-base">Full Name</label>
             <Input
               type="text"
               value={fullName}
               onChange={e => setFullName(e.target.value)}
               required
-              className="w-full bg-gray-800 text-white"
+              className="w-full bg-gray-800 text-white h-12 md:h-10 text-base md:text-sm"
             />
           </div>
           <div>
-            <label className="block text-gray-300 mb-1">Phone Number</label>
+            <label className="block text-gray-300 mb-2 text-sm md:text-base">Phone Number</label>
             <Input
               type="tel"
               value={phone}
               onChange={e => setPhone(e.target.value)}
               placeholder="Optional"
-              className="w-full bg-gray-800 text-white"
+              className="w-full bg-gray-800 text-white h-12 md:h-10 text-base md:text-sm"
             />
           </div>
           {error && <div className="text-red-500 text-sm">{error}</div>}
-          <div className="flex justify-end space-x-4">
-            <Button type="button" variant="ghost" onClick={onClose} disabled={loading}>
+          <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-4 pt-4">
+            <Button type="button" variant="ghost" onClick={onClose} disabled={loading} className="w-full sm:w-auto h-12 md:h-10">
               Cancel
             </Button>
-            <Button type="submit" className="bg-violet-600 hover:bg-violet-700 text-white" disabled={loading}>
+            <Button type="submit" className="bg-violet-600 hover:bg-violet-700 text-white w-full sm:w-auto h-12 md:h-10" disabled={loading}>
               {loading ? 'Saving...' : 'Save Changes'}
             </Button>
           </div>

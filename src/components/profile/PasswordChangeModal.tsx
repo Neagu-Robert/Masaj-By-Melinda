@@ -90,34 +90,34 @@ export default function PasswordChangeModal({ open, onClose }: PasswordChangeMod
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[425px] bg-gray-800 border-gray-700">
+      <DialogContent className="sm:max-w-[425px] bg-gray-800 border-gray-700 p-4 md:p-6">
         <DialogHeader>
-          <DialogTitle className="text-white">Change Password</DialogTitle>
-          <DialogDescription className="text-gray-400">
+          <DialogTitle className="text-white text-lg md:text-xl">Change Password</DialogTitle>
+          <DialogDescription className="text-gray-400 text-sm md:text-base">
             Enter your current password and choose a new password.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
           <div className="space-y-2">
             <label htmlFor="currentPassword" className="text-sm font-medium text-gray-200">
               Current Password
             </label>
             <div className="relative">
-              <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 md:h-5 md:w-5 text-gray-400" />
               <Input
                 id="currentPassword"
                 type={showCurrentPassword ? 'text' : 'password'}
                 placeholder="Enter current password"
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
-                className="pl-10 pr-10 bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 focus:border-[#7E69AB]"
+                className="pl-10 pr-10 bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 focus:border-[#7E69AB] h-12 md:h-10 text-base md:text-sm"
                 required
                 disabled={loading}
               />
               <button
                 type="button"
                 onClick={() => togglePasswordVisibility('current')}
-                className="absolute right-3 top-3 text-gray-400 hover:text-gray-200"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-200 h-6 w-6 md:h-4 md:w-4 flex items-center justify-center"
                 disabled={loading}
               >
                 {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -130,21 +130,21 @@ export default function PasswordChangeModal({ open, onClose }: PasswordChangeMod
               New Password
             </label>
             <div className="relative">
-              <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 md:h-5 md:w-5 text-gray-400" />
               <Input
                 id="newPassword"
                 type={showNewPassword ? 'text' : 'password'}
                 placeholder="Enter new password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                className="pl-10 pr-10 bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 focus:border-[#7E69AB]"
+                className="pl-10 pr-10 bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 focus:border-[#7E69AB] h-12 md:h-10 text-base md:text-sm"
                 required
                 disabled={loading}
               />
               <button
                 type="button"
                 onClick={() => togglePasswordVisibility('new')}
-                className="absolute right-3 top-3 text-gray-400 hover:text-gray-200"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-200 h-6 w-6 md:h-4 md:w-4 flex items-center justify-center"
                 disabled={loading}
               >
                 {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -157,21 +157,21 @@ export default function PasswordChangeModal({ open, onClose }: PasswordChangeMod
               Confirm New Password
             </label>
             <div className="relative">
-              <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 md:h-5 md:w-5 text-gray-400" />
               <Input
                 id="confirmPassword"
                 type={showConfirmPassword ? 'text' : 'password'}
                 placeholder="Confirm new password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="pl-10 pr-10 bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 focus:border-[#7E69AB]"
+                className="pl-10 pr-10 bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 focus:border-[#7E69AB] h-12 md:h-10 text-base md:text-sm"
                 required
                 disabled={loading}
               />
               <button
                 type="button"
                 onClick={() => togglePasswordVisibility('confirm')}
-                className="absolute right-3 top-3 text-gray-400 hover:text-gray-200"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-200 h-6 w-6 md:h-4 md:w-4 flex items-center justify-center"
                 disabled={loading}
               >
                 {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -201,19 +201,19 @@ export default function PasswordChangeModal({ open, onClose }: PasswordChangeMod
             </div>
           )}
 
-          <div className="flex justify-end space-x-2">
+          <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2 pt-4">
             <Button
               type="button"
               variant="outline"
               onClick={handleClose}
-              className="border-gray-600 text-gray-300 hover:bg-gray-700"
+              className="border-gray-600 text-gray-300 hover:bg-gray-700 w-full sm:w-auto h-12 md:h-10"
               disabled={loading}
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              className="bg-violet-600 hover:bg-violet-700 text-white"
+              className="bg-violet-600 hover:bg-violet-700 text-white w-full sm:w-auto h-12 md:h-10"
               disabled={loading}
             >
               {loading ? 'Changing...' : 'Change Password'}

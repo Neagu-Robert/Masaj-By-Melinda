@@ -128,34 +128,34 @@ const DateTimeSelection = ({
 
   return (
     <Card className="bg-gray-800 border-gray-700">
-      <CardHeader>
+      <CardHeader className="pb-4">
         <CardTitle className="text-lg md:text-xl text-white">Selectați data și ora</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="flex flex-col space-y-6 md:space-y-0 md:flex-row md:space-x-4">
           <div className="w-full md:w-1/2">
             {/* Calendar Section */}
-            <div className="flex items-center mb-2">
+            <div className="flex items-center mb-3 md:mb-2">
               <CalendarIcon className="mr-2 h-5 w-5 text-gray-400" />
-              <span className="font-medium text-gray-200">Selectați data</span>
+              <span className="font-medium text-gray-200 text-sm md:text-base">Selectați data</span>
             </div>
             <div className="flex justify-center">
               <Calendar
                 mode="single"
                 selected={selectedDate}
                 onSelect={setSelectedDate}
-                className="rounded-md border border-gray-600 bg-gray-700 text-white pointer-events-auto w-full max-w-sm [&_.rdp-day]:text-white [&_.rdp-day_selected]:bg-[#7E69AB] [&_.rdp-day_selected]:text-white [&_.rdp-day:hover]:bg-gray-600"
+                className="rounded-md border border-gray-600 bg-gray-700 text-white pointer-events-auto w-full max-w-sm [&_.rdp-day]:text-white [&_.rdp-day_selected]:bg-[#7E69AB] [&_.rdp-day_selected]:text-white [&_.rdp-day:hover]:bg-gray-600 [&_.rdp-day]:h-10 [&_.rdp-day]:w-10 [&_.rdp-day]:text-sm md:[&_.rdp-day]:h-9 md:[&_.rdp-day]:w-9 md:[&_.rdp-day]:text-base"
                 disabled={(date) => date < new Date()}
               />
             </div>
           </div>
           <div className="w-full md:w-1/2">
-            <div className="flex items-center mb-2">
+            <div className="flex items-center mb-3 md:mb-2">
               <Clock className="mr-2 h-5 w-5 text-gray-400" />
-              <span className="font-medium text-gray-200">Selectați ora</span>
-              {isLoading && <span className="ml-2 text-sm text-gray-400">(Încărcare...)</span>}
+              <span className="font-medium text-gray-200 text-sm md:text-base">Selectați ora</span>
+              {isLoading && <span className="ml-2 text-xs md:text-sm text-gray-400">(Încărcare...)</span>}
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 md:gap-3">
               {timeSlots.map((time) => {
                 const isUnavailable = isTimeSlotUnavailable(time);
                 const isSelected = selectedTime === time && !isUnavailable;
@@ -165,7 +165,7 @@ const DateTimeSelection = ({
                     type="button"
                     variant={isUnavailable ? "outline" : isSelected ? "default" : "outline"}
                     className={`
-                      h-12 text-sm md:text-base transition
+                      h-14 md:h-12 text-sm md:text-base transition font-medium
                       ${isSelected ? 'bg-[#7E69AB] text-white border-transparent hover:bg-[#7E69AB]/90' : ''}
                       ${isUnavailable
                         ? 'bg-gray-700 text-gray-500 border-gray-600 opacity-60 cursor-not-allowed pointer-events-none'
@@ -184,14 +184,14 @@ const DateTimeSelection = ({
                   >
                     {time}
                     {isUnavailable && (
-                      <span className="ml-2 text-xs text-red-400 align-middle">(indisponibil)</span>
+                      <span className="ml-1 md:ml-2 text-xs text-red-400 align-middle">(indisponibil)</span>
                     )}
                   </Button>
                 );
               })}
             </div>
             {selectedDate && (bookedTimeSlots.length > 0 || unavailableSlots.length > 0) && (
-              <div className="mt-2 text-xs text-gray-400">
+              <div className="mt-3 md:mt-2 text-xs text-gray-400">
                 * Intervalele marcate "indisponibil" nu pot fi selectate
               </div>
             )}

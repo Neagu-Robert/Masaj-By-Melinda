@@ -221,12 +221,12 @@ const BookingPageContent = () => {
     <div className="min-h-screen bg-gray-900">
       <BookingHeader />
 
-      <div className="pt-24 pb-20 px-4 md:px-0">
+      <div className="pt-20 md:pt-24 pb-16 md:pb-20 px-3 md:px-0">
         <div className="container mx-auto">
-          <h2 className="text-2xl font-semibold text-center mb-8 md:mb-12 text-purple-500 md:text-3xl">Rezervăți Masajul</h2>
+          <h2 className="text-xl md:text-2xl lg:text-3xl font-semibold text-center mb-6 md:mb-8 lg:mb-12 text-purple-500">Rezervăți Masajul</h2>
           <div className="max-w-3xl mx-auto">
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 md:space-y-8">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 md:space-y-6 lg:space-y-8">
                 {/* Contact Information */}
                 <ContactForm 
                   form={form} 
@@ -244,7 +244,7 @@ const BookingPageContent = () => {
                 {selectedDate && selectedTime && form.watch('fullName') && form.watch('phoneNumber') && selectedService && <BookingSummary form={form} selectedDate={selectedDate} selectedTime={selectedTime} selectedService={selectedService} />}
                 {/* Submit Button */}
                 <div className="flex justify-center pt-4">
-                  <Button type="submit" className="bg-[#63099c] hover:bg-[#63099c]/90 text-white text-lg md:text-xl py-4 md:py-6 px-6 md:px-8 w-full md:w-auto h-12 md:h-auto" disabled={isSubmitting}>
+                  <Button type="submit" className="bg-[#63099c] hover:bg-[#63099c]/90 text-white text-base md:text-lg lg:text-xl py-4 md:py-6 px-6 md:px-8 w-full md:w-auto h-14 md:h-auto" disabled={isSubmitting}>
                     {isSubmitting ? "Se procesează..." : "Confirmă rezervarea"}
                   </Button>
                 </div>

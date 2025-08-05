@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Card, CardContent } from "@/components/ui/card";
 
 
 type AuditLog = {
@@ -90,8 +91,9 @@ export default function AuditLogs() {
   return (
     <div className="max-w-4xl mx-auto p-4 bg-gray-900 min-h-screen">
       <h2 className="text-2xl font-bold mb-6 text-violet-400">Audit Logs</h2>
+      
       {/* Filters */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div>
           <Select
             value={actionFilter}
@@ -133,45 +135,95 @@ export default function AuditLogs() {
           />
         </div>
       </div>
-      {/* Logs Table */}
+
+      {/* Logs Content */}
       {loading ? (
         <div className="text-center py-8 text-gray-400">Loading audit logs...</div>
       ) : error ? (
         <div className="text-red-500 text-center py-8">{error}</div>
       ) : (
-        <div className="rounded-lg border border-gray-800 bg-gray-800/50 shadow-lg">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="text-white w-1/4">Date</TableHead>
-                <TableHead className="text-white w-1/4">Admin</TableHead>
-                <TableHead className="text-white w-1/4">Action</TableHead>
-                <TableHead className="text-white w-1/4">Target Type</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredLogs.length === 0 ? (
+        <>
+          {/* Desktop Table View */}
+          <div className="hidden md:block rounded-lg border border-gray-800 bg-gray-800/50 shadow-lg">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center py-4 text-gray-400">
-                    No audit logs found
-                  </TableCell>
+                  <TableHead className="text-white w-1/4">Date</TableHead>
+                  <TableHead className="text-white w-1/4">Admin</TableHead>
+                  <TableHead className="text-white w-1/4">Action</TableHead>
+                  <TableHead className="text-white w-1/4">Target Type</TableHead>
                 </TableRow>
-              ) : (
-                filteredLogs.map((log) => (
-                  <TableRow key={log.id} className="border-b border-gray-700">
-                    <TableCell className="text-gray-300">{new Date(log.created_at).toLocaleString()}</TableCell>
-                    <TableCell className="text-gray-300">
-                      <div>{log.profiles.full_name}</div>
-                      <div className="text-sm text-gray-500">{log.profiles.email}</div>
+              </TableHeader>
+              <TableBody>
+                {filteredLogs.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center py-4 text-gray-400">
+                      No audit logs found
                     </TableCell>
-                    <TableCell className="text-gray-300">{log.action}</TableCell>
-                    <TableCell className="text-gray-300">{log.target_type}</TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
+                ) : (
+                  filteredLogs.map((log) => (
+                    <TableRow key={log.id} className="border-b border-gray-700">
+                      <TableCell className="text-gray-300">{new Date(log.created_at).toLocaleString()}</TableCell>
+                      <TableCell className="text-gray-300">
+                        <div>{log.profiles.full_name}</div>
+                        <div className="text-sm text-gray-500">{log.profiles.email}</div>
+                      </TableCell>
+                      <TableCell className="text-gray-300">{log.action}</TableCell>
+                      <TableCell className="text-gray-300">{log.target_type}</TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="md:hidden space-y-3">
+            {filteredLogs.length === 0 ? (
+              <div className="text-center py-8 text-gray-400">
+                No audit logs found
+              </div>
+            ) : (
+              filteredLogs.map((log) => (
+                <Card key={log.id} className="bg-gray-800/50 border-gray-700">
+                  <CardContent className="p-4 space-y-3">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="text-sm text-gray-400 mb-1">Date</div>
+                        <div className="text-white text-sm">
+                          {new Date(log.created_at).toLocaleString()}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm text-gray-400 mb-1">Action</div>
+                        <div className="text-violet-300 text-sm font-medium">
+                          {log.action}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="text-sm text-gray-400 mb-1">Admin</div>
+                        <div className="text-white text-sm">
+                          <div>{log.profiles.full_name}</div>
+                          <div className="text-xs text-gray-500">{log.profiles.email}</div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm text-gray-400 mb-1">Target</div>
+                        <div className="text-gray-300 text-sm">
+                          {log.target_type}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
+        </>
       )}
     </div>
   );

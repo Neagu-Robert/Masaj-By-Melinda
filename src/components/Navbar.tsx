@@ -56,16 +56,16 @@ const Navbar = () => {
 
   return (
     <nav className="bg-gray-900 fixed w-full z-50 shadow-lg border-b border-gray-800">
-      <div className="container mx-auto px-4 py-4">
+      <div className="container mx-auto px-3 md:px-4 py-3 md:py-4">
         <div className="flex justify-between items-center">
           <div 
-            className="text-xl md:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-400 to-pink-500 cursor-pointer"
+            className="text-lg md:text-xl lg:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-400 to-pink-500 cursor-pointer"
             onClick={handleLogoClick}
           >
             Masaj by Melinda
           </div>
           {/* Desktop Navigation */}
-          <div className="hidden md:flex space-x-6 items-center">
+          <div className="hidden md:flex space-x-4 lg:space-x-6 items-center">
             {role === 'admin' && (
               <Button
                 variant="ghost"
@@ -82,7 +82,7 @@ const Navbar = () => {
                 : "text-gray-300 hover:text-white hover:bg-white/10"}
               onClick={() => scrollToElement('services')}
             >
-              <Home className="mr-1" /> Servicii
+              <Home className="mr-1 h-4 w-4" /> Servicii
             </Button>
             <Button 
               variant={isActive('/pachete') ? "default" : "ghost"}
@@ -91,7 +91,7 @@ const Navbar = () => {
                 : "text-gray-300 hover:text-white hover:bg-white/10"}
               onClick={() => handleNavigation('/pachete')}
             >
-              <Package className="mr-1" /> Pachete
+              <Package className="mr-1 h-4 w-4" /> Pachete
             </Button>
             <Button 
               className={isActive('/book') 
@@ -99,7 +99,7 @@ const Navbar = () => {
                 : "bg-[#9b87f5] text-white hover:bg-[#7E69AB]"}
               onClick={() => handleNavigation('/book')}
             >
-              <Calendar className="mr-1" /> Rezerva acum
+              <Calendar className="mr-1 h-4 w-4" /> Rezerva acum
             </Button>
             {user && role !== 'admin' && (
               <Button
@@ -108,7 +108,7 @@ const Navbar = () => {
                 className="rounded-full bg-[#9b87f5] text-white hover:bg-[#7E69AB]"
                 onClick={() => handleNavigation('/profile')}
               >
-                <User className="h-6 w-6" />
+                <User className="h-5 w-5" />
               </Button>
             )}
           </div>
@@ -116,7 +116,7 @@ const Navbar = () => {
           <Button
             variant="ghost"
             size="icon"
-            className="md:hidden text-gray-300 hover:text-white hover:bg-white/10"
+            className="md:hidden text-gray-300 hover:text-white hover:bg-white/10 h-10 w-10"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           >
             {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -124,12 +124,12 @@ const Navbar = () => {
         </div>
         {/* Mobile Navigation Menu */}
         {isMobileMenuOpen && (
-          <div className="md:hidden mt-4 pb-4 border-t border-gray-700">
-            <div className="flex flex-col space-y-2 pt-4">
+          <div className="md:hidden mt-3 pb-3 border-t border-gray-700">
+            <div className="flex flex-col space-y-2 pt-3">
               {role === 'admin' && (
                 <Button
                   variant="ghost"
-                  className="w-full justify-start h-12 text-gray-300 hover:text-white hover:bg-white/10"
+                  className="w-full justify-start h-12 text-gray-300 hover:text-white hover:bg-white/10 text-base"
                   onClick={() => handleNavigation('/admin')}
                 >
                   Back to Dashboard
@@ -137,36 +137,36 @@ const Navbar = () => {
               )}
               <Button 
                 variant={isActive(HOME_PATH) ? "default" : "ghost"}
-                className={`w-full justify-start h-12 ${isActive(HOME_PATH) 
+                className={`w-full justify-start h-12 text-base ${isActive(HOME_PATH) 
                   ? "bg-[#7E69AB] text-white hover:bg-[#9b87f5]" 
                   : "text-gray-300 hover:text-white hover:bg-white/10"}`}
                 onClick={() => scrollToElement('services')}
               >
-                <Home className="mr-2 h-5 w-5" /> Servicii
+                <Home className="mr-3 h-5 w-5" /> Servicii
               </Button>
               <Button 
                 variant={isActive('/pachete') ? "default" : "ghost"}
-                className={`w-full justify-start h-12 ${isActive('/pachete') 
+                className={`w-full justify-start h-12 text-base ${isActive('/pachete') 
                   ? "bg-[#7E69AB] text-white hover:bg-[#9b87f5]" 
                   : "text-gray-300 hover:text-white hover:bg-white/10"}`}
                 onClick={() => handleNavigation('/pachete')}
               >
-                <Package className="mr-2 h-5 w-5" /> Pachete
+                <Package className="mr-3 h-5 w-5" /> Pachete
               </Button>
               <Button 
-                className={`w-full justify-start h-12 ${isActive('/book') 
+                className={`w-full justify-start h-12 text-base ${isActive('/book') 
                   ? "bg-[#7E69AB] text-white hover:bg-[#9b87f5]" 
                   : "bg-[#9b87f5] text-white hover:bg-[#7E69AB]"}`}
                 onClick={() => handleNavigation('/book')}
               >
-                <Calendar className="mr-2 h-5 w-5" /> Rezerva acum
+                <Calendar className="mr-3 h-5 w-5" /> Rezerva acum
               </Button>
               {user && role !== 'admin' && (
                 <Button
-                  className="w-full justify-start h-12 bg-[#9b87f5] text-white hover:bg-[#7E69AB]"
+                  className="w-full justify-start h-12 bg-[#9b87f5] text-white hover:bg-[#7E69AB] text-base"
                   onClick={() => handleNavigation('/profile')}
                 >
-                  <User className="mr-2 h-5 w-5" /> Profile
+                  <User className="mr-3 h-5 w-5" /> Profile
                 </Button>
               )}
             </div>
