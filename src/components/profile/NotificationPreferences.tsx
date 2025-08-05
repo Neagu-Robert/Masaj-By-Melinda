@@ -134,7 +134,7 @@ export default function NotificationPreferences({ userId, userRole }: Notificati
             }
           />
           <Label htmlFor="password-change" className="text-white">
-            Password changes
+            Password changes and reset requests
           </Label>
         </div>
         

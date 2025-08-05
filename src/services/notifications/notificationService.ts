@@ -257,22 +257,34 @@ export const sendNotification = async (payload: NotificationPayload): Promise<No
 
   // Determine if customer notifications should be sent based on preferences
   const shouldSendCustomerNotification = (notificationType: string): boolean => {
-    if (!preferences) return true; // Default to sending if no preferences
+    if (!preferences) {
+      console.log(`No preferences found for user ${payload.recipient.userId}, defaulting to send notification for ${notificationType}`);
+      return true; // Default to sending if no preferences
+    }
     
+    let shouldSend = false;
     switch (notificationType) {
       case 'booking_created_customer':
-        return preferences.bookingCreationEnabled;
+        shouldSend = preferences.bookingCreationEnabled;
+        break;
       case 'booking_updated_profile':
       case 'booking_updated_admin':
-        return preferences.bookingUpdateEnabled;
+        shouldSend = preferences.bookingUpdateEnabled;
+        break;
       case 'booking_cancelled_profile':
       case 'booking_cancelled_admin':
-        return preferences.bookingCancellationEnabled;
+        shouldSend = preferences.bookingCancellationEnabled;
+        break;
       case 'password_changed':
-        return preferences.passwordChangeEnabled;
+      case 'password_reset_requested':
+        shouldSend = preferences.passwordChangeEnabled;
+        break;
       default:
-        return true;
+        shouldSend = true;
     }
+    
+    console.log(`Notification preference check for ${notificationType}: ${shouldSend} (user: ${payload.recipient.userId})`);
+    return shouldSend;
   };
 
   // Handle different notification types according to new specifications
@@ -388,13 +400,31 @@ export const sendNotification = async (payload: NotificationPayload): Promise<No
       break;
 
     case 'password_changed':
-      // Send password change notification email to user
-      if (payload.recipient.email) {
+      // Send password change notification email to user (check customer preferences)
+      if (shouldSendCustomerNotification(payload.type) && payload.recipient.email) {
         try {
           const emailResult = await sendEmailNotification(enrichedPayload);
           results.push(emailResult);
         } catch (error) {
           console.error('Error sending password change notification:', error);
+          results.push({
+            success: false,
+            channel: 'email',
+            error: error as Error,
+            timestamp: Date.now()
+          });
+        }
+      }
+      break;
+
+    case 'password_reset_requested':
+      // Send password reset request notification email to user (check customer preferences)
+      if (shouldSendCustomerNotification(payload.type) && payload.recipient.email) {
+        try {
+          const emailResult = await sendEmailNotification(enrichedPayload);
+          results.push(emailResult);
+        } catch (error) {
+          console.error('Error sending password reset request notification:', error);
           results.push({
             success: false,
             channel: 'email',

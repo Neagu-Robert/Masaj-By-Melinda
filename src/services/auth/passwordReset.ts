@@ -49,6 +49,35 @@ export const sendPasswordResetEmail = async (email: string): Promise<PasswordRes
       };
     }
 
+    // Send notification email about password reset request
+    try {
+      await notify({
+        type: 'password_reset_requested',
+        recipient: {
+          userId: null, // We don't have user ID at this point
+          email: email,
+          phone: '',
+          name: email.split('@')[0] // Use email prefix as name
+        },
+        data: {
+          bookingId: '',
+          userId: null,
+          userName: email.split('@')[0],
+          userEmail: email,
+          userPhone: '',
+          serviceName: '',
+          serviceId: null,
+          dateTime: new Date().toISOString(),
+          duration: 0,
+          price: 0,
+          status: 'pending'
+        }
+      });
+    } catch (notificationError) {
+      console.error('Error sending password reset notification:', notificationError);
+      // Don't fail the password reset if notification fails
+    }
+
     return {
       success: true,
       message: 'Password reset email sent successfully. Please check your email.',

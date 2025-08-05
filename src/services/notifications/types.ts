@@ -8,7 +8,8 @@ export type NotificationType =
   | 'booking_created_admin'
   | 'booking_updated_admin'
   | 'booking_cancelled_admin'
-  | 'password_changed';
+  | 'password_changed'
+  | 'password_reset_requested';
 
 export type NotificationChannel = 'email' | 'sms';
 

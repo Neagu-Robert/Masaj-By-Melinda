@@ -20,12 +20,8 @@ export default function ResetPasswordPage() {
 
   // Check if we have the necessary parameters from the reset link
   useEffect(() => {
-    const accessToken = searchParams.get('access_token');
-    const refreshToken = searchParams.get('refresh_token');
-    
-    if (!accessToken || !refreshToken) {
-      setError('Invalid password reset link. Please request a new one.');
-    }
+    // Supabase handles token verification automatically
+    // No need to manually check for tokens
   }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {

@@ -285,6 +285,47 @@ const emailTemplates = {
       Masaj by Melinda
     `;
     return { subject, html, text };
+  },
+
+  password_reset_requested: (data: BookingNotificationData): { subject: string; html: string; text: string } => {
+    const subject = `Password Reset Requested`;
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #f59e0b;">Password Reset Succesfuly</h2>
+        <p>Dear ${data.userName},</p>
+        <p>We received a request to reset your password for your Masaj by Melinda account.</p>
+        <div style="background-color: #fffbeb; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="margin-top: 0;">Account Information:</h3>
+          <p><strong>Account:</strong> ${data.userEmail}</p>
+          <p><strong>Request Date:</strong> ${data.dateTime}</p>
+        </div>
+        <p>If you did not request this password reset, please ignore this email. Your password will remain unchanged.</p>
+        <p>If you did request this reset, please check your email for the reset link and follow the instructions.</p>
+        <p>For security reasons, password reset links expire after a short time.</p>
+        <p>Best regards,<br>Masaj by Melinda</p>
+      </div>
+    `;
+    const text = `
+      Password Reset Requested
+      
+      Dear ${data.userName},
+      
+      We received a request to reset your password for your Masaj by Melinda account.
+      
+      Account Information:
+      - Account: ${data.userEmail}
+      - Request Date: ${data.dateTime}
+      
+      If you did not request this password reset, please ignore this email. Your password will remain unchanged.
+      
+      If you did request this reset, please check your email for the reset link and follow the instructions.
+      
+      For security reasons, password reset links expire after a short time.
+      
+      Best regards,
+      Masaj by Melinda
+    `;
+    return { subject, html, text };
   }
 };
 

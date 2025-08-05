@@ -113,11 +113,19 @@ export const sendSmsNotification = async (
       })
     });
 
-    const data = await response.json();
-
+    // Handle CORS and network errors
     if (!response.ok) {
-      throw new Error(data.error || `HTTP ${response.status}: ${response.statusText}`);
+      const errorText = await response.text();
+      console.error('SMS API error:', response.status, response.statusText, errorText);
+      
+      if (response.status === 0 || response.status === 403) {
+        throw new Error('CORS or network error - SMS service temporarily unavailable');
+      }
+      
+      throw new Error(`SMS API error: ${response.status} ${response.statusText}`);
     }
+
+    const data = await response.json();
 
     if (!data.success) {
       throw new Error(data.error || 'Failed to send SMS');
