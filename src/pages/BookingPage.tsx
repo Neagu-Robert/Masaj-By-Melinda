@@ -16,6 +16,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useServices } from '@/contexts/ServicesContext';
 import { logAdminAction } from '@/lib/audit-logger';
 import { useBookingNotifications } from '@/services/notifications/hooks';
+import { 
+  formatDateForDB, 
+  checkForDoubleBooking, 
+  validateBookingData 
+} from '@/lib/booking-utils';
 
 const BookingPageContent = () => {
   const navigate = useNavigate();
@@ -66,51 +71,33 @@ const BookingPageContent = () => {
       form.setValue('phoneNumber', profileInfo.phoneNumber);
     }
   }, [useProfileName, useProfilePhone, profileInfo, form]);
-
-  // Helper function to format date correctly without timezone issues
-  const formatDateForDB = (date: Date) => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
   
   const onSubmit = async (data: any) => {
-    if (!selectedDate || !selectedTime || !selectedService) {
-      toast("Selectați data și ora", {
-        description: "Vă rugăm să alegeți data, ora și serviciul pentru rezervare"
+    // Validate booking data using shared utility
+    const validation = validateBookingData(selectedDate, selectedTime || '', selectedService || '');
+    if (!validation.isValid) {
+      toast("Eroare de validare", {
+        description: validation.error || "Vă rugăm să completați toate câmpurile obligatorii"
       });
       return;
     }
+
     try {
       setIsSubmitting(true);
 
-      // Format date correctly without timezone conversion
-      const formattedDate = formatDateForDB(selectedDate);
-
-      // Check one more time if the slot is already booked (prevents race conditions)
-      const {
-        data: existingBookings,
-        error: checkError
-      } = await supabase.from('bookings').select('id').eq('booking_date', formattedDate).eq('booking_time', selectedTime);
-      if (checkError) {
-        console.error('Error checking booking availability:', checkError);
-        toast("Eroare", {
-          description: "A apărut o eroare la verificarea disponibilității. Vă rugăm să încercați din nou."
-        });
-        setIsSubmitting(false);
-        return;
-      }
-      if (existingBookings && existingBookings.length > 0) {
+      // Check for double booking using shared utility
+      const doubleBookingCheck = await checkForDoubleBooking(selectedDate!, selectedTime!);
+      
+      if (doubleBookingCheck.isDoubleBooked) {
         toast("Slot indisponibil", {
-          description: "Acest interval orar a fost deja rezervat. Vă rugăm să alegeți alt interval."
+          description: doubleBookingCheck.error || "Acest interval orar a fost deja rezervat. Vă rugăm să alegeți alt interval."
         });
         setIsSubmitting(false);
         return;
       }
 
       // Get service details
-      const serviceDetails = getServiceByName(selectedService);
+      const serviceDetails = getServiceByName(selectedService!);
       const serviceId = serviceDetails?.id || null;
 
       // Create the booking
@@ -120,7 +107,7 @@ const BookingPageContent = () => {
         phone_number: data.phoneNumber,
         service_type: selectedService,
         service_id: serviceId,
-        booking_date: formattedDate,
+        booking_date: formatDateForDB(selectedDate!),
         booking_time: selectedTime,
         user_id: user?.id || null
       };
@@ -147,13 +134,13 @@ const BookingPageContent = () => {
           'booking.create.customer',
           'booking',
           newBooking.id,
-          `Customer created booking for ${selectedService} on ${formattedDate} at ${selectedTime}`
+          `Customer created booking for ${selectedService} on ${formatDateForDB(selectedDate!)} at ${selectedTime}`
         );
       }
 
       // Show success message
       toast("Rezervare confirmată!", {
-        description: `Rezervarea pentru ${selectedService} pe ${formattedDate} la ${selectedTime} a fost confirmată.`,
+        description: `Rezervarea pentru ${selectedService} pe ${formatDateForDB(selectedDate!)} la ${selectedTime} a fost confirmată.`,
       });
 
       // Get user data for notification
@@ -174,83 +161,108 @@ const BookingPageContent = () => {
       }
 
       // Send booking confirmation notification
-      try {
-        await sendBookingConfirmation({
-          bookingId: newBooking.id,
-          userId: userId || newBooking.user_id || '',
-          userName: data.fullName,
-          userEmail: userEmail,
-          userPhone: data.phoneNumber,
-          serviceName: selectedService,
-          serviceId: serviceId, // Include service_id in notification data
-          serviceProvider: 'Melinda', // Default provider
-          bookingDate: formattedDate,
-          bookingTime: selectedTime,
-          duration: serviceDetails?.duration || 60,
-          price: serviceDetails?.price || 140.00,
-          status: 'confirmed'
-        });
-      } catch (notificationError) {
-        console.error('Error sending notification:', notificationError);
-        // Don't block the booking process if notification fails
+      if (userId && userEmail) {
+        try {
+          await sendBookingConfirmation({
+            bookingId: newBooking.id,
+            userId: userId,
+            userName: data.fullName,
+            userEmail: userEmail,
+            userPhone: data.phoneNumber,
+            serviceName: selectedService!,
+            serviceId: serviceId,
+            serviceProvider: 'Melinda',
+            bookingDate: selectedDate!,
+            bookingTime: selectedTime!,
+            duration: serviceDetails?.duration || 60,
+            price: serviceDetails?.price || 140.00,
+            status: 'confirmed'
+          });
+        } catch (notificationError) {
+          console.error('Error sending notification:', notificationError);
+        }
       }
 
-      // Reset form after successful submission
-      setTimeout(() => {
-        form.reset();
-        setSelectedDate(undefined);
-        setSelectedTime(undefined);
-        setSelectedService(undefined);
-        navigate('/home', {
-          state: {
-            fromBooking: true
-          }
-        });
-      }, 2000);
+      // Reset form and redirect
+      form.reset();
+      setSelectedDate(undefined);
+      setSelectedTime(undefined);
+      setSelectedService(undefined);
+      setUseProfileName(false);
+      setUseProfilePhone(false);
+      
+      // Navigate to profile page to show the new booking
+      navigate('/profile');
+      
     } catch (error) {
-      console.error('Submission error:', error);
+      console.error('Error creating booking:', error);
       toast("Eroare", {
-        description: "A apărut o eroare la salvarea rezervării. Vă rugăm să încercați din nou."
+        description: "A apărut o eroare neașteptată. Vă rugăm să încercați din nou."
       });
     } finally {
       setIsSubmitting(false);
     }
   };
-  
+
   return (
     <div className="min-h-screen bg-gray-900">
       <BookingHeader />
-
-      <div className="pt-20 md:pt-24 pb-16 md:pb-20 px-3 md:px-0">
-        <div className="container mx-auto">
-          <h2 className="text-xl md:text-2xl lg:text-3xl font-semibold text-center mb-6 md:mb-8 lg:mb-12 text-purple-500">Rezervăți Masajul</h2>
-          <div className="max-w-3xl mx-auto">
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 md:space-y-6 lg:space-y-8">
-                {/* Contact Information */}
-                <ContactForm 
-                  form={form} 
-                  profileInfo={profileInfo}
-                  useProfileName={useProfileName}
-                  setUseProfileName={setUseProfileName}
-                  useProfilePhone={useProfilePhone}
-                  setUseProfilePhone={setUseProfilePhone}
-                />
-                {/* Service Selection */}
-                <ServiceSelection form={form} setSelectedService={setSelectedService} />
-                {/* Date and Time Selection */}
-                <DateTimeSelection selectedDate={selectedDate} setSelectedDate={setSelectedDate} selectedTime={selectedTime} setSelectedTime={setSelectedTime} />
-                {/* Booking Summary */}
-                {selectedDate && selectedTime && form.watch('fullName') && form.watch('phoneNumber') && selectedService && <BookingSummary form={form} selectedDate={selectedDate} selectedTime={selectedTime} selectedService={selectedService} />}
-                {/* Submit Button */}
-                <div className="flex justify-center pt-4">
-                  <Button type="submit" className="bg-[#63099c] hover:bg-[#63099c]/90 text-white text-base md:text-lg lg:text-xl py-4 md:py-6 px-6 md:px-8 w-full md:w-auto h-14 md:h-auto" disabled={isSubmitting}>
-                    {isSubmitting ? "Se procesează..." : "Confirmă rezervarea"}
-                  </Button>
-                </div>
-              </form>
-            </Form>
+      <div className="container mx-auto px-4 py-8 pt-24">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">
+              Rezervați o programare
+            </h1>
+            <p className="text-gray-300 text-lg">
+              Alegeți serviciul, data și ora dorită pentru programarea dumneavoastră
+            </p>
           </div>
+
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+              {/* 1. Personal Details */}
+              <ContactForm
+                form={form}
+                profileInfo={profileInfo}
+                useProfileName={useProfileName}
+                setUseProfileName={setUseProfileName}
+                useProfilePhone={useProfilePhone}
+                setUseProfilePhone={setUseProfilePhone}
+              />
+              
+              {/* 2. Service Selection */}
+              <ServiceSelection 
+                form={form} 
+                setSelectedService={setSelectedService} 
+              />
+              
+              {/* 3. Date and Time Selection */}
+              <DateTimeSelection
+                selectedDate={selectedDate}
+                setSelectedDate={setSelectedDate}
+                selectedTime={selectedTime}
+                setSelectedTime={setSelectedTime}
+              />
+              
+              {/* 4. Booking Summary */}
+              <BookingSummary
+                form={form}
+                selectedDate={selectedDate}
+                selectedTime={selectedTime}
+                selectedService={selectedService}
+              />
+              
+              <div className="flex justify-center">
+                <Button
+                  type="submit"
+                  disabled={isSubmitting || !selectedDate || !selectedTime || !selectedService}
+                  className="bg-violet-600 hover:bg-violet-700 text-white px-8 py-3 text-lg font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSubmitting ? 'Se procesează...' : 'Confirmă rezervarea'}
+                </Button>
+              </div>
+            </form>
+          </Form>
         </div>
       </div>
     </div>
@@ -259,11 +271,11 @@ const BookingPageContent = () => {
 
 const BookingPage = () => {
   return (
-    <BookingsProvider>
-      <AvailabilitiesProvider>
+    <AvailabilitiesProvider>
+      <BookingsProvider>
         <BookingPageContent />
-      </AvailabilitiesProvider>
-    </BookingsProvider>
+      </BookingsProvider>
+    </AvailabilitiesProvider>
   );
 };
 

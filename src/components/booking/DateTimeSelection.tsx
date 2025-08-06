@@ -3,8 +3,14 @@ import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar as CalendarIcon, Clock } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 import { useAvailabilities } from '../../contexts/AvailabilitiesContext';
+import { 
+  TIME_SLOTS, 
+  formatDateForDB, 
+  fetchBookedTimeSlots, 
+  isTimeSlotUnavailable,
+  getTomorrow 
+} from '@/lib/booking-utils';
 
 type DateTimeSelectionProps = {
   selectedDate: Date | undefined;
@@ -19,48 +25,22 @@ const DateTimeSelection = ({
   selectedTime,
   setSelectedTime,
 }: DateTimeSelectionProps) => {
-  // Generate time slots from 8 AM to 8 PM
-  const timeSlots = Array.from({ length: 13 }, (_, i) => {
-    const hour = i + 8; // Start from 8 AM
-    return `${hour}:00`;
-  });
-
   // Track booked time slots for the selected date
   const [bookedTimeSlots, setBookedTimeSlots] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const { availabilities, fetchAvailabilities } = useAvailabilities();
   const [unavailableSlots, setUnavailableSlots] = useState<string[]>([]);
 
-  // Helper: format date correctly
-  const formatDateForDB = (date: Date) => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
-
   // Fetch booked slots each time selectedDate changes
   useEffect(() => {
-    const fetchBookedTimeSlots = async () => {
+    const fetchBookedSlots = async () => {
       if (!selectedDate) {
         setBookedTimeSlots([]);
         return;
       }
       setIsLoading(true);
-      const formattedDate = formatDateForDB(selectedDate);
       try {
-        const { data, error } = await supabase
-          .from('bookings')
-          .select('booking_time')
-          .eq('booking_date', formattedDate);
-        if (error) {
-          console.error('Error fetching booked time slots:', error);
-          setBookedTimeSlots([]);
-          return;
-        }
-        const booked = (data ?? []).map(booking => {
-          return (booking.booking_time || "").toString().slice(0, 5);
-        });
+        const booked = await fetchBookedTimeSlots(selectedDate);
         setBookedTimeSlots(booked);
         if (selectedTime && booked.includes(selectedTime)) {
           setSelectedTime('');
@@ -72,9 +52,8 @@ const DateTimeSelection = ({
         setIsLoading(false);
       }
     };
-    fetchBookedTimeSlots();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDate]);
+    fetchBookedSlots();
+  }, [selectedDate, selectedTime, setSelectedTime]);
 
   // Fetch availabilities for the selected date
   useEffect(() => {
@@ -110,21 +89,7 @@ const DateTimeSelection = ({
     if (selectedTime && (bookedTimeSlots.includes(selectedTime) || unavailableSlots.includes(selectedTime))) {
       setSelectedTime('');
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bookedTimeSlots, unavailableSlots]);
-
-  // Is slot unavailable (either booked or blocked)
-  const isTimeSlotUnavailable = (time: string) => {
-    const normalized = time.padStart(5, "0");
-    return (
-      bookedTimeSlots.some(
-        (b) => b === time || b === normalized || b.replace(/^0/, "") === time.replace(/^0/, "")
-      ) ||
-      unavailableSlots.some(
-        (u) => u === time || u === normalized || u.replace(/^0/, "") === time.replace(/^0/, "")
-      )
-    );
-  };
+  }, [bookedTimeSlots, unavailableSlots, selectedTime, setSelectedTime]);
 
   return (
     <Card className="bg-gray-800 border-gray-700">
@@ -145,7 +110,7 @@ const DateTimeSelection = ({
                 selected={selectedDate}
                 onSelect={setSelectedDate}
                 className="rounded-md border border-gray-600 bg-gray-700 text-white pointer-events-auto w-full max-w-sm [&_.rdp-day]:text-white [&_.rdp-day_selected]:bg-[#7E69AB] [&_.rdp-day_selected]:text-white [&_.rdp-day:hover]:bg-gray-600 [&_.rdp-day]:h-10 [&_.rdp-day]:w-10 [&_.rdp-day]:text-sm md:[&_.rdp-day]:h-9 md:[&_.rdp-day]:w-9 md:[&_.rdp-day]:text-base"
-                disabled={(date) => date < new Date()}
+                disabled={(date) => date < getTomorrow()}
               />
             </div>
           </div>
@@ -156,8 +121,8 @@ const DateTimeSelection = ({
               {isLoading && <span className="ml-2 text-xs md:text-sm text-gray-400">(Încărcare...)</span>}
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 md:gap-3">
-              {timeSlots.map((time) => {
-                const isUnavailable = isTimeSlotUnavailable(time);
+              {TIME_SLOTS.map((time) => {
+                const isUnavailable = isTimeSlotUnavailable(time, bookedTimeSlots, unavailableSlots);
                 const isSelected = selectedTime === time && !isUnavailable;
                 return (
                   <Button

@@ -31,6 +31,28 @@ export default function AuthPage() {
     }
   }, [user, role, authLoading, navigate]);
 
+  // Check if user already exists in profiles table
+  const checkExistingUser = async (email: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, email')
+        .eq('email', email)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        // PGRST116 is "not found" error, which is expected for new users
+        console.error('Error checking existing user or new user registration:', error);
+        return null;
+      }
+
+      return data; // Returns user data if found, null if not found
+    } catch (error) {
+      console.error('Error in checkExistingUser:', error);
+      return null;
+    }
+  };
+
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -71,6 +93,15 @@ export default function AuthPage() {
       }
     } else {
       // REGISTER
+      // First, check if user already exists
+      const existingUser = await checkExistingUser(email);
+      
+      if (existingUser) {
+        setError('User already registered, please login.');
+        setLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase.auth.signUp({ email, password });
       if (error) {
         setError(error.message);

@@ -476,7 +476,7 @@ function ProfilePageContent() {
                               </div>
                             </div>
                             <div className="flex justify-end space-x-2 pt-2 border-t border-gray-700">
-                              <Button variant="ghost" size="sm" onClick={() => handleEditClick(booking)}>
+                              <Button variant="ghost" size="sm" onClick={() => handleEditClick(booking)} className="text-white hover:text-gray-300">
                                 <Edit className="h-4 w-4 mr-1" />
                                 Edit
                               </Button>

@@ -1,13 +1,26 @@
 import React, { useEffect, useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { useForm } from "react-hook-form";
 import { useBookings } from "../../contexts/BookingsContext";
 import { useServices } from "../../contexts/ServicesContext";
+import { useAvailabilities } from "../../contexts/AvailabilitiesContext";
 import { toast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { logAdminAction } from "@/lib/audit-logger";
 import { supabase } from "@/integrations/supabase/client";
 import { useBookingNotifications } from "@/services/notifications/hooks";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import { 
+  formatDateForDB, 
+  checkForDoubleBooking, 
+  validateBookingData,
+  TIME_SLOTS,
+  getTomorrow,
+  fetchBookedTimeSlots
+} from "@/lib/booking-utils";
 
 interface BookingFormModalProps {
   open: boolean;
@@ -37,9 +50,15 @@ export default function BookingFormModal({ open, onClose, booking }: BookingForm
   });
   const { addBooking, updateBooking } = useBookings();
   const { services, getServiceByName } = useServices();
+  const { availabilities, fetchAvailabilities } = useAvailabilities();
   const { user: adminUser } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { sendBookingConfirmationAdmin, sendBookingUpdateAdmin } = useBookingNotifications();
+
+  // State for date/time selection - initialize with empty string to avoid controlled/uncontrolled issues
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>();
+  const [selectedTime, setSelectedTime] = useState<string>("");
+  const [bookedTimeSlots, setBookedTimeSlots] = useState<string[]>([]);
 
   useEffect(() => {
     if (booking) {
@@ -51,6 +70,15 @@ export default function BookingFormModal({ open, onClose, booking }: BookingForm
         booking_date: booking.booking_date,
         booking_time: booking.booking_time,
       });
+      // Set the selected date and time for editing
+      if (booking.booking_date) {
+        setSelectedDate(new Date(booking.booking_date));
+      }
+      if (booking.booking_time) {
+        setSelectedTime(booking.booking_time);
+      } else {
+        setSelectedTime("");
+      }
     } else {
       form.reset({
         first_name: "",
@@ -60,8 +88,31 @@ export default function BookingFormModal({ open, onClose, booking }: BookingForm
         booking_date: "",
         booking_time: "",
       });
+      setSelectedDate(undefined);
+      setSelectedTime("");
     }
   }, [booking, open, form]);
+
+  // Fetch booked time slots when date changes
+  useEffect(() => {
+    if (selectedDate) {
+      const fetchBookedSlots = async () => {
+        const slots = await fetchBookedTimeSlots(selectedDate);
+        setBookedTimeSlots(slots);
+      };
+      fetchBookedSlots();
+    } else {
+      setBookedTimeSlots([]);
+    }
+  }, [selectedDate]);
+
+  // Fetch availabilities when date changes
+  useEffect(() => {
+    if (selectedDate) {
+      const formattedDate = formatDateForDB(selectedDate);
+      fetchAvailabilities(formattedDate, formattedDate);
+    }
+  }, [selectedDate, fetchAvailabilities]);
 
   const handleSubmit = async (values: FormValues) => {
     setIsSubmitting(true);
@@ -70,12 +121,44 @@ export default function BookingFormModal({ open, onClose, booking }: BookingForm
       const serviceDetails = getServiceByName(values.service_type);
       const serviceId = serviceDetails?.id || null;
 
+      // Validate booking data
+      const bookingDate = selectedDate || new Date(values.booking_date);
+      const bookingTime = selectedTime || values.booking_time;
+      const validation = validateBookingData(bookingDate, bookingTime, values.service_type);
+      if (!validation.isValid) {
+        toast({
+          title: "Validation Error",
+          description: validation.error || "Please fill in all required fields",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
       if (booking) {
         // Update existing booking
+        // Check for double booking (excluding current booking)
+        const doubleBookingCheck = await checkForDoubleBooking(
+          bookingDate, 
+          bookingTime, 
+          booking.id
+        );
+        
+        if (doubleBookingCheck.isDoubleBooked) {
+          toast({
+            title: "Double Booking Error",
+            description: doubleBookingCheck.error || "This time slot is already booked",
+            variant: "destructive",
+          });
+          setIsSubmitting(false);
+          return;
+        }
+
         const updatedBooking = {
-          ...booking,
           ...values,
-          service_id: serviceId, // Add service_id to the booking
+          service_id: serviceId,
+          booking_date: formatDateForDB(bookingDate),
+          booking_time: bookingTime,
         };
 
         await updateBooking(booking.id, updatedBooking);
@@ -86,60 +169,28 @@ export default function BookingFormModal({ open, onClose, booking }: BookingForm
           'booking.update.admin',
           'booking',
           booking.id,
-          `Admin updated booking for ${values.service_type} on ${values.booking_date} at ${values.booking_time}`
+          `Admin updated booking for ${values.service_type} on ${formatDateForDB(bookingDate)} at ${bookingTime}`
         );
 
-        // Send notification if booking has a user
-        if (booking.user_id) {
-          try {
-            // Get user details for notification
-            const { data: userProfile } = await supabase
-              .from('profiles')
-              .select('full_name, email')
-              .eq('id', booking.user_id)
-              .single();
-
-            if (userProfile) {
-              await sendBookingUpdateAdmin({
-                bookingId: booking.id,
-                userId: booking.user_id,
-                userName: userProfile.full_name || `${values.first_name} ${values.last_name}`,
-                userEmail: userProfile.email || '',
-                userPhone: values.phone_number,
-                serviceName: values.service_type,
-                serviceId: serviceId,
-                serviceProvider: 'Melinda',
-                bookingDate: values.booking_date,
-                bookingTime: values.booking_time,
-                duration: serviceDetails?.duration || 60,
-                price: serviceDetails?.price || 140.00,
-                status: 'confirmed'
-              });
-            }
-          } catch (notificationError) {
-            console.error('Error sending notification:', notificationError);
-          }
-        } else {
-          // Send admin notification for booking without user
-          try {
-            await sendBookingUpdateAdmin({
-              bookingId: booking.id,
-              userId: '',
-              userName: `${values.first_name} ${values.last_name}`,
-              userEmail: '',
-              userPhone: values.phone_number,
-              serviceName: values.service_type,
-              serviceId: serviceId,
-              serviceProvider: 'Melinda',
-              bookingDate: values.booking_date,
-              bookingTime: values.booking_time,
-              duration: serviceDetails?.duration || 60,
-              price: serviceDetails?.price || 140.00,
-              status: 'confirmed'
-            });
-          } catch (notificationError) {
-            console.error('Error sending notification:', notificationError);
-          }
+        // Send admin notification for booking update
+        try {
+          await sendBookingUpdateAdmin({
+            bookingId: booking.id,
+            userId: booking.user_id || '',
+            userName: `${values.first_name} ${values.last_name}`,
+            userEmail: '',
+            userPhone: values.phone_number,
+            serviceName: values.service_type,
+            serviceId: serviceId,
+            serviceProvider: 'Melinda',
+            bookingDate: formatDateForDB(bookingDate),
+            bookingTime: bookingTime,
+            duration: serviceDetails?.duration || 60,
+            price: serviceDetails?.price || 140.00,
+            status: 'updated'
+          });
+        } catch (notificationError) {
+          console.error('Error sending notification:', notificationError);
         }
 
         toast({
@@ -148,9 +199,24 @@ export default function BookingFormModal({ open, onClose, booking }: BookingForm
         });
       } else {
         // Create new booking
+        // Check for double booking
+        const doubleBookingCheck = await checkForDoubleBooking(bookingDate, bookingTime);
+        
+        if (doubleBookingCheck.isDoubleBooked) {
+          toast({
+            title: "Double Booking Error",
+            description: doubleBookingCheck.error || "This time slot is already booked",
+            variant: "destructive",
+          });
+          setIsSubmitting(false);
+          return;
+        }
+
         const newBooking = {
           ...values,
-          service_id: serviceId, // Add service_id to the booking
+          service_id: serviceId,
+          booking_date: formatDateForDB(bookingDate),
+          booking_time: bookingTime,
         };
 
         await addBooking(newBooking);
@@ -161,7 +227,7 @@ export default function BookingFormModal({ open, onClose, booking }: BookingForm
           'booking.create.admin',
           'booking',
           'new',
-          `Admin created booking for ${values.service_type} on ${values.booking_date} at ${values.booking_time}`
+          `Admin created booking for ${values.service_type} on ${formatDateForDB(bookingDate)} at ${bookingTime}`
         );
 
         // Send admin notification for new booking
@@ -175,8 +241,8 @@ export default function BookingFormModal({ open, onClose, booking }: BookingForm
             serviceName: values.service_type,
             serviceId: serviceId,
             serviceProvider: 'Melinda',
-            bookingDate: values.booking_date,
-            bookingTime: values.booking_time,
+            bookingDate: formatDateForDB(bookingDate),
+            bookingTime: bookingTime,
             duration: serviceDetails?.duration || 60,
             price: serviceDetails?.price || 140.00,
             status: 'confirmed'
@@ -204,9 +270,40 @@ export default function BookingFormModal({ open, onClose, booking }: BookingForm
     }
   };
 
+  // Get available hours for the selected date
+  const getAvailableHoursForSelectedDate = () => {
+    if (!selectedDate) return [];
+    
+    const formattedDate = formatDateForDB(selectedDate);
+    
+    // Get unavailable hours from availabilities context
+    const unavailableHours = availabilities
+      .filter(a => a.date === formattedDate && !a.is_available)
+      .map(a => a.hour.slice(0, 5)); // Convert HH:MM:SS to HH:MM
+    
+    // Filter out both booked and unavailable hours using proper normalization
+    const availableHours = TIME_SLOTS.filter(hour => {
+      // Check if hour is booked
+      const isBooked = bookedTimeSlots.some(
+        (b) => b === hour || b.padStart(5, "0") === hour.padStart(5, "0") || 
+               b.replace(/^0/, "") === hour.replace(/^0/, "")
+      );
+      
+      // Check if hour is unavailable (blocked)
+      const isUnavailable = unavailableHours.some(
+        (u) => u === hour || u.padStart(5, "0") === hour.padStart(5, "0") || 
+               u.replace(/^0/, "") === hour.replace(/^0/, "")
+      );
+      
+      return !isBooked && !isUnavailable;
+    });
+    
+    return availableHours;
+  };
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>
             {booking ? "Edit Booking" : "Create New Booking"}
@@ -220,75 +317,83 @@ export default function BookingFormModal({ open, onClose, booking }: BookingForm
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-sm font-medium">First Name</label>
+              <Label htmlFor="first_name">First Name</Label>
               <input
                 {...form.register("first_name", { required: true })}
-                className="w-full p-2 border rounded"
+                className="w-full p-2 border rounded bg-gray-800 text-white border-gray-700"
+                placeholder="First name"
               />
             </div>
             <div>
-              <label className="text-sm font-medium">Last Name</label>
+              <Label htmlFor="last_name">Last Name</Label>
               <input
                 {...form.register("last_name", { required: true })}
-                className="w-full p-2 border rounded"
+                className="w-full p-2 border rounded bg-gray-800 text-white border-gray-700"
+                placeholder="Last name"
               />
             </div>
           </div>
           <div>
-            <label className="text-sm font-medium">Phone Number</label>
+            <Label htmlFor="phone_number">Phone Number</Label>
             <input
               {...form.register("phone_number", { required: true })}
-              className="w-full p-2 border rounded"
+              className="w-full p-2 border rounded bg-gray-800 text-white border-gray-700"
+              placeholder="Phone number"
             />
           </div>
           <div>
-            <label className="text-sm font-medium">Service Type</label>
-            <select
-              {...form.register("service_type", { required: true })}
-              className="w-full p-2 border rounded"
+            <Label htmlFor="service_type">Service Type</Label>
+            <Select 
+              value={form.watch("service_type")} 
+              onValueChange={(value) => form.setValue("service_type", value)}
             >
-              <option value="">Select a service</option>
-              {services.filter(service => service.is_active).map((service) => (
-                <option key={service.id} value={service.name}>
-                  {service.name} - {service.duration}min - {service.price} RON
-                </option>
-              ))}
-            </select>
+              <SelectTrigger className="bg-gray-800 text-white border-gray-700">
+                <SelectValue placeholder="Select a service" />
+              </SelectTrigger>
+              <SelectContent className="bg-gray-800 text-white">
+                {services.filter(service => service.is_active).map((service) => (
+                  <SelectItem key={service.id} value={service.name}>
+                    {service.name} - {service.duration}min - {service.price} RON
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div>
-            <label className="text-sm font-medium">Booking Date</label>
-            <input
-              type="date"
-              {...form.register("booking_date", { required: true })}
-              className="w-full p-2 border rounded"
+            <Label>Booking Date</Label>
+            <Calendar
+              mode="single"
+              selected={selectedDate}
+              onSelect={setSelectedDate}
+              disabled={(date) => date < getTomorrow()}
+              className="rounded-md border bg-gray-800 text-white"
             />
           </div>
           <div>
-            <label className="text-sm font-medium">Booking Time</label>
-            <input
-              type="time"
-              {...form.register("booking_time", { required: true })}
-              className="w-full p-2 border rounded"
-            />
+            <Label>Booking Time</Label>
+            <Select value={selectedTime} onValueChange={setSelectedTime}>
+              <SelectTrigger className="bg-gray-800 text-white border-gray-700">
+                <SelectValue placeholder="Select time" />
+              </SelectTrigger>
+              <SelectContent className="bg-gray-800 text-white">
+                {selectedDate && getAvailableHoursForSelectedDate().map((hour) => (
+                  <SelectItem key={hour} value={hour}>
+                    {hour}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-          <div className="flex justify-end space-x-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 border rounded"
-            >
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>
               Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="px-4 py-2 bg-blue-500 text-white rounded disabled:opacity-50"
-            >
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? "Saving..." : booking ? "Update" : "Create"}
-            </button>
-          </div>
+            </Button>
+          </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
   );
-} 
+}; 

@@ -16,10 +16,16 @@ import { useServices } from "@/contexts/ServicesContext";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from 'date-fns';
 import { useBookingNotifications } from "@/services/notifications/hooks";
-
-const HOURS = [
-  "08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "20:00"
-];
+import { 
+  TIME_SLOTS, 
+  formatDateForDB, 
+  fetchBookedTimeSlots, 
+  isTimeSlotUnavailable,
+  getAvailableHoursForDate,
+  getTomorrow,
+  checkForDoubleBooking,
+  validateBookingData
+} from "@/lib/booking-utils";
 
 export default function EditBookingModal({ open, onClose, booking, onBookingUpdated }) {
   const [serviceType, setServiceType] = useState("");
@@ -28,18 +34,11 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
   const [isSaving, setIsSaving] = useState(false);
   const [bookedTimeSlots, setBookedTimeSlots] = useState<string[]>([]);
   const [userDetails, setUserDetails] = useState<{ email: string; phone: string; fullName: string } | null>(null);
+  const [error, setError] = useState("");
 
   const { availabilities, fetchAvailabilities } = useAvailabilities();
   const { services, getServiceByName } = useServices();
   const { sendBookingUpdateProfile } = useBookingNotifications();
-
-  // Helper function to format date correctly
-  const formatDateForDB = (date: Date) => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
 
   useEffect(() => {
     const from = format(new Date(), 'yyyy-MM-dd');
@@ -85,90 +84,103 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
 
   // Fetch booked slots each time bookingDate changes
   useEffect(() => {
-    const fetchBookedTimeSlots = async () => {
+    const fetchBookedSlots = async () => {
       if (!bookingDate) {
         setBookedTimeSlots([]);
         return;
       }
-      const formattedDate = formatDateForDB(bookingDate);
       try {
-        const { data, error } = await supabase
-          .from('bookings')
-          .select('booking_time')
-          .eq('booking_date', formattedDate);
-        if (error) {
-          console.error('Error fetching booked time slots:', error);
-          setBookedTimeSlots([]);
-          return;
-        }
-        const booked = (data ?? []).map(booking => {
-          return (booking.booking_time || "").toString().slice(0, 5);
-        });
+        const booked = await fetchBookedTimeSlots(bookingDate);
         setBookedTimeSlots(booked);
-        // If current selected time is now booked, reset it
-        if (bookingTime && booked.includes(bookingTime)) {
+        // If current booking time is now booked by someone else, clear it
+        if (bookingTime && booked.includes(bookingTime) && booking?.booking_time !== bookingTime) {
           setBookingTime('');
         }
       } catch (error) {
-        console.error('Error in fetching booked slots:', error);
+        console.error('Error fetching booked time slots:', error);
         setBookedTimeSlots([]);
       }
     };
-    fetchBookedTimeSlots();
-  }, [bookingDate, bookingTime]);
+    fetchBookedSlots();
+  }, [bookingDate, bookingTime, booking?.booking_time]);
+
+  // Compute unavailable slots from availabilities context
+  useEffect(() => {
+    if (!bookingDate) return;
+    
+    const formattedDate = formatDateForDB(bookingDate);
+    const slots: string[] = [];
+    availabilities
+      .filter(a => a.date === formattedDate)
+      .forEach(a => {
+        if (!a.is_available) {
+          slots.push(a.hour.slice(0, 5));
+        }
+      });
+    
+    // If current booking time is now unavailable, clear it
+    if (bookingTime && slots.includes(bookingTime) && booking?.booking_time !== bookingTime) {
+      setBookingTime('');
+    }
+  }, [availabilities, bookingDate, bookingTime, booking?.booking_time]);
 
   const handleSave = async () => {
-    if (!serviceType || !bookingDate || !bookingTime) {
-      alert("Please fill in all fields");
+    setError("");
+    
+    // Validate booking data
+    const validation = validateBookingData(bookingDate, bookingTime, serviceType);
+    if (!validation.isValid) {
+      setError(validation.error || 'Invalid booking data');
       return;
     }
 
-    try {
-      setIsSaving(true);
+    // Check for double booking
+    const doubleBookingCheck = await checkForDoubleBooking(
+      bookingDate!, 
+      bookingTime, 
+      booking?.id
+    );
+    
+    if (doubleBookingCheck.isDoubleBooked) {
+      setError(doubleBookingCheck.error || 'This time slot is already booked');
+      return;
+    }
 
-      // Get service details
+    setIsSaving(true);
+    try {
+      // Get service details from the database
       const serviceDetails = getServiceByName(serviceType);
       const serviceId = serviceDetails?.id || null;
 
-      // Check for double booking (excluding current booking)
-      const formattedDate = formatDateForDB(bookingDate);
-      const conflictingBooking = bookedTimeSlots.includes(bookingTime);
-
-      if (conflictingBooking) {
-        alert("This time slot is already booked. Please choose a different time.");
-        return;
-      }
-
       // Update the booking
-      const { error } = await supabase
+      const { error: updateError } = await supabase
         .from('bookings')
         .update({
           service_type: serviceType,
-          service_id: serviceId,
-          booking_date: formattedDate,
+          booking_date: formatDateForDB(bookingDate!),
           booking_time: bookingTime,
+          service_id: serviceId,
         })
         .eq('id', booking.id);
 
-      if (error) {
-        console.error('Error updating booking:', error);
-        alert("Error updating booking");
+      if (updateError) {
+        setError('Failed to update booking: ' + updateError.message);
         return;
       }
 
-      // Send notification if user details are available
-      if (userDetails) {
+      // Send notification if booking has a user
+      if (booking.user_id && userDetails) {
         try {
           await sendBookingUpdateProfile({
             bookingId: booking.id,
-            userId: booking.user_id || '',
+            userId: booking.user_id,
             userName: userDetails.fullName,
             userEmail: userDetails.email,
             userPhone: userDetails.phone,
             serviceName: serviceType,
             serviceId: serviceId,
             serviceProvider: 'Melinda',
-            bookingDate: formattedDate,
+            bookingDate: bookingDate!,
             bookingTime: bookingTime,
             duration: serviceDetails?.duration || 60,
             price: serviceDetails?.price || 140.00,
@@ -182,33 +194,42 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
       onBookingUpdated();
       onClose();
     } catch (error) {
-      console.error('Error saving booking:', error);
-      alert("Error saving booking");
+      console.error('Error updating booking:', error);
+      setError('An unexpected error occurred while updating the booking.');
     } finally {
       setIsSaving(false);
     }
   };
 
-  const isDayAvailable = (date: Date) => {
-    const dayOfWeek = date.getDay();
-    return dayOfWeek >= 1 && dayOfWeek <= 6; // Monday to Saturday
-  };
-
-  const getAvailableHoursForDate = (date: Date | undefined) => {
-    if (!date) return [];
+  // Get available hours for the selected date
+  const getAvailableHoursForSelectedDate = () => {
+    if (!bookingDate) return [];
     
-    const formattedDate = formatDateForDB(date);
+    const formattedDate = formatDateForDB(bookingDate);
     
     // Get unavailable hours from availabilities context
     const unavailableHours = availabilities
       .filter(a => a.date === formattedDate && !a.is_available)
       .map(a => a.hour.slice(0, 5)); // Convert HH:MM:SS to HH:MM
     
-    // Filter out both booked and unavailable hours
-    return HOURS.filter(hour => 
-      !bookedTimeSlots.includes(hour) && 
-      !unavailableHours.includes(hour)
-    );
+    // Filter out both booked and unavailable hours using proper normalization
+    const availableHours = TIME_SLOTS.filter(hour => {
+      // Check if hour is booked
+      const isBooked = bookedTimeSlots.some(
+        (b) => b === hour || b.padStart(5, "0") === hour.padStart(5, "0") || 
+               b.replace(/^0/, "") === hour.replace(/^0/, "")
+      );
+      
+      // Check if hour is unavailable (blocked)
+      const isUnavailable = unavailableHours.some(
+        (u) => u === hour || u.padStart(5, "0") === hour.padStart(5, "0") || 
+               u.replace(/^0/, "") === hour.replace(/^0/, "")
+      );
+      
+      return !isBooked && !isUnavailable;
+    });
+    
+    return availableHours;
   };
 
   // Get original booking time for display
@@ -227,6 +248,9 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
+          {error && (
+            <div className="text-red-500 text-sm mb-2">{error}</div>
+          )}
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="service" className="text-right">
               Service
@@ -251,7 +275,7 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
                 mode="single"
                 selected={bookingDate}
                 onSelect={setBookingDate}
-                disabled={(date) => !isDayAvailable(date)}
+                disabled={(date) => date < getTomorrow()}
                 className="rounded-md border"
               />
             </div>
@@ -270,7 +294,7 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
                 <SelectValue placeholder="Select time" />
               </SelectTrigger>
               <SelectContent>
-                {bookingDate && getAvailableHoursForDate(bookingDate).map((hour) => (
+                {bookingDate && getAvailableHoursForSelectedDate().map((hour) => (
                   <SelectItem key={hour} value={hour}>
                     {hour}
                   </SelectItem>
@@ -290,4 +314,4 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
       </DialogContent>
     </Dialog>
   );
-} 
+}; 

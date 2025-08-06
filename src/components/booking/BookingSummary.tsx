@@ -9,9 +9,9 @@ type BookingSummaryProps = {
     phoneNumber: string;
     serviceType: string;
   }>;
-  selectedDate: Date;
-  selectedTime: string;
-  selectedService: string;
+  selectedDate: Date | undefined;
+  selectedTime: string | undefined;
+  selectedService: string | undefined;
 };
 
 const BookingSummary = ({ 
@@ -26,11 +26,11 @@ const BookingSummary = ({
         <CardTitle className="text-white">Rezumatul rezervării</CardTitle>
       </CardHeader>
       <CardContent className="space-y-2">
-        <p className="text-gray-200"><strong className="text-white">Nume:</strong> {form.watch('fullName')}</p>
-        <p className="text-gray-200"><strong className="text-white">Telefon:</strong> {form.watch('phoneNumber')}</p>
-        <p className="text-gray-200"><strong className="text-white">Serviciu:</strong> {selectedService}</p>
-        <p className="text-gray-200"><strong className="text-white">Data:</strong> {selectedDate.toLocaleDateString('ro-RO')}</p>
-        <p className="text-gray-200"><strong className="text-white">Ora:</strong> {selectedTime}</p>
+        <p className="text-gray-200"><strong className="text-white">Nume:</strong> {form.watch('fullName') || 'Nu a fost selectat'}</p>
+        <p className="text-gray-200"><strong className="text-white">Telefon:</strong> {form.watch('phoneNumber') || 'Nu a fost selectat'}</p>
+        <p className="text-gray-200"><strong className="text-white">Serviciu:</strong> {selectedService || 'Nu a fost selectat'}</p>
+        <p className="text-gray-200"><strong className="text-white">Data:</strong> {selectedDate ? selectedDate.toLocaleDateString('ro-RO') : 'Nu a fost selectată'}</p>
+        <p className="text-gray-200"><strong className="text-white">Ora:</strong> {selectedTime || 'Nu a fost selectată'}</p>
       </CardContent>
     </Card>
   );
