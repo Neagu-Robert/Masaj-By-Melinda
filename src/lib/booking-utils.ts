@@ -6,6 +6,12 @@ export const TIME_SLOTS = Array.from({ length: 13 }, (_, i) => {
   return `${hour}:00`;
 });
 
+// Time slots for Saturday (8 AM to 12 PM only)
+export const SATURDAY_TIME_SLOTS = Array.from({ length: 5 }, (_, i) => {
+  const hour = i + 8; // Start from 8 AM, end at 12 PM
+  return `${hour}:00`;
+});
+
 // Helper: format date correctly for database
 export const formatDateForDB = (date: Date) => {
   const year = date.getFullYear();
@@ -34,9 +40,45 @@ export const isDateAvailable = (date: Date) => {
     return false;
   }
   
-  // Check if it's a business day (Monday to Saturday)
+  // Check if it's a business day (Monday to Saturday, no Sundays)
   const dayOfWeek = date.getDay();
-  return dayOfWeek >= 1 && dayOfWeek <= 6; // Monday = 1, Saturday = 6
+  return dayOfWeek >= 1 && dayOfWeek <= 6; // Monday = 1, Saturday = 6, Sunday = 0
+};
+
+// Get available time slots for a specific date (considering business rules)
+export const getAvailableTimeSlotsForDate = (date: Date): string[] => {
+  const dayOfWeek = date.getDay();
+  
+  // Sunday is not available
+  if (dayOfWeek === 0) {
+    return [];
+  }
+  
+  // Saturday: only 8 AM to 12 PM
+  if (dayOfWeek === 6) {
+    return SATURDAY_TIME_SLOTS;
+  }
+  
+  // Monday to Friday: full day (8 AM to 8 PM)
+  return TIME_SLOTS;
+};
+
+// Check if a specific time is available for a date (considering business rules)
+export const isTimeAvailableForDate = (date: Date, time: string): boolean => {
+  const dayOfWeek = date.getDay();
+  
+  // Sunday is not available
+  if (dayOfWeek === 0) {
+    return false;
+  }
+  
+  // Saturday: only 8 AM to 12 PM
+  if (dayOfWeek === 6) {
+    return SATURDAY_TIME_SLOTS.includes(time);
+  }
+  
+  // Monday to Friday: full day (8 AM to 8 PM)
+  return TIME_SLOTS.includes(time);
 };
 
 // Fetch booked time slots for a specific date
@@ -66,8 +108,14 @@ export const fetchBookedTimeSlots = async (date: Date): Promise<string[]> => {
 export const isTimeSlotUnavailable = (
   time: string, 
   bookedTimeSlots: string[], 
-  unavailableSlots: string[]
+  unavailableSlots: string[],
+  date?: Date
 ): boolean => {
+  // First check business rules
+  if (date && !isTimeAvailableForDate(date, time)) {
+    return true;
+  }
+  
   const normalized = time.padStart(5, "0");
   return (
     bookedTimeSlots.some(
@@ -79,7 +127,7 @@ export const isTimeSlotUnavailable = (
   );
 };
 
-// Get available hours for a specific date
+// Get available hours for a specific date (considering business rules)
 export const getAvailableHoursForDate = (
   date: Date | undefined,
   bookedTimeSlots: string[],
@@ -87,8 +135,11 @@ export const getAvailableHoursForDate = (
 ): string[] => {
   if (!date) return [];
   
-  return TIME_SLOTS.filter(hour => 
-    !isTimeSlotUnavailable(hour, bookedTimeSlots, unavailableSlots)
+  // Get base time slots based on business rules
+  const baseTimeSlots = getAvailableTimeSlotsForDate(date);
+  
+  return baseTimeSlots.filter(hour => 
+    !isTimeSlotUnavailable(hour, bookedTimeSlots, unavailableSlots, date)
   );
 };
 
@@ -108,6 +159,10 @@ export const validateBookingData = (
   
   if (!bookingTime) {
     return { isValid: false, error: 'Please select a time' };
+  }
+  
+  if (!isTimeAvailableForDate(bookingDate, bookingTime)) {
+    return { isValid: false, error: 'Selected time is not available for this date' };
   }
   
   if (!serviceType) {

@@ -13,13 +13,16 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
+import { Input } from "@/components/ui/input";
+import { CalendarIcon, Clock } from "lucide-react";
 import { 
   formatDateForDB, 
   checkForDoubleBooking, 
   validateBookingData,
   TIME_SLOTS,
   getTomorrow,
-  fetchBookedTimeSlots
+  fetchBookedTimeSlots,
+  getAvailableTimeSlotsForDate
 } from "@/lib/booking-utils";
 
 interface BookingFormModalProps {
@@ -281,8 +284,11 @@ export default function BookingFormModal({ open, onClose, booking }: BookingForm
       .filter(a => a.date === formattedDate && !a.is_available)
       .map(a => a.hour.slice(0, 5)); // Convert HH:MM:SS to HH:MM
     
+    // Get base time slots based on business rules
+    const baseTimeSlots = getAvailableTimeSlotsForDate(selectedDate);
+    
     // Filter out both booked and unavailable hours using proper normalization
-    const availableHours = TIME_SLOTS.filter(hour => {
+    const availableHours = baseTimeSlots.filter(hour => {
       // Check if hour is booked
       const isBooked = bookedTimeSlots.some(
         (b) => b === hour || b.padStart(5, "0") === hour.padStart(5, "0") || 
@@ -301,95 +307,139 @@ export default function BookingFormModal({ open, onClose, booking }: BookingForm
     return availableHours;
   };
 
+  // Check if a date should be disabled in the calendar
+  const isDateDisabled = (date: Date) => {
+    const tomorrow = getTomorrow();
+    const dayOfWeek = date.getDay();
+    
+    // Disable dates before tomorrow
+    if (date < tomorrow) {
+      return true;
+    }
+    
+    // Disable Sundays
+    if (dayOfWeek === 0) {
+      return true;
+    }
+    
+    return false;
+  };
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-gray-900 border-gray-700">
         <DialogHeader>
-          <DialogTitle>
-            {booking ? "Edit Booking" : "Create New Booking"}
+          <DialogTitle className="text-xl font-bold text-violet-300">
+            {booking ? 'Edit Booking' : 'Create New Booking'}
           </DialogTitle>
-          <DialogDescription>
-            {booking
-              ? "Make changes to the booking here."
-              : "Fill in the details to create a new booking."}
-          </DialogDescription>
         </DialogHeader>
-        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+        
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+          {/* Personal Information */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="first_name">First Name</Label>
-              <input
-                {...form.register("first_name", { required: true })}
-                className="w-full p-2 border rounded bg-gray-800 text-white border-gray-700"
-                placeholder="First name"
+              <Label htmlFor="first_name" className="text-violet-200">First Name</Label>
+              <Input
+                id="first_name"
+                {...form.register('first_name')}
+                className="bg-gray-800 text-white border-gray-600"
               />
             </div>
             <div>
-              <Label htmlFor="last_name">Last Name</Label>
-              <input
-                {...form.register("last_name", { required: true })}
-                className="w-full p-2 border rounded bg-gray-800 text-white border-gray-700"
-                placeholder="Last name"
+              <Label htmlFor="last_name" className="text-violet-200">Last Name</Label>
+              <Input
+                id="last_name"
+                {...form.register('last_name')}
+                className="bg-gray-800 text-white border-gray-600"
               />
             </div>
           </div>
-          <div>
-            <Label htmlFor="phone_number">Phone Number</Label>
-            <input
-              {...form.register("phone_number", { required: true })}
-              className="w-full p-2 border rounded bg-gray-800 text-white border-gray-700"
-              placeholder="Phone number"
-            />
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="phone_number" className="text-violet-200">Phone Number</Label>
+              <Input
+                id="phone_number"
+                {...form.register('phone_number')}
+                className="bg-gray-800 text-white border-gray-600"
+              />
+            </div>
+            <div>
+              <Label htmlFor="service_type" className="text-violet-200">Service Type</Label>
+              <Select value={form.watch('service_type')} onValueChange={(value) => form.setValue('service_type', value)}>
+                <SelectTrigger className="bg-gray-800 text-white border-gray-600">
+                  <SelectValue placeholder="Select a service" />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-800 text-white border-gray-600">
+                  {services.map((service) => (
+                    <SelectItem key={service.id} value={service.name}>
+                      {service.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-          <div>
-            <Label htmlFor="service_type">Service Type</Label>
-            <Select 
-              value={form.watch("service_type")} 
-              onValueChange={(value) => form.setValue("service_type", value)}
-            >
-              <SelectTrigger className="bg-gray-800 text-white border-gray-700">
-                <SelectValue placeholder="Select a service" />
-              </SelectTrigger>
-              <SelectContent className="bg-gray-800 text-white">
-                {services.filter(service => service.is_active).map((service) => (
-                  <SelectItem key={service.id} value={service.name}>
-                    {service.name} - {service.duration}min - {service.price} RON
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+
+          {/* Date and Time Selection */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-violet-300">Date & Time Selection</h3>
+            <div className="flex flex-col space-y-6 md:space-y-0 md:flex-row md:space-x-6">
+              {/* Calendar Section */}
+              <div className="w-full md:w-1/2">
+                <div className="flex items-center mb-3">
+                  <CalendarIcon className="mr-2 h-5 w-5 text-violet-400" />
+                  <span className="font-medium text-violet-200">Select Date</span>
+                </div>
+                <div className="flex justify-center">
+                  <Calendar
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={setSelectedDate}
+                    disabled={isDateDisabled}
+                    className="rounded-md border border-gray-600 bg-gray-800 text-violet-200 [&_.rdp-day]:text-violet-200 [&_.rdp-day_selected]:bg-violet-600 [&_.rdp-day_selected]:text-white [&_.rdp-day:hover]:bg-violet-600/20"
+                  />
+                </div>
+              </div>
+              
+              {/* Time Selection Section */}
+              <div className="w-full md:w-1/2">
+                <div className="flex items-center mb-3">
+                  <Clock className="mr-2 h-5 w-5 text-violet-400" />
+                  <span className="font-medium text-violet-200">Select Time</span>
+                </div>
+                {booking?.booking_time && (
+                  <p className="text-violet-400 text-sm mb-2">
+                    Original time: <span className="font-semibold">{booking.booking_time}</span>
+                  </p>
+                )}
+                <Select value={selectedTime} onValueChange={setSelectedTime}>
+                  <SelectTrigger className="bg-gray-800 text-white border-gray-600">
+                    <SelectValue placeholder="Select a time" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-800 text-white border-gray-600">
+                    {selectedDate && getAvailableHoursForSelectedDate().map((hour) => (
+                      <SelectItem key={hour} value={hour}>
+                        {hour}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedDate && getAvailableHoursForSelectedDate().length === 0 && (
+                  <p className="text-violet-300 text-sm mt-2">
+                    No available time slots for this date.
+                  </p>
+                )}
+              </div>
+            </div>
           </div>
-          <div>
-            <Label>Booking Date</Label>
-            <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={setSelectedDate}
-              disabled={(date) => date < getTomorrow()}
-              className="rounded-md border bg-gray-800 text-white"
-            />
-          </div>
-          <div>
-            <Label>Booking Time</Label>
-            <Select value={selectedTime} onValueChange={setSelectedTime}>
-              <SelectTrigger className="bg-gray-800 text-white border-gray-700">
-                <SelectValue placeholder="Select time" />
-              </SelectTrigger>
-              <SelectContent className="bg-gray-800 text-white">
-                {selectedDate && getAvailableHoursForSelectedDate().map((hour) => (
-                  <SelectItem key={hour} value={hour}>
-                    {hour}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button type="button" variant="outline" onClick={onClose} className="border-gray-600 text-violet-800 hover:bg-gray-700">
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Saving..." : booking ? "Update" : "Create"}
+            <Button type="submit" className="bg-violet-600 hover:bg-violet-700 text-white">
+              {booking ? 'Update Booking' : 'Create Booking'}
             </Button>
           </DialogFooter>
         </form>

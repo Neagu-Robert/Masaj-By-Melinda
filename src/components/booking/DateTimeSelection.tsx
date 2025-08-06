@@ -9,7 +9,8 @@ import {
   formatDateForDB, 
   fetchBookedTimeSlots, 
   isTimeSlotUnavailable,
-  getTomorrow 
+  getTomorrow,
+  getAvailableTimeSlotsForDate
 } from '@/lib/booking-utils';
 
 type DateTimeSelectionProps = {
@@ -25,140 +26,134 @@ const DateTimeSelection = ({
   selectedTime,
   setSelectedTime,
 }: DateTimeSelectionProps) => {
-  // Track booked time slots for the selected date
-  const [bookedTimeSlots, setBookedTimeSlots] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
   const { availabilities, fetchAvailabilities } = useAvailabilities();
-  const [unavailableSlots, setUnavailableSlots] = useState<string[]>([]);
+  const [bookedTimeSlots, setBookedTimeSlots] = useState<string[]>([]);
 
-  // Fetch booked slots each time selectedDate changes
+  // Fetch booked time slots when date changes
   useEffect(() => {
-    const fetchBookedSlots = async () => {
-      if (!selectedDate) {
-        setBookedTimeSlots([]);
-        return;
-      }
-      setIsLoading(true);
-      try {
-        const booked = await fetchBookedTimeSlots(selectedDate);
-        setBookedTimeSlots(booked);
-        if (selectedTime && booked.includes(selectedTime)) {
-          setSelectedTime('');
-        }
-      } catch (error) {
-        console.error('Error in fetching booked slots:', error);
-        setBookedTimeSlots([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchBookedSlots();
-  }, [selectedDate, selectedTime, setSelectedTime]);
-
-  // Fetch availabilities for the selected date
-  useEffect(() => {
-    if (!selectedDate) {
-      setUnavailableSlots([]);
-      return;
+    if (selectedDate) {
+      const fetchBookedSlots = async () => {
+        const slots = await fetchBookedTimeSlots(selectedDate);
+        setBookedTimeSlots(slots);
+      };
+      fetchBookedSlots();
+    } else {
+      setBookedTimeSlots([]);
     }
-    const formattedDate = formatDateForDB(selectedDate);
-    // Fetch availabilities for just this date
-    fetchAvailabilities(formattedDate, formattedDate);
+  }, [selectedDate]);
+
+  // Fetch availabilities when date changes
+  useEffect(() => {
+    if (selectedDate) {
+      const formattedDate = formatDateForDB(selectedDate);
+      fetchAvailabilities(formattedDate, formattedDate);
+    }
   }, [selectedDate, fetchAvailabilities]);
 
-  // Compute unavailable slots from availabilities context
-  useEffect(() => {
-    if (!selectedDate) {
-      setUnavailableSlots([]);
-      return;
-    }
+  // Get available hours for the selected date
+  const getAvailableHoursForSelectedDate = () => {
+    if (!selectedDate) return [];
+    
     const formattedDate = formatDateForDB(selectedDate);
-    const slots: string[] = [];
-    availabilities
-      .filter(a => a.date === formattedDate)
-      .forEach(a => {
-        if (!a.is_available) {
-          slots.push(a.hour.slice(0, 5));
-        }
-      });
-    setUnavailableSlots(slots);
-  }, [availabilities, selectedDate]);
+    
+    // Get unavailable hours from availabilities context
+    const unavailableHours = availabilities
+      .filter(a => a.date === formattedDate && !a.is_available)
+      .map(a => a.hour.slice(0, 5)); // Convert HH:MM:SS to HH:MM
+    
+    // Get base time slots based on business rules
+    const baseTimeSlots = getAvailableTimeSlotsForDate(selectedDate);
+    
+    // Filter out both booked and unavailable hours using proper normalization
+    const availableHours = baseTimeSlots.filter(hour => {
+      // Check if hour is booked
+      const isBooked = bookedTimeSlots.some(
+        (b) => b === hour || b.padStart(5, "0") === hour.padStart(5, "0") || 
+               b.replace(/^0/, "") === hour.replace(/^0/, "")
+      );
+      
+      // Check if hour is unavailable (blocked)
+      const isUnavailable = unavailableHours.some(
+        (u) => u === hour || u.padStart(5, "0") === hour.padStart(5, "0") || 
+               u.replace(/^0/, "") === hour.replace(/^0/, "")
+      );
+      
+      return !isBooked && !isUnavailable;
+    });
+    
+    return availableHours;
+  };
 
-  // If the current selected time just became unavailable, reset it
-  useEffect(() => {
-    if (selectedTime && (bookedTimeSlots.includes(selectedTime) || unavailableSlots.includes(selectedTime))) {
-      setSelectedTime('');
+  // Check if a date should be disabled in the calendar
+  const isDateDisabled = (date: Date) => {
+    const tomorrow = getTomorrow();
+    const dayOfWeek = date.getDay();
+    
+    // Disable dates before tomorrow
+    if (date < tomorrow) {
+      return true;
     }
-  }, [bookedTimeSlots, unavailableSlots, selectedTime, setSelectedTime]);
+    
+    // Disable Sundays
+    if (dayOfWeek === 0) {
+      return true;
+    }
+    
+    return false;
+  };
 
   return (
     <Card className="bg-gray-800 border-gray-700">
       <CardHeader className="pb-4">
-        <CardTitle className="text-lg md:text-xl text-white">Selectați data și ora</CardTitle>
+        <CardTitle className="text-lg md:text-xl text-violet-300">Selectați data și ora</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="flex flex-col space-y-6 md:space-y-0 md:flex-row md:space-x-4">
           <div className="w-full md:w-1/2">
             {/* Calendar Section */}
             <div className="flex items-center mb-3 md:mb-2">
-              <CalendarIcon className="mr-2 h-5 w-5 text-gray-400" />
-              <span className="font-medium text-gray-200 text-sm md:text-base">Selectați data</span>
+              <CalendarIcon className="mr-2 h-5 w-5 text-violet-400" />
+              <span className="font-medium text-violet-200 text-sm md:text-base">Selectați data</span>
             </div>
             <div className="flex justify-center">
               <Calendar
                 mode="single"
                 selected={selectedDate}
                 onSelect={setSelectedDate}
-                className="rounded-md border border-gray-600 bg-gray-700 text-white pointer-events-auto w-full max-w-sm [&_.rdp-day]:text-white [&_.rdp-day_selected]:bg-[#7E69AB] [&_.rdp-day_selected]:text-white [&_.rdp-day:hover]:bg-gray-600 [&_.rdp-day]:h-10 [&_.rdp-day]:w-10 [&_.rdp-day]:text-sm md:[&_.rdp-day]:h-9 md:[&_.rdp-day]:w-9 md:[&_.rdp-day]:text-base"
-                disabled={(date) => date < getTomorrow()}
+                disabled={isDateDisabled}
+                className="rounded-md border border-gray-600 bg-gray-700 text-violet-200 pointer-events-auto w-full max-w-sm [&_.rdp-day]:text-violet-200 [&_.rdp-day_selected]:bg-violet-600 [&_.rdp-day_selected]:text-white [&_.rdp-day:hover]:bg-violet-600/20 [&_.rdp-day]:h-10 [&_.rdp-day]:w-10 [&_.rdp-day]:text-sm md:[&_.rdp-day]:h-9 md:[&_.rdp-day]:w-9 md:[&_.rdp-day]:text-base"
               />
             </div>
           </div>
           <div className="w-full md:w-1/2">
             <div className="flex items-center mb-3 md:mb-2">
-              <Clock className="mr-2 h-5 w-5 text-gray-400" />
-              <span className="font-medium text-gray-200 text-sm md:text-base">Selectați ora</span>
-              {isLoading && <span className="ml-2 text-xs md:text-sm text-gray-400">(Încărcare...)</span>}
+              <Clock className="mr-2 h-5 w-5 text-violet-400" />
+              <span className="font-medium text-violet-200 text-sm md:text-base">Selectați ora</span>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 md:gap-3">
-              {TIME_SLOTS.map((time) => {
-                const isUnavailable = isTimeSlotUnavailable(time, bookedTimeSlots, unavailableSlots);
-                const isSelected = selectedTime === time && !isUnavailable;
+              {getAvailableHoursForSelectedDate().map((time) => {
+                const isSelected = selectedTime === time;
                 return (
                   <Button
                     key={time}
                     type="button"
-                    variant={isUnavailable ? "outline" : isSelected ? "default" : "outline"}
+                    variant={isSelected ? "default" : "outline"}
                     className={`
                       h-14 md:h-12 text-sm md:text-base transition font-medium
-                      ${isSelected ? 'bg-[#7E69AB] text-white border-transparent hover:bg-[#7E69AB]/90' : ''}
-                      ${isUnavailable
-                        ? 'bg-gray-700 text-gray-500 border-gray-600 opacity-60 cursor-not-allowed pointer-events-none'
-                        : !isSelected
-                          ? 'bg-gray-700 text-gray-200 border-gray-600 hover:bg-[#63099c]/20 hover:border-[#63099c]'
-                          : ''}
+                      ${isSelected ? 'bg-violet-600 text-white border-transparent hover:bg-violet-700' : ''}
+                      ${!isSelected ? 'bg-gray-700 text-violet-200 border-gray-600 hover:bg-violet-600/20 hover:border-violet-500' : ''}
                     `}
-                    onClick={() => {
-                      if (!isUnavailable) {
-                        setSelectedTime(time);
-                      }
-                    }}
-                    disabled={isUnavailable}
-                    aria-disabled={isUnavailable}
-                    tabIndex={isUnavailable ? -1 : 0}
+                    onClick={() => setSelectedTime(time)}
                   >
                     {time}
-                    {isUnavailable && (
-                      <span className="ml-1 md:ml-2 text-xs text-red-400 align-middle">(indisponibil)</span>
-                    )}
                   </Button>
                 );
               })}
             </div>
-            {selectedDate && (bookedTimeSlots.length > 0 || unavailableSlots.length > 0) && (
-              <div className="mt-3 md:mt-2 text-xs text-gray-400">
-                * Intervalele marcate "indisponibil" nu pot fi selectate
-              </div>
+            {selectedDate && getAvailableHoursForSelectedDate().length === 0 && (
+              <p className="text-violet-300 text-sm mt-2">
+                Nu sunt intervale disponibile pentru această dată.
+              </p>
             )}
           </div>
         </div>

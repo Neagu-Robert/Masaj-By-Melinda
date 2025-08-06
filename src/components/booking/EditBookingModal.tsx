@@ -24,8 +24,11 @@ import {
   getAvailableHoursForDate,
   getTomorrow,
   checkForDoubleBooking,
-  validateBookingData
+  validateBookingData,
+  getAvailableTimeSlotsForDate
 } from "@/lib/booking-utils";
+import { Input } from "@/components/ui/input";
+import { Calendar as CalendarIcon, Clock } from "lucide-react";
 
 export default function EditBookingModal({ open, onClose, booking, onBookingUpdated }) {
   const [serviceType, setServiceType] = useState("");
@@ -35,6 +38,26 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
   const [bookedTimeSlots, setBookedTimeSlots] = useState<string[]>([]);
   const [userDetails, setUserDetails] = useState<{ email: string; phone: string; fullName: string } | null>(null);
   const [error, setError] = useState("");
+
+  // Function to reset form to original booking values
+  const resetForm = () => {
+    if (booking) {
+      setServiceType(booking.service_type || "");
+      setBookingDate(booking.booking_date ? new Date(booking.booking_date) : undefined);
+      setBookingTime(booking.booking_time || "");
+    } else {
+      setServiceType("");
+      setBookingDate(undefined);
+      setBookingTime("");
+    }
+    setError("");
+  };
+
+  // Handle modal close with reset
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
 
   const { availabilities, fetchAvailabilities } = useAvailabilities();
   const { services, getServiceByName } = useServices();
@@ -75,12 +98,10 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
   }, [booking, fetchAvailabilities]);
 
   useEffect(() => {
-    if (booking) {
-      setServiceType(booking.service_type || "");
-      setBookingDate(booking.booking_date ? new Date(booking.booking_date) : undefined);
-      setBookingTime(booking.booking_time || "");
+    if (open && booking) {
+      resetForm();
     }
-  }, [booking]);
+  }, [open, booking]);
 
   // Fetch booked slots each time bookingDate changes
   useEffect(() => {
@@ -192,7 +213,7 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
       }
 
       onBookingUpdated();
-      onClose();
+      handleClose();
     } catch (error) {
       console.error('Error updating booking:', error);
       setError('An unexpected error occurred while updating the booking.');
@@ -212,8 +233,11 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
       .filter(a => a.date === formattedDate && !a.is_available)
       .map(a => a.hour.slice(0, 5)); // Convert HH:MM:SS to HH:MM
     
+    // Get base time slots based on business rules
+    const baseTimeSlots = getAvailableTimeSlotsForDate(bookingDate);
+    
     // Filter out both booked and unavailable hours using proper normalization
-    const availableHours = TIME_SLOTS.filter(hour => {
+    const availableHours = baseTimeSlots.filter(hour => {
       // Check if hour is booked
       const isBooked = bookedTimeSlots.some(
         (b) => b === hour || b.padStart(5, "0") === hour.padStart(5, "0") || 
@@ -232,6 +256,24 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
     return availableHours;
   };
 
+  // Check if a date should be disabled in the calendar
+  const isDateDisabled = (date: Date) => {
+    const tomorrow = getTomorrow();
+    const dayOfWeek = date.getDay();
+    
+    // Disable dates before tomorrow
+    if (date < tomorrow) {
+      return true;
+    }
+    
+    // Disable Sundays
+    if (dayOfWeek === 0) {
+      return true;
+    }
+    
+    return false;
+  };
+
   // Get original booking time for display
   const getOriginalBookingTime = () => {
     if (!booking) return '';
@@ -239,78 +281,122 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
   };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-gray-900 border-gray-700">
         <DialogHeader>
-          <DialogTitle>Edit Booking</DialogTitle>
-          <DialogDescription>
-            Make changes to your booking here. Click save when you're done.
-          </DialogDescription>
+          <DialogTitle className="text-xl font-bold text-violet-300">Edit Booking</DialogTitle>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          {error && (
-            <div className="text-red-500 text-sm mb-2">{error}</div>
-          )}
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="service" className="text-right">
-              Service
-            </Label>
-            <Select value={serviceType} onValueChange={setServiceType}>
-              <SelectTrigger className="col-span-3">
-                <SelectValue placeholder="Select a service" />
-              </SelectTrigger>
-              <SelectContent>
-                {services.filter(service => service.is_active).map((service) => (
-                  <SelectItem key={service.id} value={service.name}>
-                    {service.name} - {service.duration}min - {service.price} RON
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label className="text-right">Date</Label>
-            <div className="col-span-3">
-              <Calendar
-                mode="single"
-                selected={bookingDate}
-                onSelect={setBookingDate}
-                disabled={(date) => date < getTomorrow()}
-                className="rounded-md border"
+        
+        <div className="space-y-6">
+          {/* Personal Information */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="first_name" className="text-violet-200">First Name</Label>
+              <Input
+                id="first_name"
+                value={booking?.first_name || ''}
+                disabled
+                className="bg-gray-700 text-gray-400 border-gray-600"
+              />
+            </div>
+            <div>
+              <Label htmlFor="last_name" className="text-violet-200">Last Name</Label>
+              <Input
+                id="last_name"
+                value={booking?.last_name || ''}
+                disabled
+                className="bg-gray-700 text-gray-400 border-gray-600"
               />
             </div>
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label className="text-right">
-              Time
-              {getOriginalBookingTime() && (
-                <span className="block text-xs text-gray-500 font-normal">
-                  Original: {getOriginalBookingTime()}
-                </span>
-              )}
-            </Label>
-            <Select value={bookingTime} onValueChange={setBookingTime}>
-              <SelectTrigger className="col-span-3">
-                <SelectValue placeholder="Select time" />
-              </SelectTrigger>
-              <SelectContent>
-                {bookingDate && getAvailableHoursForSelectedDate().map((hour) => (
-                  <SelectItem key={hour} value={hour}>
-                    {hour}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="phone_number" className="text-violet-200">Phone Number</Label>
+              <Input
+                id="phone_number"
+                value={booking?.phone_number || ''}
+                disabled
+                className="bg-gray-700 text-gray-400 border-gray-600"
+              />
+            </div>
+            <div>
+              <Label htmlFor="service_type" className="text-violet-200">Service Type</Label>
+              <Select value={serviceType} onValueChange={setServiceType}>
+                <SelectTrigger className="bg-gray-800 text-white border-gray-600">
+                  <SelectValue placeholder="Select a service" />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-800 text-white border-gray-600">
+                  {services.map((service) => (
+                    <SelectItem key={service.id} value={service.name}>
+                      {service.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
+
+          {/* Date and Time Selection */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-violet-300">Date & Time Selection</h3>
+            <div className="flex flex-col space-y-6 md:space-y-0 md:flex-row md:space-x-6">
+              {/* Calendar Section */}
+              <div className="w-full md:w-1/2">
+                <div className="flex items-center mb-3">
+                  <CalendarIcon className="mr-2 h-5 w-5 text-violet-400" />
+                  <span className="font-medium text-violet-200">Select Date</span>
+                </div>
+                <Calendar
+                  mode="single"
+                  selected={bookingDate}
+                  onSelect={setBookingDate}
+                  disabled={isDateDisabled}
+                  className="rounded-md border border-gray-600 bg-gray-800 text-violet-200 [&_.rdp-day]:text-violet-200 [&_.rdp-day_selected]:bg-violet-600 [&_.rdp-day_selected]:text-white [&_.rdp-day:hover]:bg-violet-600/20"
+                />
+              </div>
+              
+              {/* Time Selection Section */}
+              <div className="w-full md:w-1/2">
+                <div className="flex items-center mb-3">
+                  <Clock className="mr-2 h-5 w-5 text-violet-400" />
+                  <span className="font-medium text-violet-200">Select Time</span>
+                </div>
+                {getOriginalBookingTime() && (
+                  <p className="text-violet-400 text-sm mb-2">
+                    Original time: <span className="font-semibold">{getOriginalBookingTime()}</span>
+                  </p>
+                )}
+                <Select value={bookingTime} onValueChange={setBookingTime}>
+                  <SelectTrigger className="bg-gray-800 text-white border-gray-600">
+                    <SelectValue placeholder="Select a time" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-800 text-white border-gray-600">
+                    {getAvailableHoursForSelectedDate().map((hour) => (
+                      <SelectItem key={hour} value={hour}>
+                        {hour}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {bookingDate && getAvailableHoursForSelectedDate().length === 0 && (
+                  <p className="text-violet-300 text-sm mt-2">
+                    No available time slots for this date.
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={handleClose} className="border-gray-600 text-violet-800 hover:bg-gray-700">
+              Cancel
+            </Button>
+            <Button onClick={handleSave} className="bg-violet-600 hover:bg-violet-700 text-white">
+              Save Changes
+            </Button>
+          </DialogFooter>
         </div>
-        <DialogFooter>
-          <Button type="button" variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button type="button" onClick={handleSave} disabled={isSaving}>
-            {isSaving ? "Saving..." : "Save changes"}
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
