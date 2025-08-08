@@ -35,14 +35,14 @@ const BookingPageContent = () => {
       serviceType: ''
     }
   });
-  const { user } = useAuth();
+  const { user, isGuest } = useAuth();
   const { services, getServiceByName } = useServices();
   const [profileInfo, setProfileInfo] = useState<{ fullName: string; phoneNumber: string | null } | null>(null);
   const [useProfileName, setUseProfileName] = useState(false);
   const [useProfilePhone, setUseProfilePhone] = useState(false);
   
   // Initialize the notifications hook
-  const { sendBookingConfirmation } = useBookingNotifications();
+  const { sendBookingConfirmation, sendBookingConfirmationAdmin } = useBookingNotifications();
 
   useEffect(() => {
     async function fetchProfile() {
@@ -143,31 +143,15 @@ const BookingPageContent = () => {
         description: `Rezervarea pentru ${selectedService} pe ${formatDateForDB(selectedDate!)} la ${selectedTime} a fost confirmată.`,
       });
 
-      // Get user data for notification
-      const { data: userData } = await supabase.auth.getUser();
-      const userId = userData?.user?.id;
-
-      // Get user email from auth or profile
-      let userEmail = '';
-      if (userData?.user?.email) {
-        userEmail = userData.user.email;
-      } else if (userId) {
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('email')
-          .eq('id', userId)
-          .single();
-        userEmail = profileData?.email || '';
-      }
-
-      // Send booking confirmation notification
-      if (userId && userEmail) {
+      // Notifications
+      if (isGuest) {
+        // Guest: do not send customer email, send admin SMS only
         try {
-          await sendBookingConfirmation({
+          await sendBookingConfirmationAdmin({
             bookingId: newBooking.id,
-            userId: userId,
+            userId: '',
             userName: data.fullName,
-            userEmail: userEmail,
+            userEmail: '',
             userPhone: data.phoneNumber,
             serviceName: selectedService!,
             serviceId: serviceId,
@@ -179,7 +163,43 @@ const BookingPageContent = () => {
             status: 'confirmed'
           });
         } catch (notificationError) {
-          console.error('Error sending notification:', notificationError);
+          console.error('Error sending admin SMS notification for guest booking:', notificationError);
+        }
+      } else {
+        // Authenticated user: send standard confirmation (email + admin SMS)
+        const { data: userData } = await supabase.auth.getUser();
+        const userId = userData?.user?.id;
+        let userEmail = '';
+        if (userData?.user?.email) {
+          userEmail = userData.user.email;
+        } else if (userId) {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('email')
+            .eq('id', userId)
+            .single();
+          userEmail = profileData?.email || '';
+        }
+        if (userId && userEmail) {
+          try {
+            await sendBookingConfirmation({
+              bookingId: newBooking.id,
+              userId: userId,
+              userName: data.fullName,
+              userEmail: userEmail,
+              userPhone: data.phoneNumber,
+              serviceName: selectedService!,
+              serviceId: serviceId,
+              serviceProvider: 'Melinda',
+              bookingDate: selectedDate!,
+              bookingTime: selectedTime!,
+              duration: serviceDetails?.duration || 60,
+              price: serviceDetails?.price || 140.00,
+              status: 'confirmed'
+            });
+          } catch (notificationError) {
+            console.error('Error sending notification:', notificationError);
+          }
         }
       }
 
@@ -191,8 +211,12 @@ const BookingPageContent = () => {
       setUseProfileName(false);
       setUseProfilePhone(false);
       
-      // Navigate to profile page to show the new booking
-      navigate('/profile');
+      // Redirect: guests don't have a profile page
+      if (isGuest) {
+        navigate('/home');
+      } else {
+        navigate('/profile');
+      }
       
     } catch (error) {
       console.error('Error creating booking:', error);

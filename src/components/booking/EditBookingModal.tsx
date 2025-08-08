@@ -285,6 +285,9 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-gray-900 border-gray-700">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold text-violet-300">Edit Booking</DialogTitle>
+          <DialogDescription className="text-gray-400">
+            Change the service, date, or time for this booking and save your changes.
+          </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-6">

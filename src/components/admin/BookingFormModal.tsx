@@ -332,6 +332,11 @@ export default function BookingFormModal({ open, onClose, booking }: BookingForm
           <DialogTitle className="text-xl font-bold text-violet-300">
             {booking ? 'Edit Booking' : 'Create New Booking'}
           </DialogTitle>
+          <DialogDescription className="text-gray-400">
+            {booking
+              ? 'Update the customer details, service, date and time for this booking.'
+              : 'Provide customer details, select a service, and choose a date and time.'}
+          </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">

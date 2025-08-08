@@ -6,7 +6,7 @@ import { logAdminAction } from "@/lib/audit-logger";
 import { Eye, EyeOff } from 'lucide-react';
 
 export default function AuthPage() {
-  const { user, role, loading: authLoading } = useAuth();
+  const { user, role, loading: authLoading, enterAsGuest } = useAuth();
   const navigate = useNavigate();
 
   const [isLogin, setIsLogin] = useState(true);
@@ -210,6 +210,25 @@ export default function AuthPage() {
             Forgot your password?
           </button>
         )}
+
+        {/* Guest entry CTA */}
+        <div className="mt-6">
+          <div className="relative flex items-center">
+            <div className="flex-grow border-t border-gray-700" />
+            <span className="mx-3 text-gray-400 text-xs">or</span>
+            <div className="flex-grow border-t border-gray-700" />
+          </div>
+          <button
+            type="button"
+            className="w-full mt-4 bg-gray-700 hover:bg-gray-600 text-white py-2 rounded font-semibold"
+            onClick={async () => {
+              await enterAsGuest();
+              navigate('/home', { replace: true });
+            }}
+          >
+            Continue as Guest
+          </button>
+        </div>
       </form>
     </div>
   );

@@ -1,7 +1,17 @@
 import { createContext, useContext, useEffect, useState, useRef } from "react";
 import { supabase } from "../integrations/supabase/client";
 
-const AuthContext = createContext(null);
+type AuthContextValue = {
+  user: any;
+  role: string | null;
+  status: string | null;
+  loading: boolean;
+  isGuest: boolean;
+  enterAsGuest: () => Promise<void>;
+  exitGuest: () => void;
+};
+
+const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -9,6 +19,13 @@ export function AuthProvider({ children }) {
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [initialized, setInitialized] = useState(false);
+  const [isGuest, setIsGuest] = useState<boolean>(() => {
+    try {
+      return window.localStorage.getItem("isGuest") === "true";
+    } catch {
+      return false;
+    }
+  });
   
   // Refs to track state and prevent unnecessary re-fetches
   const currentUserId = useRef(null);
@@ -68,6 +85,7 @@ export function AuthProvider({ children }) {
         if (session?.user) {
           await fetchUserProfile(session.user.id);
         } else {
+          // No authenticated user
           setRole(null);
           setStatus(null);
         }
@@ -119,6 +137,13 @@ export function AuthProvider({ children }) {
         currentUserId.current = newUserId;
         
         if (session?.user) {
+          // If a real user signed in while in guest mode, exit guest mode
+          if (isGuest) {
+            try {
+              window.localStorage.removeItem("isGuest");
+            } catch {}
+            setIsGuest(false);
+          }
           await fetchUserProfile(session.user.id);
         } else {
           setRole(null);
@@ -135,7 +160,7 @@ export function AuthProvider({ children }) {
       ignore = true;
       subscription?.unsubscribe();
     };
-  }, [initialized]);
+  }, [initialized, isGuest]);
 
   // Simplified banned user effect to prevent re-render loops
   useEffect(() => {
@@ -148,8 +173,31 @@ export function AuthProvider({ children }) {
     }
   }, [status, user, loading]);
 
+  // Guest mode controls
+  const enterAsGuest = async () => {
+    try {
+      // Ensure any existing session is cleared
+      await supabase.auth.signOut();
+    } catch {}
+    try {
+      window.localStorage.setItem("isGuest", "true");
+    } catch {}
+    setIsGuest(true);
+    setUser(null);
+    setRole(null);
+    setStatus(null);
+    currentUserId.current = null;
+  };
+
+  const exitGuest = () => {
+    try {
+      window.localStorage.removeItem("isGuest");
+    } catch {}
+    setIsGuest(false);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, role, status, loading }}>
+    <AuthContext.Provider value={{ user, role, status, loading, isGuest, enterAsGuest, exitGuest }}>
       {children}
     </AuthContext.Provider>
   );
