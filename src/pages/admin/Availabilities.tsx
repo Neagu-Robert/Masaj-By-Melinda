@@ -4,6 +4,7 @@ import { useAvailabilities } from "../../contexts/AvailabilitiesContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { logAdminAction } from "@/lib/audit-logger";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const HOURS = [
   "08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "20:00"
@@ -29,6 +30,9 @@ export default function Availabilities() {
   const [originalAvailability, setOriginalAvailability] = useState<Record<string, Record<string, boolean> & { _allOff?: boolean }>>({});
   const [dirty, setDirty] = useState(false);
   const { availabilities, loading, fetchAvailabilities, upsertAvailabilities } = useAvailabilities();
+  // Booked slots map: key is yyyy-MM-dd, value is a Set of HH:MM (local)
+  const [bookedMap, setBookedMap] = useState<Record<string, Set<string>>>({});
+  const [loadingBooked, setLoadingBooked] = useState(false);
 
   const days = getMonthDays(currentMonth);
   const monthStr = format(currentMonth, "MMMM yyyy");
@@ -40,6 +44,58 @@ export default function Availabilities() {
     const monthStart = format(startOfMonth(currentMonth), "yyyy-MM-dd");
     const monthEnd = format(endOfMonth(currentMonth), "yyyy-MM-dd");
     fetchAvailabilities(monthStart, monthEnd);
+    // Also fetch booked hours (bookings + recurring instances with TRUE status)
+    const fetchBooked = async () => {
+      try {
+        setLoadingBooked(true);
+        // Fetch bookings in range
+        const [bookingsRes, recurringRes] = await Promise.all([
+          supabase
+            .from('bookings')
+            .select('booking_date, booking_time')
+            .gte('booking_date', monthStart)
+            .lte('booking_date', monthEnd),
+          supabase
+            .from('recurring_bookings')
+            .select('date, hour, status')
+            .eq('status', true)
+            .gte('date', monthStart)
+            .lte('date', monthEnd)
+        ]);
+
+        const map: Record<string, Set<string>> = {};
+
+        // Map regular bookings
+        if (bookingsRes.data) {
+          for (const b of bookingsRes.data as any[]) {
+            const dateKey = b.booking_date as string; // yyyy-MM-dd
+            const time = (b.booking_time as string)?.slice(0,5);
+            if (!dateKey || !time) continue;
+            if (!map[dateKey]) map[dateKey] = new Set<string>();
+            map[dateKey].add(time);
+          }
+        }
+        // Map recurring TRUE instances
+        if (recurringRes.data) {
+          for (const r of recurringRes.data as any[]) {
+            if (!r.status) continue;
+            const dateKey = r.date as string; // yyyy-MM-dd
+            const time = (r.hour as string)?.slice(0,5);
+            if (!dateKey || !time) continue;
+            if (!map[dateKey]) map[dateKey] = new Set<string>();
+            map[dateKey].add(time);
+          }
+        }
+
+        setBookedMap(map);
+      } catch (e) {
+        console.error('Error fetching booked slots:', e);
+        setBookedMap({});
+      } finally {
+        setLoadingBooked(false);
+      }
+    };
+    fetchBooked();
     // eslint-disable-next-line
   }, [currentMonth]);
 
@@ -81,8 +137,17 @@ export default function Availabilities() {
     return dayAvail[hour] !== false;
   };
 
+  // Helper: is hour booked based on bookings/recurring TRUE instances
+  const isHourBooked = (date: Date, hour: string) => {
+    const key = format(date, "yyyy-MM-dd");
+    const set = bookedMap[key];
+    return !!set && set.has(hour);
+  };
+
   // Toggle hour
   const toggleHour = (date: Date, hour: string) => {
+    // Do not allow toggling a booked slot
+    if (isHourBooked(date, hour)) return;
     const key = format(date, "yyyy-MM-dd");
     setAvailability(prev => {
       const day = { ...prev[key] };
@@ -204,18 +269,24 @@ export default function Availabilities() {
           
           {/* Hours Grid - More vertical spacing */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
-            {HOURS.map(hour => (
-              <button
-                key={hour}
-                onClick={() => toggleHour(selectedDay, hour)}
-                disabled={selectedDay < today}
-                className={`px-4 py-3 md:py-4 rounded font-mono transition-colors text-sm md:text-base font-medium
-                  ${selectedDay < today ? "bg-gray-700/50 text-gray-500 cursor-not-allowed" : isHourAvailable(selectedDay, hour) ? "bg-violet-400 text-gray-900 hover:bg-violet-300" : "bg-gray-700 text-gray-400 hover:bg-gray-600"}
-                `}
-              >
-                {hour}
-              </button>
-            ))}
+            {HOURS.map(hour => {
+              const booked = isHourBooked(selectedDay, hour);
+              const past = selectedDay < today;
+              const available = isHourAvailable(selectedDay, hour);
+              return (
+                <button
+                  key={hour}
+                  onClick={() => toggleHour(selectedDay, hour)}
+                  disabled={past || booked}
+                  title={booked ? 'Booked' : undefined}
+                  className={`px-4 py-3 md:py-4 rounded font-mono transition-colors text-sm md:text-base font-medium
+                    ${past ? "bg-gray-700/50 text-gray-500 cursor-not-allowed" : booked ? "bg-red-600 text-white cursor-not-allowed" : available ? "bg-violet-400 text-gray-900 hover:bg-violet-300" : "bg-gray-700 text-gray-400 hover:bg-gray-600"}
+                  `}
+                >
+                  {hour}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
