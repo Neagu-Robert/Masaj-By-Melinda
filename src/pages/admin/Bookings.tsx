@@ -219,8 +219,8 @@ export default function Bookings() {
   const futureBookedSet = new Set<string>();
   // mark original recurring
   bookings.forEach((b: any) => { if (b.recurring) recurringSet.add(b.booking_date); });
-  // mark planned recurring instances
-  recurringInstances.forEach((r) => { recurringSet.add(r.date); });
+  // mark planned recurring instances: only add those with TRUE status
+  recurringInstances.forEach((r) => { if (r.status) recurringSet.add(r.date); });
   // regular booked
   bookings.forEach((b: any) => {
     const d = parseLocalDate(b.booking_date);
@@ -397,7 +397,7 @@ export default function Bookings() {
                   .filter((b: any) => { const d = parseLocalDate(b.booking_date); return d.getTime()===dayKey; })
                   .sort((a:any,b:any)=> parseLocalDate(a.booking_date).getTime()-parseLocalDate(b.booking_date).getTime());
                 const dayRecurring = recurringInstances
-                  .filter(r => { const d = parseLocalDate(r.date); return d.getTime()===dayKey; })
+                  .filter(r => r.status && (() => { const d = parseLocalDate(r.date); return d.getTime()===dayKey; })())
                   .sort((a,b)=> parseLocalDate(a.date).getTime()-parseLocalDate(b.date).getTime());
                 if (loading) return <div className="text-gray-400">Loading...</div>;
                 if (dayBookings.length===0 && dayRecurring.length===0) return <div className="text-gray-400">No bookings for this date.</div>;

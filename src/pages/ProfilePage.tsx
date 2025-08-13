@@ -370,11 +370,14 @@ function ProfilePageContent() {
   });
 
   // Mark planned recurring instances (green) from recurring_bookings
+  // Only mark as green if the instance status is TRUE
   recurringInstances.forEach((r) => {
     const d = new Date(r.date);
     d.setHours(0,0,0,0);
     const key = d.toISOString().slice(0,10);
-    recurringSet.add(key);
+    if (r.status) {
+      recurringSet.add(key);
+    }
   });
 
   // Non-recurring booked dates

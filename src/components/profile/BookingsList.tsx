@@ -78,7 +78,7 @@ const BookingsList: React.FC<BookingsListProps> = ({
           <>
           {/* Recurring planned instances (from recurring_bookings) */}
           {dayRecurring.map((r) => (
-            <Card key={`rec-${r.booking_id}-${r.date}-${r.hour}`} className="bg-gray-800/50 border-green-600/50 hover:border-green-500/60 transition-colors duration-200">
+            <Card key={`rec-${r.booking_id}-${r.date}-${r.hour}`} className={`bg-gray-800/50 ${r.status ? 'border-green-600/50 hover:border-green-500/60' : 'border-gray-600/50'} transition-colors duration-200`}>
               <CardContent className="p-4 space-y-3">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
@@ -90,6 +90,9 @@ const BookingsList: React.FC<BookingsListProps> = ({
                     <div className="text-white text-sm">{formatBookingDateTime(r.date, r.hour?.slice(0,5) || '00:00')}</div>
                   </div>
                 </div>
+                {!r.status && (
+                  <div className="text-xs text-yellow-300">Skipped due to already taken date</div>
+                )}
                 <div className="flex justify-end space-x-2 pt-2 border-t border-gray-700">
                   {/* Recurring instances cannot be made recurring again; only allow cancel of the whole series */}
                   <Button
