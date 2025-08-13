@@ -5,6 +5,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { logAdminAction } from "@/lib/audit-logger";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  previewCreateRecurringAvailability,
+  confirmCreateRecurringAvailability,
+  cancelRecurringAvailability,
+  RecurrenceType as RecurrenceTypeAvail,
+} from "@/services/recurring/availability";
 
 const HOURS = [
   "08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "20:00"
@@ -33,6 +39,16 @@ export default function Availabilities() {
   // Booked slots map: key is yyyy-MM-dd, value is a Set of HH:MM (local)
   const [bookedMap, setBookedMap] = useState<Record<string, Set<string>>>({});
   const [loadingBooked, setLoadingBooked] = useState(false);
+  // Recurring block UI state
+  const [recurringOpen, setRecurringOpen] = useState(false);
+  const [recurrenceType, setRecurrenceType] = useState<RecurrenceTypeAvail>('daily');
+  const [weekdays, setWeekdays] = useState<number[]>([]);
+  const [horizon, setHorizon] = useState<30 | 60 | 90>(30);
+  const [recurringHour, setRecurringHour] = useState<string>(HOURS[0]);
+  const [recurringStartDate, setRecurringStartDate] = useState<string | undefined>(undefined);
+  const [preview, setPreview] = useState<{ date: string; time: string; available: boolean; reason?: string }[] | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [activeRecurring, setActiveRecurring] = useState<{ id: string; recurrence_type: string; weekdays: number[] | null; hour: string; start_date: string; until: string }[]>([]);
 
   const days = getMonthDays(currentMonth);
   const monthStr = format(currentMonth, "MMMM yyyy");
@@ -96,6 +112,22 @@ export default function Availabilities() {
       }
     };
     fetchBooked();
+    // Load active recurring blocks intersecting month
+    const fetchRecurring = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('recurring_availabilities')
+          .select('id,recurrence_type,weekdays,hour,start_date,until')
+          .lte('start_date', monthEnd)
+          .gte('until', monthStart);
+        if (error) throw error;
+        setActiveRecurring(data || []);
+      } catch (e) {
+        console.error('Error fetching recurring availabilities:', e);
+        setActiveRecurring([]);
+      }
+    };
+    fetchRecurring();
     // eslint-disable-next-line
   }, [currentMonth]);
 
@@ -258,13 +290,29 @@ export default function Availabilities() {
         <div className="bg-gray-800 rounded p-4 md:p-6 mb-4 md:mb-6">
           <div className="flex flex-col md:flex-row md:items-center mb-4 md:mb-6">
             <span className="text-lg md:text-xl font-semibold mb-2 md:mb-0">{format(selectedDay, "PPP")}</span>
-            <button
-              onClick={() => toggleWholeDay(selectedDay)}
-              disabled={selectedDay < today}
-              className={`md:ml-auto px-4 py-2 rounded bg-gray-700 hover:bg-gray-600 transition-colors w-full md:w-auto ${selectedDay < today ? "cursor-not-allowed opacity-50" : ""}`}
-            >
-              Toggle whole day {isDayAllOff(selectedDay) ? "on" : "off"}
-            </button>
+            <div className="md:ml-auto flex gap-2 w-full md:w-auto">
+              <button
+                onClick={() => toggleWholeDay(selectedDay)}
+                disabled={selectedDay < today}
+                className={`px-4 py-2 rounded bg-gray-700 hover:bg-gray-600 transition-colors flex-1 md:flex-none ${selectedDay < today ? "cursor-not-allowed opacity-50" : ""}`}
+              >
+                Toggle whole day {isDayAllOff(selectedDay) ? "on" : "off"}
+              </button>
+              <button
+                onClick={() => {
+                  setRecurringHour(HOURS[0]);
+                  setRecurringStartDate(format(selectedDay, 'yyyy-MM-dd'));
+                  setRecurrenceType('daily');
+                  setWeekdays([]);
+                  setHorizon(30);
+                  setPreview(null);
+                  setRecurringOpen(true);
+                }}
+                className={`px-4 py-2 rounded bg-violet-600 hover:bg-violet-700 transition-colors flex-1 md:flex-none`}
+              >
+                Recurring block
+              </button>
+            </div>
           </div>
           
           {/* Hours Grid - More vertical spacing */}
@@ -290,6 +338,50 @@ export default function Availabilities() {
           </div>
         </div>
       )}
+      {/* Active recurring blocks list */}
+      <div className="bg-gray-800 rounded p-4 md:p-6 mb-4 md:mb-6">
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-lg font-semibold text-violet-300">Active recurring blocks (this range)</span>
+        </div>
+        {activeRecurring.length === 0 ? (
+          <div className="text-gray-400">No active recurring blocks overlapping this month.</div>
+        ) : (
+          <div className="space-y-2">
+            {activeRecurring.map((r) => (
+              <div key={r.id} className="flex items-center justify-between bg-gray-900/60 border border-gray-700 rounded px-3 py-2">
+                <div className="text-sm text-gray-200">
+                  <span className="text-violet-300 font-medium mr-2">{r.recurrence_type}</span>
+                  <span className="mr-2">{r.hour.slice(0,5)}</span>
+                  <span className="text-gray-400">{r.start_date} → {r.until}</span>
+                </div>
+                <button
+                  onClick={async () => {
+                    try {
+                      await cancelRecurringAvailability(r.id);
+                      toast.success('Recurring block cancelled');
+                      const monthStart = format(startOfMonth(currentMonth), "yyyy-MM-dd");
+                      const monthEnd = format(endOfMonth(currentMonth), "yyyy-MM-dd");
+                      await fetchAvailabilities(monthStart, monthEnd);
+                      const { data } = await supabase
+                        .from('recurring_availabilities')
+                        .select('id,recurrence_type,weekdays,hour,start_date,until')
+                        .lte('start_date', monthEnd)
+                        .gte('until', monthStart);
+                      setActiveRecurring(data || []);
+                    } catch (e) {
+                      console.error(e);
+                      toast.error('Failed to cancel recurring block');
+                    }
+                  }}
+                  className="px-3 py-1 rounded bg-red-600 hover:bg-red-700 text-white text-sm"
+                >
+                  Cancel
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
       
       <button
         onClick={handleSave}
@@ -298,6 +390,116 @@ export default function Availabilities() {
       >
         {loading ? "Saving..." : "Save"}
       </button>
+      {/* Recurring Modal */}
+      {recurringOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+          <div className="bg-gray-900 border border-gray-700 rounded-lg w-full max-w-lg p-6">
+            <h3 className="text-xl font-semibold text-violet-300 mb-4">Create recurring block</h3>
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm text-gray-300 mb-1">Recurrence</label>
+                  <select value={recurrenceType} onChange={(e)=> setRecurrenceType(e.target.value as RecurrenceTypeAvail)} className="w-full bg-gray-800 text-white border border-gray-600 rounded px-3 py-2">
+                    <option value="daily">Daily</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="biweekly">Biweekly</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-300 mb-1">Duration</label>
+                  <select value={horizon} onChange={(e)=> setHorizon(Number(e.target.value) as 30|60|90)} className="w-full bg-gray-800 text-white border border-gray-600 rounded px-3 py-2">
+                    <option value={30}>30 days</option>
+                    <option value={60}>60 days</option>
+                    <option value={90}>90 days</option>
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm text-gray-300 mb-1">Hour</label>
+                  <select value={recurringHour} onChange={(e)=> setRecurringHour(e.target.value)} className="w-full bg-gray-800 text-white border border-gray-600 rounded px-3 py-2">
+                    {HOURS.map(h => <option key={h} value={h}>{h}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-300 mb-1">Start date</label>
+                  <input type="date" value={recurringStartDate || ''} onChange={(e)=> setRecurringStartDate(e.target.value || undefined)} className="w-full bg-gray-800 text-white border border-gray-600 rounded px-3 py-2" />
+                </div>
+              </div>
+              {(recurrenceType === 'weekly' || recurrenceType === 'biweekly') && (
+                <div>
+                  <label className="block text-sm text-gray-300 mb-2">Weekdays</label>
+                  <div className="grid grid-cols-7 gap-2 text-sm text-gray-200">
+                    {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map((d, idx) => (
+                      <label key={d} className="flex items-center gap-1">
+                        <input type="checkbox" checked={weekdays.includes(idx)} onChange={(e)=> setWeekdays(prev => e.target.checked ? [...prev, idx] : prev.filter(x => x !== idx))} />
+                        {d}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={async () => {
+                    try {
+                      setPreviewLoading(true);
+                      const res = await previewCreateRecurringAvailability(recurringHour, recurrenceType, horizon, recurringStartDate, weekdays);
+                      setPreview(res.preview || []);
+                    } catch (e:any) {
+                      toast.error(e.message || 'Preview failed');
+                    } finally { setPreviewLoading(false); }
+                  }}
+                  className="px-4 py-2 rounded bg-violet-600 hover:bg-violet-700 text-white"
+                  disabled={previewLoading}
+                >
+                  {previewLoading ? 'Previewing...' : 'Preview'}
+                </button>
+                <button onClick={()=> setRecurringOpen(false)} className="px-4 py-2 rounded border border-gray-600 text-gray-300 hover:bg-gray-800">Close</button>
+              </div>
+              {preview && (
+                <div className="max-h-64 overflow-auto border border-gray-700 rounded p-3 bg-gray-800">
+                  <div className="text-sm text-gray-300 mb-2">Preview ({preview.length} dates)</div>
+                  <ul className="space-y-1 text-sm">
+                    {preview.map((p, idx) => (
+                      <li key={idx} className={p.available ? 'text-green-300' : 'text-gray-400'}>
+                        {p.date} at {p.time} {p.available ? '' : `(unavailable: ${p.reason})`}
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="mt-3">
+                    <button
+                      onClick={async ()=>{
+                        try {
+                          const res = await confirmCreateRecurringAvailability(recurringHour, recurrenceType, horizon, recurringStartDate, weekdays);
+                          toast.success(`Created ${res.createdCount} blocks, skipped ${res.skippedCount}`);
+                          setRecurringOpen(false);
+                          setPreview(null);
+                          const monthStart = format(startOfMonth(currentMonth), "yyyy-MM-dd");
+                          const monthEnd = format(endOfMonth(currentMonth), "yyyy-MM-dd");
+                          await fetchAvailabilities(monthStart, monthEnd);
+                          const { data } = await supabase
+                            .from('recurring_availabilities')
+                            .select('id,recurrence_type,weekdays,hour,start_date,until')
+                            .lte('start_date', monthEnd)
+                            .gte('until', monthStart);
+                          setActiveRecurring(data || []);
+                        } catch (e:any) {
+                          console.error(e);
+                          toast.error(e.message || 'Failed to create');
+                        }
+                      }}
+                      className="px-4 py-2 rounded bg-green-600 hover:bg-green-700 text-white"
+                    >
+                      Confirm
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 
