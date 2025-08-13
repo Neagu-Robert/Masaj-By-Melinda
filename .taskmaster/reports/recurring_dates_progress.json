@@ -1,0 +1,220 @@
+{
+  "title": "Recurring Bookings - Implementation Plan",
+  "source": ".taskmaster/tasks/recurring_dates.md",
+  "overview": "Add recurring booking capability (weekly/biweekly) for 30/60/90 days, cancellable at any time (removing only future instances). Update UI (calendar view), Supabase schema, Edge Functions, and notifications.",
+  "status": "planned",
+  "percentComplete": 0,
+  "assumptions": [
+    "Guests cannot create recurring bookings; feature is available only from the Profile page for authenticated users.",
+    "Recurring instances must obey existing availability and double-booking constraints.",
+    "Use local-time behavior consistently (per current app).",
+    "Instances are pre-created up-front for the selected horizon (30/60/90) on enable; conflicting dates are handled interactively in the UI and skipped on creation.",
+    "On cancellation, only a single notification is sent (not per instance)."
+  ],
+  "answers": {
+    "q1": "Pre-create all instances up-front within the chosen period.",
+    "q2": "Check for conflicts first; if any, prompt the user. If user proceeds, create only available instances and mark skipped ones with status=false for the instance record.",
+    "q3": "Use spelling 'biweekly'.",
+    "q4": "Profile calendar replaces the current 3-section tables entirely.",
+    "q5": "Only one notification is sent on cancellation (user email if registered, admin SMS).",
+    "q6": "Keep current local-time behavior."
+  },
+  "questions": [
+    {
+      "id": "q7",
+      "text": "Should we persist a plan-level row (metadata) separate from instance rows, or keep a single 'recurring_bookings' table where each row is an instance (with date + status)?",
+      "suggested": "Single 'recurring_bookings' table per your spec plus added fields (date, status)."
+    }
+  ],
+  "tasks": [
+    {
+      "id": 1,
+      "title": "Database Schema Updates",
+      "description": "Add recurring support to bookings and create instance records for recurrence.",
+      "status": "pending",
+      "dependencies": [],
+      "acceptanceCriteria": [
+        "bookings table has boolean 'recurring' default false",
+        "recurring_bookings table exists with: id (uuid, pk), booking_id (uuid fk to bookings.id on delete cascade), recurrence_type (text: 'weekly'|'biweekly'), until (date), day (text), hour (time), date (date for this instance), status (bool, default true), created_at, updated_at"
+      ],
+      "steps": [
+        "Create migration to add bookings.recurring boolean default false",
+        "Create migration for recurring_bookings as specified (FK to bookings.id, on delete cascade)",
+        "Ensure uuid extension enabled and defaults set",
+        "Regenerate Supabase types in src/integrations/supabase/types.ts (via Supabase CLI)"
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Edge Function: create_recurring_bookings",
+      "description": "Generate recurring instances when user enables recurrence on a booking; pre-create instances up-front with conflict review.",
+      "status": "pending",
+      "dependencies": [1],
+      "acceptanceCriteria": [
+        "POST with payload { bookingId, recurrenceType: 'weekly'|'biweekly', horizonDays: 30|60|90 }",
+        "Checks conflicts (booked/blocked) before creation; returns a preview of dates and which are unavailable",
+        "If client confirms, creates booking rows only for available dates and recurring_bookings instance rows for all selected dates (status=false for skipped conflicts)",
+        "Sets original bookings.recurring = true",
+        "Returns arrays: createdInstances, skippedInstances"
+      ],
+      "steps": [
+        "Load original booking and compute candidate dates based on weekly/biweekly until horizon",
+        "For each date: check availability + double-booking; build preview result",
+        "On confirm: insert bookings for available dates; insert recurring_bookings rows for each date (date, status=true/false)",
+        "Update original booking.recurring = true",
+        "Return result payload"
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Edge Function: cancel_recurring_bookings",
+      "description": "Cancel recurrence: delete only future booking instances and update metadata.",
+      "status": "pending",
+      "dependencies": [1,2],
+      "acceptanceCriteria": [
+        "POST with { bookingId } (or instance linkage)",
+        "Deletes bookings with same service/day/hour strictly in the future that belong to this recurrence",
+        "Sets original booking.recurring = false",
+        "Returns count of deleted instances"
+      ],
+      "steps": [
+        "Identify the set of future instances from recurring_bookings and matching bookings",
+        "Delete bookings that are in the future (>= tomorrow)",
+        "Update bookings.recurring = false and (optionally) mark related recurring_bookings rows",
+        "Return summary"
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Notifications: templates and service hooks",
+      "description": "Add notifications for enabling/cancelling recurrence (guests excluded).",
+      "status": "pending",
+      "dependencies": [2,3],
+      "acceptanceCriteria": [
+        "On enable: user email (if registered) and admin SMS include day/hour and horizon",
+        "On cancel: single confirmation to user (email) and admin (SMS)",
+        "Guests cannot trigger recurrence"
+      ],
+      "steps": [
+        "Add email templates to emailService for 'recurring_enabled' and 'recurring_cancelled'",
+        "Add SMS templates to smsService for admin notifications",
+        "Add hook methods in useBookingNotifications: sendRecurringEnabled, sendRecurringCancelled",
+        "Integrate calls in UI actions post-successful Edge Function response",
+        "Ensure UI hides the action for isGuest"
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Frontend: Profile Calendar View",
+      "description": "Replace user bookings list with calendar + day detail view with color-coding and recurring indicators.",
+      "status": "pending",
+      "dependencies": [1],
+      "acceptanceCriteria": [
+        "Calendar shows month grid with today highlighted (blue)",
+        "Past days grey, future days white",
+        "Day colors/dots: past booking (dark purple), future booking (bright violet), recurring booking (light green)",
+        "Below calendar: list for selected day with edit/delete; default to today",
+        "Works responsively"
+      ],
+      "steps": [
+        "Introduce calendar component (reuse booking calendar styles)",
+        "Replace ProfilePage tables with calendar + detail list",
+        "Aggregate bookings by date; include 'recurring' flag for color-coding",
+        "Maintain existing edit/delete modals"
+      ]
+    },
+    {
+      "id": 6,
+      "title": "UI: Make Recurring flow",
+      "description": "Make Recurring button + mini-form (weekly/biweekly, 30/60/90) with conflict prompt.",
+      "status": "pending",
+      "dependencies": [2,4,5],
+      "acceptanceCriteria": [
+        "Button visible only for authenticated users",
+        "Form shows preview and warns when conflicts detected: 'some dates are taken, proceed anyway?'",
+        "On confirm, calls create_recurring_bookings; shows success and any skipped dates",
+        "Calendar reflects created instances"
+      ],
+      "steps": [
+        "Add button and modal/form UI in ProfilePage booking detail",
+        "Call Edge Function to preview; if conflicts, show prompt",
+        "On confirm, call creation; refresh calendar state and show toast per outcome"
+      ]
+    },
+    {
+      "id": 7,
+      "title": "UI: Cancel Recurring flow",
+      "description": "Provide 'Cancel Recurring' to delete remaining future occurrences.",
+      "status": "pending",
+      "dependencies": [3,4,5],
+      "acceptanceCriteria": [
+        "Action calls cancel_recurring_bookings",
+        "Removes only future instances; original remains",
+        "Sends single cancellation notification"
+      ],
+      "steps": [
+        "Detect recurring flag and show action",
+        "Wire to Edge Function; update UI and badges",
+        "Show result summary (# deleted)"
+      ]
+    },
+    {
+      "id": 8,
+      "title": "Admin: Minimal recurring visibility",
+      "description": "Indicate recurring bookings in Admin/Bookings list and allow quick filter.",
+      "status": "pending",
+      "dependencies": [1],
+      "acceptanceCriteria": [
+        "Recurring bookings have a visual indicator in the list",
+        "Optional filter: show only recurring"
+      ],
+      "steps": [
+        "Include 'recurring' in select and render a badge",
+        "Add filter dropdown option"
+      ]
+    },
+    {
+      "id": 9,
+      "title": "Double-booking and availability alignment",
+      "description": "Ensure recurrence respects existing checks (utils + contexts).",
+      "status": "pending",
+      "dependencies": [2],
+      "acceptanceCriteria": [
+        "No recurring instance is created if slot is booked or blocked",
+        "Function returns a list of skipped instances with reasons"
+      ],
+      "steps": [
+        "Reuse checkForDoubleBooking and availability lookups inside Edge Function",
+        "Unit test representative samples"
+      ]
+    },
+    {
+      "id": 10,
+      "title": "Testing & QA",
+      "description": "Comprehensive tests for recurrence creation/cancellation, notifications, and UI calendar.",
+      "status": "pending",
+      "dependencies": [2,3,4,5,6,7],
+      "acceptanceCriteria": [
+        "Happy paths (weekly/biweekly; 30/60/90)",
+        "Guest cannot access recurring actions",
+        "Conflict handling (skipped instances)",
+        "Cancel removes only future instances",
+        "Calendar renders correctly across months"
+      ],
+      "steps": [
+        "Manual and automated tests where possible",
+        "Staging dataset with edge cases (DST, month boundaries)"
+      ]
+    }
+  ],
+  "risks": [
+    "Time zone and DST causing off-by-one hour dates",
+    "Schema/types drift (update src/integrations/supabase/types.ts)",
+    "Two-table vs one-table design for recurrence; we proceed with single-table instance model per answers."
+  ],
+  "nextActions": [
+    "Implement Task 1: DB schema migrations",
+    "Proceed with Edge Functions (Tasks 2 & 3) and notification templates (Task 4)",
+    "Update ProfilePage UI (Tasks 5–7)"
+  ]
+}

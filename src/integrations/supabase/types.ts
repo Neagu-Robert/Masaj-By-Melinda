@@ -19,7 +19,10 @@ export type Database = {
           last_name: string
           phone_number: string
           service_type: string
+          service_id: number | null
+          recurring: boolean
           updated_at: string
+          user_id?: string | null
         }
         Insert: {
           booking_date: string
@@ -30,8 +33,10 @@ export type Database = {
           last_name: string
           phone_number: string
           service_type: string
+          service_id?: number | null
+          recurring?: boolean
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Update: {
           booking_date?: string
@@ -42,8 +47,10 @@ export type Database = {
           last_name?: string
           phone_number?: string
           service_type?: string
+          service_id?: number | null
+          recurring?: boolean
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -69,6 +76,86 @@ export type Database = {
           date?: string;
           hour?: string;
           is_available?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      recurring_bookings: {
+        Row: {
+          id: string;
+          booking_id: string;
+          recurrence_type: 'weekly' | 'biweekly' | string;
+          until: string; // date
+          day: string;
+          hour: string; // time HH:MM:SS
+          date: string; // date
+          status: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          booking_id: string;
+          recurrence_type: 'weekly' | 'biweekly' | string;
+          until: string;
+          day: string;
+          hour: string;
+          date: string;
+          status?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          booking_id?: string;
+          recurrence_type?: 'weekly' | 'biweekly' | string;
+          until?: string;
+          day?: string;
+          hour?: string;
+          date?: string;
+          status?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'recurring_bookings_booking_id_fkey';
+            columns: ['booking_id'];
+            isOneToOne: false;
+            referencedRelation: 'bookings';
+            referencedColumns: ['id'];
+          }
+        ];
+      };
+      services: {
+        Row: {
+          id: number;
+          name: string;
+          description: string | null;
+          duration: number;
+          price: number;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: number;
+          name: string;
+          description?: string | null;
+          duration: number;
+          price: number;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: number;
+          name?: string;
+          description?: string | null;
+          duration?: number;
+          price?: number;
+          is_active?: boolean;
           created_at?: string;
           updated_at?: string;
         };

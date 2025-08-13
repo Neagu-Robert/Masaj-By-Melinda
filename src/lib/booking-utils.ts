@@ -95,9 +95,21 @@ export const fetchBookedTimeSlots = async (date: Date): Promise<string[]> => {
       return [];
     }
     
-    return (data ?? []).map(booking => {
-      return (booking.booking_time || "").toString().slice(0, 5);
-    });
+    const concrete = (data ?? []).map(booking => (booking.booking_time || "").toString().slice(0, 5));
+
+    // Also include recurring instances (HH:MM) for that date
+    // Note: utils cannot use hooks directly; provide a fallback direct query here
+    const { data: rec, error: recErr } = await supabase
+      .from('recurring_bookings')
+      .select('hour')
+      .eq('date', formattedDate)
+      .eq('status', true);
+    if (recErr) {
+      console.warn('Error fetching recurring time slots:', recErr);
+      return concrete;
+    }
+    const recurring = (rec ?? []).map(r => (r.hour || '').toString().slice(0,5));
+    return Array.from(new Set([...concrete, ...recurring]));
   } catch (error) {
     console.error('Error in fetchBookedTimeSlots:', error);
     return [];

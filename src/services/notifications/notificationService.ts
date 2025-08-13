@@ -275,6 +275,18 @@ export const sendNotification = async (payload: NotificationPayload): Promise<No
       case 'booking_cancelled_admin':
         shouldSend = preferences.bookingCancellationEnabled;
         break;
+      case 'recurring_created_profile':
+        shouldSend = preferences.bookingCreationEnabled;
+        break;
+      case 'recurring_cancelled_profile':
+        shouldSend = preferences.bookingCancellationEnabled;
+        break;
+      case 'recurring_created_admin':
+        shouldSend = preferences.bookingCreationEnabled;
+        break;
+      case 'recurring_cancelled_admin':
+        shouldSend = preferences.bookingCancellationEnabled;
+        break;
       case 'password_changed':
       case 'password_reset_requested':
         shouldSend = preferences.passwordChangeEnabled;
@@ -289,6 +301,41 @@ export const sendNotification = async (payload: NotificationPayload): Promise<No
 
   // Handle different notification types according to new specifications
   switch (payload.type) {
+    case 'recurring_created_profile':
+      // Email to customer (respects booking creation prefs)
+      if (shouldSendEmailNotification(payload.type) && payload.recipient.email) {
+        try {
+          const emailResult = await sendEmailNotification(enrichedPayload);
+          results.push(emailResult);
+        } catch (error) {
+          console.error('Error sending recurring created email:', error);
+          results.push({ success: false, channel: 'email', error: error as Error, timestamp: Date.now() });
+        }
+      }
+      // Admin SMS
+      {
+        const adminSmsResults = await sendAdminSmsNotifications(payload.type, enrichedPayload.data);
+        results.push(...adminSmsResults);
+      }
+      break;
+
+    case 'recurring_cancelled_profile':
+      // Email to customer (respects booking cancellation prefs)
+      if (shouldSendEmailNotification(payload.type) && payload.recipient.email) {
+        try {
+          const emailResult = await sendEmailNotification(enrichedPayload);
+          results.push(emailResult);
+        } catch (error) {
+          console.error('Error sending recurring cancelled email:', error);
+          results.push({ success: false, channel: 'email', error: error as Error, timestamp: Date.now() });
+        }
+      }
+      // Admin SMS
+      {
+        const adminSmsResults = await sendAdminSmsNotifications(payload.type, enrichedPayload.data);
+        results.push(...adminSmsResults);
+      }
+      break;
     case 'booking_created_customer':
       // Send email to customer (check email preferences)
       if (shouldSendEmailNotification(payload.type) && payload.recipient.email) {
@@ -376,6 +423,32 @@ export const sendNotification = async (payload: NotificationPayload): Promise<No
             error: error as Error,
             timestamp: Date.now()
           });
+        }
+      }
+      break;
+
+    case 'recurring_created_admin':
+      // Email only to customer (respect creation prefs); no admin SMS
+      if (shouldSendEmailNotification(payload.type) && payload.recipient.email) {
+        try {
+          const emailResult = await sendEmailNotification(enrichedPayload);
+          results.push(emailResult);
+        } catch (error) {
+          console.error('Error sending recurring created (admin) email:', error);
+          results.push({ success: false, channel: 'email', error: error as Error, timestamp: Date.now() });
+        }
+      }
+      break;
+
+    case 'recurring_cancelled_admin':
+      // Email only to customer (respect cancellation prefs); no admin SMS
+      if (shouldSendEmailNotification(payload.type) && payload.recipient.email) {
+        try {
+          const emailResult = await sendEmailNotification(enrichedPayload);
+          results.push(emailResult);
+        } catch (error) {
+          console.error('Error sending recurring cancelled (admin) email:', error);
+          results.push({ success: false, channel: 'email', error: error as Error, timestamp: Date.now() });
         }
       }
       break;

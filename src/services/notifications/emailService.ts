@@ -213,6 +213,154 @@ const emailTemplates = {
     return { subject, html, text };
   },
 
+  // Recurring created by user from profile
+  recurring_created_profile: (data: BookingNotificationData): { subject: string; html: string; text: string } => {
+    const subject = `Recurring Enabled - ${data.serviceName}`;
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #10b981;">Recurring Booking Enabled</h2>
+        <p>Dear ${data.userName},</p>
+        <p>Your booking has been set to recur.</p>
+        <div style="background-color: #f0fdf4; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="margin-top: 0;">Recurring Details:</h3>
+          <p><strong>Service:</strong> ${data.serviceName}</p>
+          <p><strong>Start:</strong> ${data.dateTime}</p>
+          <p><strong>Recurrence:</strong> ${data.notes || 'Weekly/Biweekly'}</p>
+        </div>
+        <p>You can disable the recurrence at any time from your profile.</p>
+        <p>Best regards,<br>Masaj by Melinda</p>
+      </div>
+    `;
+    const text = `
+      Recurring Booking Enabled
+      
+      Dear ${data.userName},
+      
+      Your booking has been set to recur.
+      
+      Recurring Details:
+      - Service: ${data.serviceName}
+      - Start: ${data.dateTime}
+      - Recurrence: ${data.notes || 'Weekly/Biweekly'}
+      
+      You can disable the recurrence at any time from your profile.
+      
+      Best regards,
+      Masaj by Melinda
+    `;
+    return { subject, html, text };
+  },
+
+  // Recurring cancelled by user from profile
+  recurring_cancelled_profile: (data: BookingNotificationData): { subject: string; html: string; text: string } => {
+    const subject = `Recurring Disabled - ${data.serviceName}`;
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #ef4444;">Recurring Booking Disabled</h2>
+        <p>Dear ${data.userName},</p>
+        <p>Your recurring booking has been cancelled. Future recurring instances have been removed.</p>
+        <div style="background-color: #fef2f2; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="margin-top: 0;">Cancelled Recurrence:</h3>
+          <p><strong>Service:</strong> ${data.serviceName}</p>
+          <p><strong>Original:</strong> ${data.dateTime}</p>
+        </div>
+        <p>If this was a mistake, you can re-enable recurrence from your profile.</p>
+        <p>Best regards,<br>Masaj by Melinda</p>
+      </div>
+    `;
+    const text = `
+      Recurring Booking Disabled
+      
+      Dear ${data.userName},
+      
+      Your recurring booking has been cancelled. Future recurring instances have been removed.
+      
+      Cancelled Recurrence:
+      - Service: ${data.serviceName}
+      - Original: ${data.dateTime}
+      
+      If this was a mistake, you can re-enable recurrence from your profile.
+      
+      Best regards,
+      Masaj by Melinda
+    `;
+    return { subject, html, text };
+  },
+
+  // Recurring created by admin
+  recurring_created_admin: (data: BookingNotificationData): { subject: string; html: string; text: string } => {
+    const subject = `Recurring Enabled by Admin - ${data.serviceName}`;
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #10b981;">Recurring Booking Enabled (Admin)</h2>
+        <p>Dear ${data.userName},</p>
+        <p>Your booking has been set to recur by our staff.</p>
+        <div style="background-color: #f0fdf4; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="margin-top: 0;">Recurring Details:</h3>
+          <p><strong>Service:</strong> ${data.serviceName}</p>
+          <p><strong>Start:</strong> ${data.dateTime}</p>
+          <p><strong>Recurrence:</strong> ${data.notes || 'Weekly/Biweekly'}</p>
+        </div>
+        <p>If this was not intended, please contact us.</p>
+        <p>Best regards,<br>Masaj by Melinda</p>
+      </div>
+    `;
+    const text = `
+      Recurring Booking Enabled (Admin)
+      
+      Dear ${data.userName},
+      
+      Your booking has been set to recur by our staff.
+      
+      Recurring Details:
+      - Service: ${data.serviceName}
+      - Start: ${data.dateTime}
+      - Recurrence: ${data.notes || 'Weekly/Biweekly'}
+      
+      If this was not intended, please contact us.
+      
+      Best regards,
+      Masaj by Melinda
+    `;
+    return { subject, html, text };
+  },
+
+  // Recurring cancelled by admin
+  recurring_cancelled_admin: (data: BookingNotificationData): { subject: string; html: string; text: string } => {
+    const subject = `Recurring Disabled by Admin - ${data.serviceName}`;
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #ef4444;">Recurring Booking Disabled (Admin)</h2>
+        <p>Dear ${data.userName},</p>
+        <p>Your recurring booking has been cancelled by our staff. Future recurring instances have been removed.</p>
+        <div style="background-color: #fef2f2; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="margin-top: 0;">Cancelled Recurrence:</h3>
+          <p><strong>Service:</strong> ${data.serviceName}</p>
+          <p><strong>Original:</strong> ${data.dateTime}</p>
+        </div>
+        <p>If this was not intended, please contact us.</p>
+        <p>Best regards,<br>Masaj by Melinda</p>
+      </div>
+    `;
+    const text = `
+      Recurring Booking Disabled (Admin)
+      
+      Dear ${data.userName},
+      
+      Your recurring booking has been cancelled by our staff. Future recurring instances have been removed.
+      
+      Cancelled Recurrence:
+      - Service: ${data.serviceName}
+      - Original: ${data.dateTime}
+      
+      If this was not intended, please contact us.
+      
+      Best regards,
+      Masaj by Melinda
+    `;
+    return { subject, html, text };
+  },
+
   reminder: (data: BookingNotificationData): { subject: string; html: string; text: string } => {
     const subject = `Appointment Reminder - ${data.serviceName}`;
     const html = `

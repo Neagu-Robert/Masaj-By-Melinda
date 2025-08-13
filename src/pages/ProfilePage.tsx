@@ -13,7 +13,10 @@ import { BookingsProvider } from "@/contexts/BookingsContext";
 import EditProfileModal from '@/components/profile/EditProfileModal';
 import NotificationPreferences from '@/components/profile/NotificationPreferences';
 import PasswordChangeModal from '@/components/profile/PasswordChangeModal';
+import BookingsList from '@/components/profile/BookingsList';
 import { useBookingNotifications } from '@/services/notifications/hooks';
+import { Calendar as UICalendar } from '@/components/ui/calendar';
+import { previewCreateRecurring, confirmCreateRecurring, cancelRecurring, RecurrenceType } from '@/services/recurring/service';
 import { toast } from '@/components/ui/use-toast';
 
 function ProfilePageContent() {
@@ -22,6 +25,13 @@ function ProfilePageContent() {
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [bookings, setBookings] = useState([]);
+  const [recurringInstances, setRecurringInstances] = useState<{
+    booking_id: string;
+    date: string;
+    hour: string;
+    status: boolean;
+    service_type?: string;
+  }[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeView, setActiveView] = useState('details');
@@ -31,7 +41,19 @@ function ProfilePageContent() {
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [isPasswordChangeOpen, setIsPasswordChangeOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { sendBookingCancellationProfile } = useBookingNotifications();
+  const { sendRecurringCreatedProfile, sendRecurringCancelledProfile, sendBookingCancellationProfile } = useBookingNotifications();
+  // Recurring UI state
+  const [recurringOpen, setRecurringOpen] = useState(false);
+  const [recurrenceType, setRecurrenceType] = useState<RecurrenceType>('weekly');
+  const [horizon, setHorizon] = useState<30 | 60 | 90>(30);
+  const [preview, setPreview] = useState<{ date: string; time: string; available: boolean; reason?: string }[] | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  // Calendar selection state
+  const [selectedDay, setSelectedDay] = useState<Date>(() => {
+    const d = new Date();
+    d.setHours(0,0,0,0);
+    return d;
+  });
 
   useEffect(() => {
     let isMounted = true;
@@ -67,6 +89,39 @@ function ProfilePageContent() {
           setBookings(bookingsData);
         }
 
+        // Fetch recurring plan instances for this user's recurring bookings
+        const { data: recurringRoots } = await supabase
+          .from('bookings')
+          .select('id, service_type, recurring')
+          .eq('user_id', user.id)
+          .eq('recurring', true);
+
+        const recurringRootIds = (recurringRoots || []).map((b: any) => b.id);
+        const serviceTypeByRoot: Record<string, string> = {};
+        (recurringRoots || []).forEach((b: any) => { serviceTypeByRoot[b.id] = b.service_type; });
+
+        if (recurringRootIds.length > 0) {
+          const { data: recInst } = await supabase
+            .from('recurring_bookings')
+            .select('booking_id,date,hour,status')
+            .in('booking_id', recurringRootIds);
+          if (isMounted && recInst) {
+            setRecurringInstances(
+              recInst.map((r: any) => ({
+                booking_id: r.booking_id,
+                date: r.date,
+                hour: r.hour,
+                status: r.status,
+                service_type: serviceTypeByRoot[r.booking_id],
+              }))
+            );
+          } else if (isMounted) {
+            setRecurringInstances([]);
+          }
+        } else if (isMounted) {
+          setRecurringInstances([]);
+        }
+
         if (isMounted) {
           setLoading(false);
         }
@@ -81,6 +136,103 @@ function ProfilePageContent() {
   const handleEditClick = (booking) => {
     setSelectedBooking(booking);
     setIsModalOpen(true);
+  };
+  // Recurring: open modal and fetch preview
+  const handleOpenRecurring = async (booking: any) => {
+    setSelectedBooking(booking);
+    setRecurringOpen(true);
+    setPreview(null);
+    setRecurrenceType('weekly');
+    setHorizon(30);
+  };
+
+  const handlePreviewRecurring = async () => {
+    if (!selectedBooking) return;
+    setPreviewLoading(true);
+    try {
+      const result = await previewCreateRecurring(selectedBooking.id, recurrenceType, horizon);
+      setPreview(result.preview);
+    } catch (e: any) {
+      toast({ title: 'Error', description: e.message, variant: 'destructive' });
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
+  const handleConfirmRecurring = async () => {
+    if (!selectedBooking) return;
+    try {
+      const result = await confirmCreateRecurring(selectedBooking.id, recurrenceType, horizon);
+      setRecurringOpen(false);
+      setPreview(null);
+      setRefreshTrigger(c => c + 1);
+      if (result.skippedCount > 0) {
+        toast({ title: 'Recurring created with skips', description: `${result.createdCount} created, ${result.skippedCount} skipped.` });
+      } else {
+        toast({ title: 'Recurring created', description: `${result.createdCount} instances created.` });
+      }
+
+      // Send notifications: user email and admin SMS via booking_updated_profile
+      try {
+        const serviceDetails = getServiceByName(selectedBooking.service_type);
+        const serviceId = serviceDetails?.id || null;
+        await sendRecurringCreatedProfile({
+          bookingId: selectedBooking.id,
+          userId: user.id,
+          userName: profile?.full_name || user.email,
+          userEmail: user.email,
+          userPhone: profile?.phone_number || '',
+          serviceName: selectedBooking.service_type,
+          serviceId,
+          serviceProvider: 'Melinda',
+          bookingDate: selectedBooking.booking_date,
+          bookingTime: selectedBooking.booking_time,
+          duration: serviceDetails?.duration || 60,
+          price: serviceDetails?.price || 140.0,
+          notes: `${recurrenceType} for ${horizon} days`,
+          status: 'recurring_enabled',
+        });
+      } catch (e) {
+        console.error('Error sending recurring creation notification:', e);
+      }
+    } catch (e: any) {
+      toast({ title: 'Error', description: e.message, variant: 'destructive' });
+    }
+  };
+
+  const handleCancelRecurring = async (booking: any) => {
+    try {
+      const ok = window.confirm('Cancel recurring and remove all future instances?');
+      if (!ok) return;
+      const res = await cancelRecurring(booking.id);
+      setRefreshTrigger(c => c + 1);
+      toast({ title: 'Recurring cancelled', description: `${res.deletedCount} future instances removed.` });
+
+      // Send notifications: user email and admin SMS via booking_updated_profile
+      try {
+        const serviceDetails = getServiceByName(booking.service_type);
+        const serviceId = serviceDetails?.id || null;
+        await sendRecurringCancelledProfile({
+          bookingId: booking.id,
+          userId: user.id,
+          userName: profile?.full_name || user.email,
+          userEmail: user.email,
+          userPhone: profile?.phone_number || '',
+          serviceName: booking.service_type,
+          serviceId,
+          serviceProvider: 'Melinda',
+          bookingDate: booking.booking_date,
+          bookingTime: booking.booking_time,
+          duration: serviceDetails?.duration || 60,
+          price: serviceDetails?.price || 140.0,
+          status: 'recurring_cancelled',
+        });
+      } catch (e) {
+        console.error('Error sending recurring cancellation notification:', e);
+      }
+    } catch (e: any) {
+      toast({ title: 'Error', description: e.message, variant: 'destructive' });
+    }
   };
 
   const handleCancelBooking = async (booking) => {
@@ -198,6 +350,43 @@ function ProfilePageContent() {
     const pad = (n: number) => n.toString().padStart(2, '0');
     return `${pad(date.getHours())}:${pad(date.getMinutes())} | ${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()}`;
   }
+
+  // Calendar modifiers data (for color coding)
+  const todayMidnight = new Date();
+  todayMidnight.setHours(0, 0, 0, 0);
+  const toKey = (dateStr: string) => {
+    const d = new Date(dateStr);
+    d.setHours(0, 0, 0, 0);
+    return d.toISOString().slice(0, 10);
+  };
+  const recurringSet = new Set<string>();
+  const pastBookedSet = new Set<string>();
+  const futureBookedSet = new Set<string>();
+
+  // Mark original recurring booking date as recurring (green)
+  bookings.forEach((b: any) => {
+    const key = toKey(b.booking_date);
+    if (b.recurring) recurringSet.add(key);
+  });
+
+  // Mark planned recurring instances (green) from recurring_bookings
+  recurringInstances.forEach((r) => {
+    const d = new Date(r.date);
+    d.setHours(0,0,0,0);
+    const key = d.toISOString().slice(0,10);
+    recurringSet.add(key);
+  });
+
+  // Non-recurring booked dates
+  bookings.forEach((b: any) => {
+    const d = new Date(b.booking_date);
+    d.setHours(0, 0, 0, 0);
+    const key = d.toISOString().slice(0,10);
+    if (!b.recurring) {
+      if (d < todayMidnight) pastBookedSet.add(key);
+      else if (d > todayMidnight) futureBookedSet.add(key);
+    }
+  });
 
   return (
     <div className="flex h-screen bg-gray-900 text-white">
@@ -388,247 +577,123 @@ function ProfilePageContent() {
           {activeView === 'bookings' && (
             <section id="booking-history">
               <h2 className="text-xl md:text-3xl font-bold mb-4 md:mb-6 text-violet-300 border-b border-gray-700 pb-2">Bookings</h2>
-              {(() => {
-                const today = new Date();
-                today.setHours(0,0,0,0);
-                const todayStr = today.toISOString().slice(0,10);
-                const future = bookings.filter(b => {
-                  const d = new Date(b.booking_date);
-                  d.setHours(0,0,0,0);
-                  return d > today;
-                }).sort((a, b) => new Date(a.booking_date).getTime() - new Date(b.booking_date).getTime());
-                const todayBookings = bookings.filter(b => {
-                  const d = new Date(b.booking_date);
-                  d.setHours(0,0,0,0);
-                  return d.getTime() === today.getTime();
-                }).sort((a, b) => new Date(a.booking_date).getTime() - new Date(b.booking_date).getTime());
-                const past = bookings.filter(b => {
-                  const d = new Date(b.booking_date);
-                  d.setHours(0,0,0,0);
-                  return d < today;
-                }).sort((a, b) => new Date(b.booking_date).getTime() - new Date(a.booking_date).getTime());
-                return <>
-                  <div className="mb-8 md:mb-10">
-                    <h3 className="text-lg md:text-xl font-semibold mb-4 text-green-300">Future Bookings</h3>
-                    {/* Desktop Table View */}
-                    <div className="hidden md:block bg-gray-800/50 rounded-lg overflow-hidden">
-                      <Table>
-                        <TableHeader>
-                          <TableRow className="hover:bg-gray-700/50 border-b-gray-700">
-                            <TableHead className="text-white">Service</TableHead>
-                            <TableHead className="text-white">Date</TableHead>
-                            <TableHead className="text-white">Created</TableHead>
-                            <TableHead className="text-white">Updated</TableHead>
-                            <TableHead className="text-white">Actions</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {future.length > 0 ? future.map((booking) => (
-                            <TableRow key={booking.id} className="border-b-gray-800">
-                              <TableCell>{booking.service_type}</TableCell>
-                              <TableCell>{formatBookingDateTime(booking.booking_date, booking.booking_time)}</TableCell>
-                              <TableCell>{formatDateTime(booking.created_at)}</TableCell>
-                              <TableCell>{booking.updated_at ? formatDateTime(booking.updated_at) : '—'}</TableCell>
-                              <TableCell>
-                                <div className="flex space-x-2">
-                                  <Button variant="ghost" size="icon" onClick={() => handleEditClick(booking)}>
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                  <Button variant="ghost" size="icon" onClick={() => handleCancelBooking(booking)} className="text-red-400 hover:text-red-300">
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          )) : (
-                            <TableRow>
-                              <TableCell colSpan={5} className="text-center py-8 text-gray-400">
-                                No future bookings.
-                              </TableCell>
-                            </TableRow>
-                          )}
-                        </TableBody>
-                      </Table>
-                    </div>
-                    {/* Mobile Card View */}
-                    <div className="md:hidden space-y-3">
-                      {future.length > 0 ? future.map((booking) => (
-                        <Card key={booking.id} className="bg-gray-800/50 border-gray-700">
-                          <CardContent className="p-4 space-y-3">
-                            <div className="flex justify-between items-start">
-                              <div className="flex-1">
-                                <div className="text-sm text-gray-400 mb-1">Service</div>
-                                <div className="text-white font-medium">{booking.service_type}</div>
-                              </div>
-                              <div className="text-right">
-                                <div className="text-sm text-gray-400 mb-1">Date</div>
-                                <div className="text-white text-sm">{formatBookingDateTime(booking.booking_date, booking.booking_time)}</div>
-                              </div>
-                            </div>
-                            <div className="flex justify-between items-start">
-                              <div className="flex-1">
-                                <div className="text-sm text-gray-400 mb-1">Created</div>
-                                <div className="text-white text-sm">{formatDateTime(booking.created_at)}</div>
-                              </div>
-                              <div className="text-right">
-                                <div className="text-sm text-gray-400 mb-1">Updated</div>
-                                <div className="text-white text-sm">{booking.updated_at ? formatDateTime(booking.updated_at) : '—'}</div>
-                              </div>
-                            </div>
-                            <div className="flex justify-end space-x-2 pt-2 border-t border-gray-700">
-                              <Button variant="ghost" size="sm" onClick={() => handleEditClick(booking)} className="text-white hover:text-gray-300">
-                                <Edit className="h-4 w-4 mr-1" />
-                                Edit
-                              </Button>
-                              <Button variant="ghost" size="sm" onClick={() => handleCancelBooking(booking)} className="text-red-400 hover:text-red-300">
-                                <Trash2 className="h-4 w-4 mr-1" />
-                                Cancel
-                              </Button>
-                            </div>
-                          </CardContent>
-                        </Card>
-                        )) : (
-                          <div className="text-center py-8 text-gray-400">
-                            No future bookings.
-                          </div>
-                        )}
-                    </div>
+              
+              {/* Side-by-side layout: Calendar on left, Bookings on right */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                               {/* Calendar view - Left side */}
+               <div className="bg-gray-800/50 rounded-lg p-4">
+                 <div className="mb-3 text-gray-300">Select a date to view bookings.</div>
+                 <div className="flex justify-center">
+                   <UICalendar
+                     mode="single"
+                     selected={selectedDay}
+                     onSelect={(d) => { if (d) { d.setHours(0,0,0,0); setSelectedDay(d); } }}
+                     className="rounded-md border border-gray-600 bg-gray-800 text-violet-300  p-4"
+                     classNames={{
+                       day: "h-14 w-14 p-0 font-normal aria-selected:opacity-100 rounded-lg transition-all duration-200 hover:scale-110 hover:bg-violet-500/20 cursor-pointer",
+                       head_cell: "text-muted-foreground rounded-md w-14 font-normal text-sm",
+                       cell: "h-14 w-14 text-center text-sm p-0 relative",
+                     }}
+                      modifiers={{
+                        today: (date) => date.toDateString() === todayMidnight.toDateString(),
+                        recurring: (date) => recurringSet.has(date.toISOString().slice(0,10)),
+                        pastBooked: (date) => pastBookedSet.has(date.toISOString().slice(0,10)),
+                        futureBooked: (date) => futureBookedSet.has(date.toISOString().slice(0,10)),
+                      }}
+                      modifiersClassNames={{
+                        today: "bg-blue-600 text-white rounded-lg shadow-lg",
+                        recurring: "bg-green-600/60 text-white rounded-lg shadow-lg",
+                        pastBooked: "bg-violet-900 text-white rounded-lg shadow-lg",
+                        futureBooked: "bg-purple-600 text-white rounded-lg shadow-lg",
+                      }}
+                    />
                   </div>
-                  <div className="mb-8 md:mb-10">
-                    <h3 className="text-lg md:text-xl font-semibold mb-4 text-blue-300">Today's Bookings</h3>
-                    {/* Desktop Table View */}
-                    <div className="hidden md:block bg-gray-800/50 rounded-lg overflow-hidden">
-                      <Table>
-                        <TableHeader>
-                          <TableRow className="hover:bg-gray-700/50 border-b-gray-700">
-                            <TableHead className="text-white">Service</TableHead>
-                            <TableHead className="text-white">Date</TableHead>
-                            <TableHead className="text-white">Created</TableHead>
-                            <TableHead className="text-white">Updated</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {todayBookings.length > 0 ? todayBookings.map((booking) => (
-                            <TableRow key={booking.id} className="border-b-gray-800">
-                              <TableCell>{booking.service_type}</TableCell>
-                              <TableCell>{formatBookingDateTime(booking.booking_date, booking.booking_time)}</TableCell>
-                              <TableCell>{formatDateTime(booking.created_at)}</TableCell>
-                              <TableCell>{booking.updated_at ? formatDateTime(booking.updated_at) : '—'}</TableCell>
-                            </TableRow>
-                          )) : (
-                            <TableRow>
-                              <TableCell colSpan={4} className="text-center py-8 text-gray-400">
-                                No bookings for today.
-                              </TableCell>
-                            </TableRow>
-                          )}
-                        </TableBody>
-                      </Table>
-                    </div>
-                    {/* Mobile Card View */}
-                    <div className="md:hidden space-y-3">
-                      {todayBookings.length > 0 ? todayBookings.map((booking) => (
-                        <Card key={booking.id} className="bg-gray-800/50 border-gray-700">
-                          <CardContent className="p-4 space-y-3">
-                            <div className="flex justify-between items-start">
-                              <div className="flex-1">
-                                <div className="text-sm text-gray-400 mb-1">Service</div>
-                                <div className="text-white font-medium">{booking.service_type}</div>
-                              </div>
-                              <div className="text-right">
-                                <div className="text-sm text-gray-400 mb-1">Date</div>
-                                <div className="text-white text-sm">{formatBookingDateTime(booking.booking_date, booking.booking_time)}</div>
-                              </div>
-                            </div>
-                            <div className="flex justify-between items-start">
-                              <div className="flex-1">
-                                <div className="text-sm text-gray-400 mb-1">Created</div>
-                                <div className="text-white text-sm">{formatDateTime(booking.created_at)}</div>
-                              </div>
-                              <div className="text-right">
-                                <div className="text-sm text-gray-400 mb-1">Updated</div>
-                                <div className="text-white text-sm">{booking.updated_at ? formatDateTime(booking.updated_at) : '—'}</div>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      )) : (
-                        <div className="text-center py-8 text-gray-400">
-                          No bookings for today.
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <div>
-                    <h3 className="text-lg md:text-xl font-semibold mb-4 text-violet-300">Past Bookings</h3>
-                    {/* Desktop Table View */}
-                    <div className="hidden md:block bg-gray-800/50 rounded-lg overflow-hidden">
-                      <Table>
-                        <TableHeader>
-                          <TableRow className="hover:bg-gray-700/50 border-b-gray-700">
-                            <TableHead className="text-white">Service</TableHead>
-                            <TableHead className="text-white">Date</TableHead>
-                            <TableHead className="text-white">Created</TableHead>
-                            <TableHead className="text-white">Updated</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {past.length > 0 ? past.map((booking) => (
-                            <TableRow key={booking.id} className="border-b-gray-800">
-                              <TableCell>{booking.service_type}</TableCell>
-                              <TableCell>{formatBookingDateTime(booking.booking_date, booking.booking_time)}</TableCell>
-                              <TableCell>{formatDateTime(booking.created_at)}</TableCell>
-                              <TableCell>{booking.updated_at ? formatDateTime(booking.updated_at) : '—'}</TableCell>
-                            </TableRow>
-                          )) : (
-                            <TableRow>
-                              <TableCell colSpan={4} className="text-center py-8 text-gray-400">
-                                No past bookings.
-                              </TableCell>
-                            </TableRow>
-                          )}
-                        </TableBody>
-                      </Table>
-                    </div>
-                    {/* Mobile Card View */}
-                    <div className="md:hidden space-y-3">
-                      {past.length > 0 ? past.map((booking) => (
-                        <Card key={booking.id} className="bg-gray-800/50 border-gray-700">
-                          <CardContent className="p-4 space-y-3">
-                            <div className="flex justify-between items-start">
-                              <div className="flex-1">
-                                <div className="text-sm text-gray-400 mb-1">Service</div>
-                                <div className="text-white font-medium">{booking.service_type}</div>
-                              </div>
-                              <div className="text-right">
-                                <div className="text-sm text-gray-400 mb-1">Date</div>
-                                <div className="text-white text-sm">{formatBookingDateTime(booking.booking_date, booking.booking_time)}</div>
-                              </div>
-                            </div>
-                            <div className="flex justify-between items-start">
-                              <div className="flex-1">
-                                <div className="text-sm text-gray-400 mb-1">Created</div>
-                                <div className="text-white text-sm">{formatDateTime(booking.created_at)}</div>
-                              </div>
-                              <div className="text-right">
-                                <div className="text-sm text-gray-400 mb-1">Updated</div>
-                                <div className="text-white text-sm">{booking.updated_at ? formatDateTime(booking.updated_at) : '—'}</div>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      )) : (
-                        <div className="text-center py-8 text-gray-400">
-                          No past bookings.
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </>;
-              })()}
+                </div>
+
+                {/* Bookings list - Right side */}
+                <div className="lg:min-h-[600px]">
+                  <BookingsList
+                    selectedDay={selectedDay}
+                    bookings={bookings}
+                    recurringInstances={recurringInstances}
+                    onEditClick={handleEditClick}
+                    onCancelBooking={handleCancelBooking}
+                    onOpenRecurring={handleOpenRecurring}
+                    onCancelRecurring={handleCancelRecurring}
+                    user={user}
+                  />
+                </div>
+              </div>
             </section>
           )}
         </main>
+        {/* Recurring Modal */}
+        {recurringOpen && selectedBooking && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+            <div className="bg-gray-900 border border-gray-700 rounded-lg w-full max-w-lg p-6">
+              <h3 className="text-xl font-semibold text-violet-300 mb-4">Do you wish to make this booking recurring?</h3>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm text-gray-300 mb-1">Recurrence</label>
+                    <select
+                      value={recurrenceType}
+                      onChange={(e) => setRecurrenceType(e.target.value as RecurrenceType)}
+                      className="w-full bg-gray-800 text-white border border-gray-600 rounded px-3 py-2"
+                    >
+                      <option value="weekly">Weekly</option>
+                      <option value="biweekly">Biweekly</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-300 mb-1">Duration</label>
+                    <select
+                      value={horizon}
+                      onChange={(e) => setHorizon(Number(e.target.value) as 30 | 60 | 90)}
+                      className="w-full bg-gray-800 text-white border border-gray-600 rounded px-3 py-2"
+                    >
+                      <option value={30}>30 days</option>
+                      <option value={60}>60 days</option>
+                      <option value={90}>90 days</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <Button onClick={handlePreviewRecurring} disabled={previewLoading} className="bg-violet-600 hover:bg-violet-700 text-white">
+                    {previewLoading ? 'Previewing...' : 'Preview'}
+                  </Button>
+                  <Button variant="outline" onClick={() => setRecurringOpen(false)} className="border-gray-600 text-gray-600 hover:bg-gray-800">
+                    Close
+                  </Button>
+                </div>
+
+                {preview && (
+                  <div className="max-h-64 overflow-auto border border-gray-700 rounded p-3 bg-gray-800">
+                    <div className="text-sm text-gray-300 mb-2">Preview ({preview.length} dates)</div>
+                    <ul className="space-y-1 text-sm">
+                      {preview.map((p, idx) => (
+                        <li key={idx} className={p.available ? 'text-green-300' : 'text-gray-400'}>
+                          {p.date} at {p.time} {p.available ? '' : `(unavailable: ${p.reason})`}
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="mt-3 flex gap-2">
+                      {preview.some(p => !p.available) && (
+                        <div className="text-xs text-yellow-300">Some dates are unavailable. Proceeding will create only available instances.</div>
+                      )}
+                    </div>
+                    <div className="mt-3">
+                      <Button onClick={handleConfirmRecurring} className="bg-green-600 hover:bg-green-700 text-white">
+                        Confirm Recurring
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
         <EditBookingModal
           open={isModalOpen}
           onClose={() => setIsModalOpen(false)}

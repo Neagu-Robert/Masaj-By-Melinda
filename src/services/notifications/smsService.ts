@@ -39,6 +39,16 @@ const smsTemplates = {
   booking_updated_admin: (data: BookingNotificationData): string => {
     return `Masaj by Melinda: Booking updated by admin. Customer: ${data.userName}, Service: ${data.serviceName}, Date: ${data.dateTime}, Duration: ${data.duration} min.`;
   }
+  ,
+  // Recurring enabled by user
+  recurring_created_profile: (data: BookingNotificationData): string => {
+    const meta = data.notes ? ` (${data.notes})` : '';
+    return `Masaj by Melinda: A recurring booking has been enabled by ${data.userName} for ${data.serviceName} starting ${data.dateTime}${meta}.`;
+  },
+  // Recurring cancelled by user
+  recurring_cancelled_profile: (data: BookingNotificationData): string => {
+    return `Masaj by Melinda: A recurring booking has been cancelled by ${data.userName} for ${data.serviceName} (original ${data.dateTime}).`;
+  }
 };
 
 /**

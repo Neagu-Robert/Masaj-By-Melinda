@@ -30,7 +30,7 @@ type AuditLog = {
   profiles: {
     email: string;
     full_name: string;
-  };
+  } | null;
 };
 
 export default function AuditLogs() {
@@ -82,8 +82,8 @@ export default function AuditLogs() {
     const matchesTargetType = targetTypeFilter === "all" || log.target_type === targetTypeFilter;
     const matchesSearch = !searchQuery || 
       log.details.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      log.profiles.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      log.profiles.full_name.toLowerCase().includes(searchQuery.toLowerCase());
+      log.profiles?.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      log.profiles?.full_name.toLowerCase().includes(searchQuery.toLowerCase());
     
     return matchesAction && matchesTargetType && matchesSearch;
   });
@@ -166,8 +166,8 @@ export default function AuditLogs() {
                     <TableRow key={log.id} className="border-b border-gray-700">
                       <TableCell className="text-gray-300">{new Date(log.created_at).toLocaleString()}</TableCell>
                       <TableCell className="text-gray-300">
-                        <div>{log.profiles.full_name}</div>
-                        <div className="text-sm text-gray-500">{log.profiles.email}</div>
+                        <div>{log.profiles?.full_name || 'N/A'}</div>
+                        <div className="text-sm text-gray-500">{log.profiles?.email || 'User Deleted'}</div>
                       </TableCell>
                       <TableCell className="text-gray-300">{log.action}</TableCell>
                       <TableCell className="text-gray-300">{log.target_type}</TableCell>
@@ -207,8 +207,8 @@ export default function AuditLogs() {
                       <div className="flex-1">
                         <div className="text-sm text-gray-400 mb-1">Admin</div>
                         <div className="text-white text-sm">
-                          <div>{log.profiles.full_name}</div>
-                          <div className="text-xs text-gray-500">{log.profiles.email}</div>
+                          <div>{log.profiles?.full_name || 'N/A'}</div>
+                          <div className="text-xs text-gray-500">{log.profiles?.email || 'User Deleted'}</div>
                         </div>
                       </div>
                       <div className="text-right">
