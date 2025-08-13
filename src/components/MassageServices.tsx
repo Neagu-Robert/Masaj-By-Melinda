@@ -8,9 +8,12 @@ import {
   CardTitle,
 } from "./ui/card";
 import { useServices } from "@/contexts/ServicesContext";
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 
 const MassageServices = () => {
   const { services, loading, error } = useServices();
+  const navigate = useNavigate();
 
   // Filter for massage services (services that contain "Masaj" in the name)
   const massageServices = services.filter(service => 
@@ -83,6 +86,14 @@ const MassageServices = () => {
               <p className="text-2xl md:text-3xl font-semibold text-violet-400">
                 {service.price} RON
               </p>
+              <div className="mt-4 flex justify-end">
+                <Button
+                  className="bg-violet-600 hover:bg-violet-700 text-white"
+                  onClick={() => navigate(`/book?service=${encodeURIComponent(service.name)}`, { state: { service: service.name } })}
+                >
+                  Rezervă acum
+                </Button>
+              </div>
             </CardContent>
           </Card>
         ))}

@@ -2,6 +2,8 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { useServices } from '@/contexts/ServicesContext';
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 
 // Device treatment images mapping
 const deviceTreatmentImages = {
@@ -38,6 +40,7 @@ const deviceTreatmentBenefits = {
 
 const DeviceTreatments = () => {
   const { services, loading, error } = useServices();
+  const navigate = useNavigate();
 
   // Filter for device treatments (services that don't contain "Masaj" in the name)
   const deviceServices = services.filter(service => 
@@ -126,6 +129,14 @@ const DeviceTreatments = () => {
                     <p className="text-2xl font-semibold text-violet-400">
                       {service.price} RON
                     </p>
+                    <div className="mt-3 flex justify-end">
+                      <Button
+                        className="bg-violet-600 hover:bg-violet-700 text-white"
+                        onClick={() => navigate(`/book?service=${encodeURIComponent(service.name)}`, { state: { service: service.name } })}
+                      >
+                        Rezervă acum
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </CardContent>

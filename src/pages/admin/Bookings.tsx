@@ -367,9 +367,9 @@ export default function Bookings() {
                 onSelect={(d) => { if (d) { d.setHours(0,0,0,0); setSelectedDay(d); } }}
                 className="rounded-md border border-gray-600 bg-gray-800 text-violet-200 p-4"
                 classNames={{
-                  day: "h-10 w-10 p-0 font-normal aria-selected:opacity-100 rounded-lg transition-all duration-200 hover:scale-110 hover:bg-violet-500/20 cursor-pointer",
-                  head_cell: "text-muted-foreground rounded-md w-10 font-normal text-sm",
-                  cell: "h-10 w-10 text-center text-sm p-0 relative",
+                  day: "h-12 w-12 md:h-10 md:w-10 p-0 font-normal aria-selected:opacity-100 rounded-lg transition-all duration-200 hover:scale-110 hover:bg-violet-500/20 cursor-pointer",
+                  head_cell: "text-muted-foreground rounded-md w-12 md:w-10 font-normal text-sm",
+                  cell: "h-12 w-12 md:h-10 md:w-10 text-center text-sm p-0 relative",
                 }}
                 modifiers={{
                   today: (date) => dateKey(date) === dateKey(todayMidnight),

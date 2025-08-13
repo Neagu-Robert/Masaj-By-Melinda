@@ -258,7 +258,7 @@ export default function Availabilities() {
       {loading && <div className="mb-4 text-violet-400">Loading...</div>}
       
       {/* Calendar grid */}
-      <div className="grid grid-cols-7 gap-2 mb-6">
+      <div className="grid grid-cols-7 gap-2 mb-6 text-xs md:text-base">
         {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(d => (
           <div key={d} className="text-center text-gray-400 text-sm md:text-base font-medium">{d}</div>
         ))}
@@ -272,7 +272,7 @@ export default function Availabilities() {
               key={day.toISOString()}
               onClick={() => !isPast && setSelectedDay(day)}
               disabled={isPast}
-              className={`aspect-square w-10 md:w-12 rounded flex items-center justify-center border transition-colors text-sm md:text-base font-medium
+              className={`aspect-square w-9 h-9 md:w-12 rounded flex items-center justify-center border transition-colors text-xs md:text-base font-medium
                 ${isPast ? "bg-gray-800 text-gray-700 cursor-not-allowed" : ""}
                 ${!isPast && !isCurrentMonth ? "bg-gray-800 text-gray-600" : ""}
                 ${!isPast && isCurrentMonth && (allOff ? "bg-gray-700 text-gray-500" : "bg-violet-400 text-gray-900")}
@@ -316,7 +316,7 @@ export default function Availabilities() {
           </div>
           
           {/* Hours Grid - More vertical spacing */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 md:gap-4">
             {HOURS.map(hour => {
               const booked = isHourBooked(selectedDay, hour);
               const past = selectedDay < today;
@@ -327,7 +327,7 @@ export default function Availabilities() {
                   onClick={() => toggleHour(selectedDay, hour)}
                   disabled={past || booked}
                   title={booked ? 'Booked' : undefined}
-                  className={`px-4 py-3 md:py-4 rounded font-mono transition-colors text-sm md:text-base font-medium
+                  className={`px-3 py-3 md:py-4 rounded font-mono transition-colors text-sm md:text-base font-medium
                     ${past ? "bg-gray-700/50 text-gray-500 cursor-not-allowed" : booked ? "bg-red-600 text-white cursor-not-allowed" : available ? "bg-violet-400 text-gray-900 hover:bg-violet-300" : "bg-gray-700 text-gray-400 hover:bg-gray-600"}
                   `}
                 >

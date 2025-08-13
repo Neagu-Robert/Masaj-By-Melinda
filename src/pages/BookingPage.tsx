@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
@@ -24,6 +24,7 @@ import {
 
 const BookingPageContent = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [selectedTime, setSelectedTime] = useState<string | undefined>();
   const [selectedService, setSelectedService] = useState<string | undefined>();
@@ -62,6 +63,25 @@ const BookingPageContent = () => {
     }
     fetchProfile();
   }, [user]);
+
+  // Preselect service from navigation state or query parameter; scroll to top to show step 1
+  useEffect(() => {
+    // Always position at the top (step 1: contact info)
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    const stateService = (location.state as any)?.service as string | undefined;
+    const urlService = new URLSearchParams(location.search).get('service') || undefined;
+    const requested = stateService || urlService || undefined;
+    if (!requested) return;
+
+    // When services are loaded, validate and set
+    const match = services.find(s => s.is_active && s.name.toLowerCase() === requested.toLowerCase());
+    if (match) {
+      form.setValue('serviceType', match.name);
+      setSelectedService(match.name);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.state, location.search, services]);
 
   useEffect(() => {
     if (useProfileName && profileInfo?.fullName) {
