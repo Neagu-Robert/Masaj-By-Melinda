@@ -4,6 +4,11 @@
       "name": "send-booking-reminders",
       "schedule": "0 0 * * *",
       "timeZone": "Europe/Bucharest"
+    },
+    {
+      "name": "cleanup-old-data",
+      "schedule": "0 3 * * *",
+      "timeZone": "Europe/Bucharest"
     }
   ]
 } 

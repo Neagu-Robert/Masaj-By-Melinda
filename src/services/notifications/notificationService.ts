@@ -275,6 +275,9 @@ export const sendNotification = async (payload: NotificationPayload): Promise<No
       case 'booking_cancelled_admin':
         shouldSend = preferences.bookingCancellationEnabled;
         break;
+      case 'reminder':
+        shouldSend = preferences.reminderEnabled;
+        break;
       case 'recurring_created_profile':
         shouldSend = preferences.bookingCreationEnabled;
         break;

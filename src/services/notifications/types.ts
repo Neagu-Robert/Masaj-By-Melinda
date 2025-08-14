@@ -34,6 +34,7 @@ export interface NotificationPreference {
   bookingCreationEnabled: boolean;
   bookingUpdateEnabled: boolean;
   bookingCancellationEnabled: boolean;
+  reminderEnabled: boolean;
   passwordChangeEnabled: boolean;
 }
 

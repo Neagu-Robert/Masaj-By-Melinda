@@ -16,6 +16,7 @@ export default function NotificationPreferences({ userId, userRole }: Notificati
     bookingCreationEnabled: true,
     bookingUpdateEnabled: true,
     bookingCancellationEnabled: true,
+    reminderEnabled: true,
     passwordChangeEnabled: true
   });
   const [loading, setLoading] = useState(false);
@@ -31,6 +32,7 @@ export default function NotificationPreferences({ userId, userRole }: Notificati
             bookingCreationEnabled: userPreferences.bookingCreationEnabled,
             bookingUpdateEnabled: userPreferences.bookingUpdateEnabled,
             bookingCancellationEnabled: userPreferences.bookingCancellationEnabled,
+            reminderEnabled: userPreferences.reminderEnabled,
             passwordChangeEnabled: userPreferences.passwordChangeEnabled
           });
         }
@@ -94,6 +96,19 @@ export default function NotificationPreferences({ userId, userRole }: Notificati
           />
           <Label htmlFor="booking-creation" className="text-white">
             Booking creation
+          </Label>
+        </div>
+
+        <div className="flex items-center space-x-3">
+          <Checkbox
+            id="booking-reminders"
+            checked={preferences.reminderEnabled}
+            onCheckedChange={(checked) => 
+              setPreferences(prev => ({ ...prev, reminderEnabled: !!checked }))
+            }
+          />
+          <Label htmlFor="booking-reminders" className="text-white">
+            Booking reminders (email day before)
           </Label>
         </div>
         

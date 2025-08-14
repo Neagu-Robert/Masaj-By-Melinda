@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import sgMail from 'https://esm.sh/@sendgrid/mail@8.1.1';
@@ -124,7 +125,7 @@ serve(async (req) => {
     // Get all bookings for tomorrow with user profiles and service details
     const { data: bookings, error: bookingsError } = await supabase
       .from('bookings')
-      .select(`*, profiles:profiles(email), services:services(duration, price)`)
+      .select(`*, profiles:profiles(email, role, id), services:services(duration, price)`)
       .eq('booking_date', tomorrowFormatted);
 
     if (bookingsError) {
@@ -134,8 +135,26 @@ serve(async (req) => {
     // Send reminder emails for each booking
     const results = await Promise.all(
       (bookings || []).map(async (booking) => {
+        if (booking.profiles?.role !== 'customer') {
+          return { id: booking.id, success: false, reason: 'not_customer' };
+        }
         if (!booking.profiles?.email) {
           return { id: booking.id, success: false, reason: 'no_email' };
+        }
+        // Check reminder preference for this user
+        try {
+          const { data: pref, error: prefErr } = await supabase
+            .from('notification_preferences')
+            .select('reminder_enabled')
+            .eq('user_id', booking.profiles.id)
+            .maybeSingle();
+          if (prefErr) {
+            // If preferences table errors, default to sending
+          } else if (pref && pref.reminder_enabled === false) {
+            return { id: booking.id, success: false, reason: 'reminder_disabled' };
+          }
+        } catch (_) {
+          // Default to send on any read error
         }
         const serviceDetails = await getServiceDetails(
           booking.service_id || null,

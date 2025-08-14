@@ -33,6 +33,14 @@ Masaj by Melinda is a web application for a professional wellness and massage se
 - Store bookings in Supabase (PostgreSQL).
 - Show confirmation toast and redirect after successful booking.
 
+- Recurring bookings:
+  - Users and admins can enable weekly/biweekly recurring bookings.
+  - The system generates planned instances in `recurring_bookings` with `status`:
+    - `true` (will occur) if slot is free
+    - `false` (skipped) if slot is taken/blocked
+  - Profile calendar shows skipped instances as not-green and lists them as "skipped due to already taken date".
+  - Admin calendar shows only `status=true` instances and hides skipped ones.
+
 #### C. Navigation & Layout
 
 - Responsive navbar with desktop (inline links) and mobile (hamburger menu) modes.
@@ -51,9 +59,23 @@ Masaj by Melinda is a web application for a professional wellness and massage se
 - Secondary color: Pink-500
 - Page background theme: dark
 
-#### F. Admin/Management (Future Expansion)
+#### F. Admin/Management
 
-- Admins can view bookings and manage service availabilities (not yet implemented, but plan for future).
+- Bookings management (`src/pages/admin/Bookings.tsx`):
+  - View bookings with a calendar and per-day list.
+  - Create, edit, delete bookings.
+  - Create recurring bookings (preview + confirm) using Supabase Functions.
+  - Calendar highlights recurring dates with `status=true` only.
+
+- Availabilities management (`src/pages/admin/Availabilities.tsx`):
+  - View and toggle per-hour availability for each day.
+  - Booked slots (from `bookings` + `recurring_bookings` `status=true`) are shown as booked and cannot be toggled.
+  - Create recurring availability blocks (daily/weekly/biweekly) to auto-block specific hours over 30/60/90 days with preview + confirm flow.
+  - Cancel a recurring availability block to cascade-remove its generated instances.
+
+- Audit Logs (`src/pages/admin/AuditLogs.tsx`):
+  - Admin actions (booking create/update/delete, availability updates, etc.) are logged to `admin_audit_logs`.
+  - Logs resolve the admin's profile (optional) and gracefully handle missing users.
 
 ---
 
@@ -68,6 +90,13 @@ Masaj by Melinda is a web application for a professional wellness and massage se
 - **Theme:** next-themes for light/dark mode support
 - **Other:** Custom hooks, utility functions, and reusable UI components
 
+- **Supabase Edge Functions:**
+  - `supabase/functions/create-recurring-bookings/` – preview/confirm planned booking instances
+  - `supabase/functions/cancel-recurring-bookings/` – cancel a recurring booking series
+  - `supabase/functions/create-recurring-availabilities/` – preview/confirm recurring availability blocks
+  - `supabase/functions/cancel-recurring-availabilities/` – cancel a recurring availability series
+  - All functions expose permissive CORS for `authorization, x-client-info, apikey, content-type` headers and run with service role.
+
 ---
 
 ### 4. User Stories
@@ -76,7 +105,9 @@ Masaj by Melinda is a web application for a professional wellness and massage se
 - As a user, I want to book a session by selecting a service, date, and time, so I can schedule my appointment online.
 - As a user, I want to see only available time slots, so I don’t accidentally double-book.
 - As a user, I want to receive a confirmation after booking, so I know my appointment is set.
-- As an admin (future), I want to view and manage bookings and service availability.
+- As an admin, I want to view and manage bookings and service availability.
+- As an admin, I want to create recurring availability blocks (e.g., disable 13:00 for weekdays for 60 days) and cancel them safely.
+- As a visitor, I want to click "Rezervă acum" on a service card and land on the booking page with that service preselected.
 
 ---
 
@@ -86,16 +117,20 @@ Masaj by Melinda is a web application for a professional wellness and massage se
 - All user data must be validated before submission.
 - The booking process should be fast and user-friendly.
 - The design should inspire trust and relaxation.
+- Mobile optimizations for calendars and grids:
+  - Larger tap targets and responsive sizing for Profile/Admin calendars.
+  - Availability hour grid adapts columns for small screens; booked slots are clearly indicated and disabled.
 
 ---
 
 ### 6. Stretch Goals / Future Features
 
-- Admin dashboard for managing bookings and availabilities.
-- User authentication for booking history.
-- Email/SMS notifications for bookings.
-- Analytics dashboard for business insights.
-- Secure admin access with security measures 
+- Admin dashboard for managing bookings and availabilities (done).
+- User authentication for booking history (done).
+- Email/SMS notifications for bookings (done).
+- Analytics dashboard for business insights (done).
+- Secure admin access with security measures (done). 
+- Extended recurrence options (custom weekday sets, monthly patterns) for both bookings and availability blocks.
 
 ---
 
@@ -106,3 +141,44 @@ Masaj by Melinda is a web application for a professional wellness and massage se
 - shadcn/ui and Tailwind CSS docs for UI components and styling.
 
 ---
+
+### 8. Implementation Details & Directory Map (New)
+
+- Frontend Pages & Components
+  - Booking page: `src/pages/BookingPage.tsx`
+    - Reads `service` from router state or `?service=` query to preselect service.
+    - Steps: Contact → Service → Date/Time → Summary → Confirm.
+  - Profile page: `src/pages/ProfilePage.tsx`
+    - Calendar color-codes recurring vs regular days; shows skipped recurring instances with explanation.
+  - Admin pages:
+    - Bookings: `src/pages/admin/Bookings.tsx` (calendar + day list, recurring booking modal)
+    - Availabilities: `src/pages/admin/Availabilities.tsx` (toggle hours, booked overlay, recurring availability modal, active blocks list)
+    - Audit Logs: `src/pages/admin/AuditLogs.tsx`
+  - Service cards with “Rezervă acum”:
+    - Massage: `src/components/MassageServices.tsx`
+    - Devices: `src/components/DeviceTreatments.tsx`
+
+- Contexts & Services
+  - ServicesContext: `src/contexts/ServicesContext.tsx`
+  - AvailabilitiesContext: `src/contexts/AvailabilitiesContext.tsx`
+  - Recurring services:
+    - Bookings: `src/services/recurring/service.ts`
+    - Availabilities: `src/services/recurring/availability.ts`
+  - Notifications: `src/services/notifications/*`
+
+- Supabase / Backend
+  - Tables:
+    - `bookings`, `availabilities`, `recurring_bookings`, `admin_audit_logs`, `recurring_availabilities`
+  - Functions:
+    - `supabase/functions/create-recurring-bookings/`
+    - `supabase/functions/cancel-recurring-bookings/`
+    - `supabase/functions/create-recurring-availabilities/`
+    - `supabase/functions/cancel-recurring-availabilities/`
+  - Migrations:
+    - `supabase/migrations/20250808_recurring_bookings.sql`
+    - `supabase/migrations/20250813_recurring_availabilities.sql`
+
+- Audit Logging
+  - Logger: `src/lib/audit-logger.ts`
+  - UI: `src/pages/admin/AuditLogs.tsx`
+  - Policies ensure only admins can select logs; inserts are enabled appropriately per project RLS.

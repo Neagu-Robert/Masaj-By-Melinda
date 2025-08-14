@@ -253,6 +253,27 @@ const BookingPageContent = () => {
       <BookingHeader />
       <div className="container mx-auto px-4 py-8 pt-24">
         <div className="max-w-4xl mx-auto">
+          {/* Guest promotional message */}
+          {isGuest && (
+            <div className="bg-violet-900/20 border border-violet-400/30 rounded-lg p-6 mb-8">
+              <div className="flex items-start space-x-3">
+                <div className="flex-shrink-0">
+                  <svg className="w-6 h-6 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div className="text-left">
+                  <h3 className="text-lg font-semibold text-violet-300 mb-2">
+                    Beneficii pentru utilizatorii înregistrați
+                  </h3>
+                  <p className="text-gray-200 leading-relaxed">
+                    Pentru a primi notificări de confirmare a rezervărilor sau pentru posibile schimbări va trebui să vă înregistrați. Dacă nu vă înregistrați va trebui să vă verificați numărul de telefon de fiecare dată când intrați pe site. Dacă vă înregistrați vă puteți salva numărul de telefon și va rămâne verificat pentru fiecare rezervare. Cei înregistrați pot de asemenea să rezerve ședințe săptămânale până la 3 luni printr-un singur click.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="text-center mb-8">
             <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">
               Faceți o rezervare

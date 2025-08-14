@@ -23,6 +23,7 @@ export const getNotificationPreferences = async (userId: string): Promise<Notifi
       bookingCreationEnabled: data.booking_creation_enabled,
       bookingUpdateEnabled: data.booking_update_enabled,
       bookingCancellationEnabled: data.booking_cancellation_enabled,
+      reminderEnabled: data.reminder_enabled ?? true,
       passwordChangeEnabled: data.password_change_enabled
     };
   } catch (error) {
@@ -37,6 +38,7 @@ export const saveNotificationPreferences = async (
     bookingCreationEnabled: boolean;
     bookingUpdateEnabled: boolean;
     bookingCancellationEnabled: boolean;
+    reminderEnabled: boolean;
     passwordChangeEnabled: boolean;
   }
 ): Promise<boolean> => {
@@ -56,6 +58,7 @@ export const saveNotificationPreferences = async (
           booking_creation_enabled: preferences.bookingCreationEnabled,
           booking_update_enabled: preferences.bookingUpdateEnabled,
           booking_cancellation_enabled: preferences.bookingCancellationEnabled,
+          reminder_enabled: preferences.reminderEnabled,
           password_change_enabled: preferences.passwordChangeEnabled,
           updated_at: new Date().toISOString()
         })
@@ -74,6 +77,7 @@ export const saveNotificationPreferences = async (
           booking_creation_enabled: preferences.bookingCreationEnabled,
           booking_update_enabled: preferences.bookingUpdateEnabled,
           booking_cancellation_enabled: preferences.bookingCancellationEnabled,
+          reminder_enabled: preferences.reminderEnabled,
           password_change_enabled: preferences.passwordChangeEnabled
         });
 
