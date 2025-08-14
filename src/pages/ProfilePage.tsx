@@ -591,11 +591,11 @@ function ProfilePageContent() {
                      mode="single"
                      selected={selectedDay}
                      onSelect={(d) => { if (d) { d.setHours(0,0,0,0); setSelectedDay(d); } }}
-                      className="rounded-md border border-gray-600 bg-gray-800 text-violet-300 p-3 md:p-4"
+                      className="rounded-md border border-gray-600 bg-gray-800 text-violet-300 p-3 md:p-4 max-w-[300px] md:max-w-none"
                      classNames={{
-                        day: "h-12 w-12 md:h-14 md:w-14 p-0 font-normal aria-selected:opacity-100 rounded-lg transition-all duration-200 hover:scale-110 hover:bg-violet-500/20 cursor-pointer",
-                        head_cell: "text-muted-foreground rounded-md w-12 md:w-14 font-normal text-xs md:text-sm",
-                        cell: "h-12 w-12 md:h-14 md:w-14 text-center text-xs md:text-sm p-0 relative",
+                        day: "h-10 w-10 md:h-14 md:w-14 p-0 font-normal aria-selected:opacity-100 rounded-lg transition-all duration-200 hover:scale-110 hover:bg-violet-500/20 cursor-pointer",
+                        head_cell: "text-muted-foreground rounded-md w-10 md:w-14 font-normal text-xs md:text-sm",
+                        cell: "h-10 w-10 md:h-14 md:w-14 text-center text-xs md:text-sm p-0 relative",
                      }}
                       modifiers={{
                         today: (date) => date.toDateString() === todayMidnight.toDateString(),

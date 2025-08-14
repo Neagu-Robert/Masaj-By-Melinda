@@ -122,23 +122,23 @@ const BookingsList: React.FC<BookingsListProps> = ({
                     <div className="text-white text-sm">{formatBookingDateTime(booking.booking_date, booking.booking_time)}</div>
                   </div>
                 </div>
-                <div className="flex justify-end space-x-2 pt-2 border-t border-gray-700">
+                <div className="flex flex-wrap justify-end gap-2 pt-2 border-t border-gray-700">
                   {/* Only allow edit/cancel for concrete booking rows */}
-                  <Button variant="ghost" size="sm" onClick={() => onEditClick(booking)} className="text-white hover:text-gray-300 hover:bg-gray-700/50 transition-colors duration-200">
-                    <Edit className="h-4 w-4 mr-1" />
+                  <Button variant="ghost" size="sm" onClick={() => onEditClick(booking)} className="text-white hover:text-gray-300 hover:bg-gray-700/50 transition-colors duration-200 text-xs px-2 py-1">
+                    <Edit className="h-3 w-3 mr-1" />
                     Edit
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={() => onCancelBooking(booking)} className="text-red-400 hover:text-red-300 hover:bg-red-500/20 transition-colors duration-200">
-                    <Trash2 className="h-4 w-4 mr-1" />
+                  <Button variant="ghost" size="sm" onClick={() => onCancelBooking(booking)} className="text-red-400 hover:text-red-300 hover:bg-red-500/20 transition-colors duration-200 text-xs px-2 py-1">
+                    <Trash2 className="h-3 w-3 mr-1" />
                     Cancel
                   </Button>
                   {user && (
                     booking.recurring ? (
-                      <Button variant="ghost" size="sm" onClick={() => onCancelRecurring(booking)} className="text-violet-300 hover:text-violet-200 hover:bg-violet-500/20 transition-colors duration-200">
+                      <Button variant="ghost" size="sm" onClick={() => onCancelRecurring(booking)} className="text-violet-300 hover:text-violet-200 hover:bg-violet-500/20 transition-colors duration-200 text-xs px-2 py-1">
                         Cancel Recurring
                       </Button>
                     ) : (
-                      <Button variant="ghost" size="sm" onClick={() => onOpenRecurring(booking)} className="text-green-300 hover:text-green-200 hover:bg-green-500/20 transition-colors duration-200">
+                      <Button variant="ghost" size="sm" onClick={() => onOpenRecurring(booking)} className="text-green-300 hover:text-green-200 hover:bg-green-500/20 transition-colors duration-200 text-xs px-2 py-1">
                         Make Recurring
                       </Button>
                     )

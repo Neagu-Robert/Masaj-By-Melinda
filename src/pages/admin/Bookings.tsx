@@ -354,7 +354,7 @@ export default function Bookings() {
         Add Booking
       </Button>
       
-      {/* Calendar + Day list (mirrors profile UI) */}
+      {/* Calendar - Visible on both mobile and desktop */}
       <section id="booking-history" className="mt-4">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Calendar */}
@@ -365,11 +365,11 @@ export default function Bookings() {
                 mode="single"
                 selected={selectedDay}
                 onSelect={(d) => { if (d) { d.setHours(0,0,0,0); setSelectedDay(d); } }}
-                className="rounded-md border border-gray-600 bg-gray-800 text-violet-200 p-4"
+                className="rounded-md border border-gray-600 bg-gray-800 text-violet-200 p-2 md:p-4 max-w-[300px] md:max-w-none"
                 classNames={{
-                  day: "h-12 w-12 md:h-10 md:w-10 p-0 font-normal aria-selected:opacity-100 rounded-lg transition-all duration-200 hover:scale-110 hover:bg-violet-500/20 cursor-pointer",
-                  head_cell: "text-muted-foreground rounded-md w-12 md:w-10 font-normal text-sm",
-                  cell: "h-12 w-12 md:h-10 md:w-10 text-center text-sm p-0 relative",
+                  day: "h-10 w-10 md:h-12 md:w-12 p-0 font-normal aria-selected:opacity-100 rounded-lg transition-all duration-200 hover:scale-110 hover:bg-violet-500/20 cursor-pointer",
+                  head_cell: "text-muted-foreground rounded-md w-10 md:w-12 font-normal text-xs md:text-sm",
+                  cell: "h-10 w-10 md:h-12 md:w-12 text-center text-xs md:text-sm p-0 relative",
                 }}
                 modifiers={{
                   today: (date) => dateKey(date) === dateKey(todayMidnight),
@@ -387,8 +387,8 @@ export default function Bookings() {
             </div>
           </div>
 
-          {/* Day list */}
-          <div className="bg-gray-800/50 rounded-lg p-4 min-h-[300px]">
+          {/* Desktop Day list - Hidden on mobile */}
+          <div className="bg-gray-800/50 rounded-lg p-4 min-h-[300px] hidden md:block">
             <h3 className="text-lg font-semibold text-violet-300 mb-4">Bookings for {selectedDay.toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' })}</h3>
             <div className="space-y-3 max-h-[520px] overflow-y-auto pr-2">
               {(() => {
@@ -455,57 +455,110 @@ export default function Bookings() {
         </div>
       </section>
 
-      {/* Mobile Card View */}
-      <div className="md:hidden space-y-3">
+      {/* Mobile Card View - Only show for selected day */}
+      <div className="md:hidden space-y-3 mt-6">
+        <h3 className="text-lg font-semibold text-violet-300 mb-4">{selectedDay.toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' })}</h3>
         {loading ? (
           <div className="text-center py-8 text-gray-400">Loading...</div>
-        ) : filteredBookings.length === 0 ? (
-          <div className="text-center py-8 text-gray-400">No bookings found.</div>
-        ) : (
-          filteredBookings.map((b: any) => (
-            <Card key={b.id} className="bg-gray-800/50 border-gray-700">
-              <CardContent className="p-4 space-y-3">
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <div className="text-sm text-gray-400 mb-1">Name</div>
-                    <div className="text-white font-medium">{b.first_name} {b.last_name}</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-sm text-gray-400 mb-1">Date & Time</div>
-                    <div className="text-white text-sm">{b.booking_date} at {b.booking_time}</div>
-                  </div>
-                </div>
-                
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <div className="text-sm text-gray-400 mb-1">Email</div>
-                    <div className="text-white text-sm">{b.profiles?.email || '-'}</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-sm text-gray-400 mb-1">Phone</div>
-                    <div className="text-white text-sm">{b.phone_number}</div>
-                  </div>
-                </div>
-                
-                <div>
-                  <div className="text-sm text-gray-400 mb-1">Service</div>
-                  <div className="text-violet-300 font-medium">{b.service_type}</div>
-                </div>
-                
-                                 <div className="flex justify-end space-x-2 pt-2 border-t border-gray-700">
-                   <Button variant="ghost" size="sm" onClick={() => handleEdit(b)} className="text-white hover:text-gray-300">
-                     <Edit className="h-4 w-4 mr-1" />
-                     Edit
-                   </Button>
-                   <Button variant="ghost" size="sm" onClick={() => handleDelete(b.id)} className="text-red-400 hover:text-red-300">
-                     <Trash2 className="h-4 w-4 mr-1" />
-                     Delete
-                   </Button>
-                 </div>
-              </CardContent>
-            </Card>
-          ))
-        )}
+        ) : (() => {
+          const dayKey = selectedDay.getTime();
+          const dayBookings = filteredBookings
+            .filter((b: any) => { const d = parseLocalDate(b.booking_date); return d.getTime()===dayKey; })
+            .sort((a:any,b:any)=> parseLocalDate(a.booking_date).getTime()-parseLocalDate(b.booking_date).getTime());
+          const dayRecurring = recurringInstances
+            .filter(r => r.status && (() => { const d = parseLocalDate(r.date); return d.getTime()===dayKey; })())
+            .sort((a,b)=> parseLocalDate(a.date).getTime()-parseLocalDate(b.date).getTime());
+          
+          if (dayBookings.length === 0 && dayRecurring.length === 0) {
+            return <div className="text-center py-8 text-gray-400">No bookings for this date.</div>;
+          }
+          
+          return (
+            <>
+              {/* Show recurring instances first */}
+              {dayRecurring.map((r, idx) => (
+                <Card key={`mobile-rec-${r.booking_id}-${r.date}-${r.hour}-${idx}`} className="bg-gray-800/50 border-green-600/50">
+                  <CardContent className="p-4 space-y-3">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="text-sm text-gray-400 mb-1">Recurring</div>
+                        <div className="text-white font-medium">{r.service_type}</div>
+                        <div className="text-xs text-gray-400">{r.userName} ({r.userEmail})</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm text-gray-400 mb-1">Time</div>
+                        <div className="text-white text-sm">{String(r.hour).slice(0,5)}</div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex justify-end space-x-2 pt-2 border-t border-gray-700">
+                      <Button variant="ghost" size="sm" className="text-violet-300 hover:text-violet-200 hover:bg-violet-500/20" onClick={() => {
+                        const root = bookings.find((b:any) => b.id === r.booking_id);
+                        if (root) cancelRecurringAdmin(root);
+                      }}>
+                        Cancel Recurring
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+              
+              {/* Show regular bookings */}
+              {dayBookings.map((b: any) => (
+                <Card key={`mobile-${b.id}`} className="bg-gray-800/50 border-gray-700">
+                  <CardContent className="p-4 space-y-3">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="text-sm text-gray-400 mb-1">Name</div>
+                        <div className="text-white font-medium">{b.first_name} {b.last_name}</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm text-gray-400 mb-1">Time</div>
+                        <div className="text-white text-sm">{b.booking_time}</div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="text-sm text-gray-400 mb-1">Email</div>
+                        <div className="text-white text-sm">{b.profiles?.email || '-'}</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm text-gray-400 mb-1">Phone</div>
+                        <div className="text-white text-sm">{b.phone_number}</div>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <div className="text-sm text-gray-400 mb-1">Service</div>
+                      <div className="text-violet-300 font-medium">{b.service_type}</div>
+                    </div>
+                    
+                    <div className="flex flex-wrap justify-end gap-2 pt-2 border-t border-gray-700">
+                      <Button variant="ghost" size="sm" onClick={() => handleEdit(b)} className="text-white hover:text-gray-300 text-xs px-2 py-1">
+                        <Edit className="h-3 w-3 mr-1" />
+                        Edit
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => handleDelete(b.id)} className="text-red-400 hover:text-red-300 text-xs px-2 py-1">
+                        <Trash2 className="h-3 w-3 mr-1" />
+                        Delete
+                      </Button>
+                      {b.recurring ? (
+                        <Button variant="ghost" size="sm" className="text-violet-300 hover:text-violet-200 text-xs px-2 py-1" onClick={() => cancelRecurringAdmin(b)}>
+                          Cancel Recurring
+                        </Button>
+                      ) : (
+                        <Button variant="ghost" size="sm" className="text-green-300 hover:text-green-200 text-xs px-2 py-1" onClick={() => openRecurringModal(b)}>
+                          Make Recurring
+                        </Button>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </>
+          );
+        })()}
       </div>
       
       <BookingFormModal open={modalOpen} onClose={handleModalClose} booking={selectedBooking} />
