@@ -21,6 +21,8 @@ import {
   checkForDoubleBooking, 
   validateBookingData 
 } from '@/lib/booking-utils';
+import { usePhoneVerification } from '@/contexts/PhoneVerificationContext';
+import { PhoneVerificationModal } from '@/components/auth/PhoneVerificationModal';
 
 const BookingPageContent = () => {
   const navigate = useNavigate();
@@ -29,6 +31,7 @@ const BookingPageContent = () => {
   const [selectedTime, setSelectedTime] = useState<string | undefined>();
   const [selectedService, setSelectedService] = useState<string | undefined>();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
   const form = useForm({
     defaultValues: {
       fullName: '',
@@ -41,6 +44,7 @@ const BookingPageContent = () => {
   const [profileInfo, setProfileInfo] = useState<{ fullName: string; phoneNumber: string | null } | null>(null);
   const [useProfileName, setUseProfileName] = useState(false);
   const [useProfilePhone, setUseProfilePhone] = useState(false);
+  const { isVerified, startVerification, verificationStatus } = usePhoneVerification();
   
   // Initialize the notifications hook
   const { sendBookingConfirmation, sendBookingConfirmationAdmin } = useBookingNotifications();
@@ -92,7 +96,42 @@ const BookingPageContent = () => {
     }
   }, [useProfileName, useProfilePhone, profileInfo, form]);
   
+  const handleVerifyPhone = async () => {
+    const phoneNumber = form.getValues('phoneNumber');
+    const formattedPhone = `+40${phoneNumber.replace(/\s+/g, '')}`;
+    
+    // Check if the number from the profile is already verified
+    if (user && profileInfo?.phoneNumber === phoneNumber) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('phone_verified')
+        .eq('id', user.id)
+        .single();
+      if (profile?.phone_verified) {
+        toast("Info", { description: "Acest număr de telefon este deja verificat în profilul dumneavoastră." });
+        return;
+      }
+    }
+
+    await startVerification(formattedPhone, user?.id);
+    setIsVerificationModalOpen(true);
+  };
+
   const onSubmit = async (data: any) => {
+    const phoneNumber = form.getValues('phoneNumber');
+    const formattedPhone = `+40${phoneNumber.replace(/\s+/g, '')}`;
+
+    if (!isVerified(formattedPhone)) {
+      toast("Eroare de validare", {
+        description: "Vă rugăm să vă verificați numărul de telefon înainte de a continua.",
+        action: {
+          label: "Verifică acum",
+          onClick: handleVerifyPhone,
+        },
+      });
+      return;
+    }
+    
     // Validate booking data using shared utility
     const validation = validateBookingData(selectedDate, selectedTime || '', selectedService || '');
     if (!validation.isValid) {
@@ -293,6 +332,8 @@ const BookingPageContent = () => {
                 setUseProfileName={setUseProfileName}
                 useProfilePhone={useProfilePhone}
                 setUseProfilePhone={setUseProfilePhone}
+                onVerifyPhone={handleVerifyPhone}
+                isPhoneVerified={isVerified(`+40${form.watch('phoneNumber').replace(/\s+/g, '')}`)}
               />
               
               {/* 2. Service Selection */}
@@ -330,6 +371,11 @@ const BookingPageContent = () => {
           </Form>
         </div>
       </div>
+      <PhoneVerificationModal
+        isOpen={isVerificationModalOpen}
+        onClose={() => setIsVerificationModalOpen(false)}
+        phoneNumber={`+40${form.getValues('phoneNumber').replace(/\s+/g, '')}`}
+      />
     </div>
   );
 };

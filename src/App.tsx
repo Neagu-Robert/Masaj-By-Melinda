@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import AuthPage from "./pages/AuthPage";
 import NotFound from "./pages/NotFound";
@@ -51,37 +51,35 @@ function App() {
         <ServicesProvider>
           <Toaster />
           <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<AuthPage />} />
-              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-              <Route path="/reset-password" element={<ResetPasswordPage />} />
-              <Route path="/home" element={<Index />} />
-              <Route path="/book" element={<BookingPage />} />
-              <Route path="/pachete" element={<PachetePage />} />
-              <Route path="/profile" element={
-                <ProtectedRoute allowedRoles={['admin', 'customer']}>
-                  <ProfilePage />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin" element={
-                <ProtectedRoute allowedRoles={["admin"]}>
-                  <DashboardLayout />
-                </ProtectedRoute>
-              }>
-                <Route index element={<AdminHome />} />
-                <Route path="bookings" element={<Bookings />} />
-                <Route path="availabilities" element={<Availabilities />} />
-                <Route path="analytics" element={<Analytics />} />
-                <Route path="users" element={<Users />} />
-                <Route path="auditlogs" element={<AuditLogs />} />
+          <Routes>
+            <Route path="/" element={<AuthPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/home" element={<Index />} />
+            <Route path="/book" element={<BookingPage />} />
+            <Route path="/pachete" element={<PachetePage />} />
+            <Route path="/profile" element={
+              <ProtectedRoute allowedRoles={['admin', 'customer']}>
+                <ProfilePage />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin" element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }>
+              <Route index element={<AdminHome />} />
+              <Route path="bookings" element={<Bookings />} />
+              <Route path="availabilities" element={<Availabilities />} />
+              <Route path="analytics" element={<Analytics />} />
+              <Route path="users" element={<Users />} />
+              <Route path="auditlogs" element={<AuditLogs />} />
         
-              </Route>
-              <Route path="/not-authorized" element={<NotAuthorized />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
+            </Route>
+            <Route path="/not-authorized" element={<NotAuthorized />} />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
         </ServicesProvider>
       </TooltipProvider>
     </QueryClientProvider>

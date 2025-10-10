@@ -520,7 +520,18 @@ function ProfilePageContent() {
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-400">Phone Number</label>
-                  <p className="text-base md:text-lg mt-1 text-gray-500">{profile.phone_number || 'Not provided'}</p>
+                  <div className="flex items-center space-x-2">
+                    <p className="text-base md:text-lg mt-1">{profile.phone || 'Not provided'}</p>
+                    {profile.phone && (
+                      <span className={`text-xs font-medium px-2 py-1 rounded-full ${
+                        profile.phone_verified 
+                          ? 'bg-green-500/20 text-green-300' 
+                          : 'bg-yellow-500/20 text-yellow-300'
+                      }`}>
+                        {profile.phone_verified ? 'Verified' : 'Not Verified'}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-400">Account Role</label>
@@ -564,9 +575,10 @@ function ProfilePageContent() {
                 onClose={() => setIsEditProfileOpen(false)}
                 userId={user.id}
                 currentName={profile.full_name || ''}
-                currentPhone={profile.phone_number || ''}
+                currentPhone={profile.phone || ''}
+                isPhoneVerified={profile.phone_verified}
                 onSuccess={(newName, newPhone) => {
-                  setProfile((prev) => ({ ...prev, full_name: newName, phone_number: newPhone }));
+                  setProfile((prev) => ({ ...prev, full_name: newName, phone: newPhone }));
                 }}
               />
               

@@ -5,6 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { User, Phone } from 'lucide-react';
 import { UseFormReturn } from 'react-hook-form';
+import { Button } from '@/components/ui/button';
+import { CheckCircle2 } from 'lucide-react';
 
 type ContactFormProps = {
   form: UseFormReturn<{
@@ -17,9 +19,22 @@ type ContactFormProps = {
   setUseProfileName?: (v: boolean) => void;
   useProfilePhone?: boolean;
   setUseProfilePhone?: (v: boolean) => void;
+  onVerifyPhone: () => void;
+  isPhoneVerified: boolean;
 };
 
-const ContactForm = ({ form, profileInfo, useProfileName, setUseProfileName, useProfilePhone, setUseProfilePhone }: ContactFormProps) => {
+const ContactForm = ({
+  form,
+  profileInfo,
+  useProfileName,
+  setUseProfileName,
+  useProfilePhone,
+  setUseProfilePhone,
+  onVerifyPhone,
+  isPhoneVerified,
+}: ContactFormProps) => {
+  const phoneNumber = form.watch('phoneNumber');
+
   return (
     <Card className="bg-gray-800 border-gray-700">
       <CardHeader className="pb-4">
@@ -92,11 +107,30 @@ const ContactForm = ({ form, profileInfo, useProfileName, setUseProfileName, use
                     className="pl-10 md:pl-12 h-12 md:h-14 bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 focus:border-[#7E69AB] text-base md:text-lg" 
                     {...field}
                     required
-                    disabled={!!useProfilePhone}
+                    disabled={!!useProfilePhone || isPhoneVerified}
                   />
                 </div>
               </FormControl>
               <FormMessage />
+              {!useProfilePhone && (
+                <div className="mt-2">
+                  {isPhoneVerified ? (
+                    <div className="flex items-center text-green-400">
+                      <CheckCircle2 className="h-5 w-5 mr-2" />
+                      <span>Număr verificat</span>
+                    </div>
+                  ) : (
+                    <Button
+                      type="button"
+                      onClick={onVerifyPhone}
+                      className="bg-gray-600 hover:bg-gray-500 text-white text-sm h-auto px-4 py-2"
+                      disabled={!phoneNumber || phoneNumber.length < 10}
+                    >
+                      Verifică numărul de telefon
+                    </Button>
+                  )}
+                </div>
+              )}
             </FormItem>
           )}
         />
