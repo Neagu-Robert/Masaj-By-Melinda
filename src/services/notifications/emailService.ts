@@ -1,6 +1,6 @@
 import { 
-  SENDGRID_FROM_EMAIL, 
-  SENDGRID_FROM_NAME,
+  BREVO_FROM_EMAIL, 
+  BREVO_FROM_NAME,
   EMAIL_NOTIFICATIONS_ENABLED 
 } from './config';
 import { 
@@ -483,8 +483,8 @@ const emailTemplates = {
 const isEmailConfigured = (): boolean => {
   return !!(
     EMAIL_NOTIFICATIONS_ENABLED &&
-    SENDGRID_FROM_EMAIL &&
-    SENDGRID_FROM_NAME
+    BREVO_FROM_EMAIL &&
+    BREVO_FROM_NAME
   );
 };
 

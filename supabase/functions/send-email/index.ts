@@ -1,21 +1,12 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import sgMail from 'https://esm.sh/@sendgrid/mail@8.1.1';
 
-const SENDGRID_API_KEY = Deno.env.get('SENDGRID_API_KEY');
-const SENDGRID_FROM_EMAIL = Deno.env.get('SENDGRID_FROM_EMAIL') || 'masajbymelinda@gmail.com';
-const SENDGRID_FROM_NAME = Deno.env.get('SENDGRID_FROM_NAME') || 'Masaj by Melinda';
+const BREVO_API_KEY = Deno.env.get('BREVO_API_KEY');
+const SENDER_EMAIL = Deno.env.get('BREVO_FROM_EMAIL') || 'masajbymelinda@gmail.com';
+const SENDER_NAME = Deno.env.get('BREVO_FROM_NAME') || 'Masaj by Melinda';
 
-console.log('Email function loaded. SendGrid API key present:', !!SENDGRID_API_KEY);
-console.log('From email:', SENDGRID_FROM_EMAIL);
-console.log('From name:', SENDGRID_FROM_NAME);
-
-// Initialize SendGrid
-if (SENDGRID_API_KEY) {
-  sgMail.setApiKey(SENDGRID_API_KEY);
-  console.log('SendGrid API key set successfully');
-} else {
-  console.error('SendGrid API key not found in environment variables');
-}
+console.log('Email function loaded. Brevo API key present:', !!BREVO_API_KEY);
+console.log('Sender email:', SENDER_EMAIL);
+console.log('Sender name:', SENDER_NAME);
 
 serve(async (req) => {
   // CORS headers
@@ -44,38 +35,57 @@ serve(async (req) => {
       }), { status: 400, headers });
     }
 
-    // Check if SendGrid is configured
-    if (!SENDGRID_API_KEY) {
+    // Check if Brevo is configured
+    if (!BREVO_API_KEY) {
       return new Response(JSON.stringify({
         success: false,
-        error: 'SendGrid API key not configured'
+        error: 'Brevo API key not configured'
       }), { status: 500, headers });
     }
 
-    const msg = {
-      to,
-      from: {
-        email: SENDGRID_FROM_EMAIL,
-        name: SENDGRID_FROM_NAME,
+    const brevoPayload = {
+      sender: {
+        name: SENDER_NAME,
+        email: SENDER_EMAIL,
       },
+      to: [
+        {
+          email: to,
+        },
+      ],
       subject,
-      text: textContent,
-      html: htmlContent,
+      htmlContent,
+      textContent,
     };
 
     console.log('Attempting to send email to:', to);
-    console.log('From:', SENDGRID_FROM_EMAIL);
+    console.log('From:', SENDER_EMAIL);
     console.log('Subject:', subject);
-    console.log('Message object:', JSON.stringify(msg, null, 2));
+    console.log('Brevo payload:', JSON.stringify(brevoPayload, null, 2));
 
-    await sgMail.send(msg);
+    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'api-key': BREVO_API_KEY,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify(brevoPayload),
+    });
 
-    console.log('Email sent successfully');
+    if (!response.ok) {
+      const errorBody = await response.text();
+      console.error('Brevo API error:', response.status, errorBody);
+      throw new Error(`Brevo API responded with status ${response.status}: ${errorBody}`);
+    }
+
+    const result = await response.json();
+    console.log('Email sent successfully via Brevo. Message ID:', result.messageId);
 
     return new Response(JSON.stringify({
       success: true,
       status: 'SENT',
-      messageId: `email_${Date.now()}`
+      messageId: result.messageId || `email_${Date.now()}`
     }), { status: 200, headers });
 
   } catch (error) {

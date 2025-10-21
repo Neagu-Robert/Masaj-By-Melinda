@@ -1,7 +1,7 @@
 // Import only the necessary types and configurations
 import { 
-  INFOBIP_API_KEY, 
-  INFOBIP_SENDER_NUMBER,
+  TWILIO_SID,
+  TWILIO_AUTH_TOKEN,
   MAX_RETRY_ATTEMPTS,
   RETRY_DELAY_MS,
   SMS_NOTIFICATIONS_ENABLED
@@ -61,11 +61,10 @@ const getSupabaseFunctionUrl = (fn) =>
  * Check if SMS is properly configured
  */
 const isSmsConfigured = (): boolean => {
-  // For testing: Allow SMS if enabled, even without Infobip credentials
-  // The actual SMS sending is handled by the Vercel API route
   return !!(
-    SMS_NOTIFICATIONS_ENABLED
-    // && INFOBIP_API_KEY && INFOBIP_SENDER_NUMBER  // Commented out for testing
+    SMS_NOTIFICATIONS_ENABLED &&
+    TWILIO_SID &&
+    TWILIO_AUTH_TOKEN
   );
 };
 
@@ -152,7 +151,7 @@ export const sendSmsNotification = async (
       sentAt: new Date().toISOString(),
       data: {
         ...payload.data,
-        smsDetails: data.details, // Include Infobip response details
+        smsDetails: data.details, // Include Twilio response details
         smsStatus: data.status
       }
     });

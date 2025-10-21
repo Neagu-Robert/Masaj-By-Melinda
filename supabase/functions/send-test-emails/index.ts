@@ -1,16 +1,11 @@
 // @ts-nocheck
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import sgMail from 'https://esm.sh/@sendgrid/mail@8.1.1';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { BookingNotificationData } from './types.ts';
 
-const SENDGRID_API_KEY = Deno.env.get('SENDGRID_API_KEY') || '';
-const SENDGRID_FROM_EMAIL = Deno.env.get('SENDGRID_FROM_EMAIL') || 'masajbymelinda@gmail.com';
-const SENDGRID_FROM_NAME = Deno.env.get('SENDGRID_FROM_NAME') || 'Masaj by Melinda';
-
-if (SENDGRID_API_KEY) {
-  sgMail.setApiKey(SENDGRID_API_KEY);
-}
+const BREVO_API_KEY = Deno.env.get('BREVO_API_KEY') || '';
+const BREVO_FROM_EMAIL = Deno.env.get('BREVO_FROM_EMAIL') || 'masajbymelinda@gmail.com';
+const BREVO_FROM_NAME = Deno.env.get('BREVO_FROM_NAME') || 'Masaj by Melinda';
 
 const testUserEmails = [
   'masterroberto636@gmail.com',
@@ -537,18 +532,25 @@ serve(async (req) => {
 
     const { subject, html, text } = template(hardcodedData);
 
-    const msg = {
-      to: recipientEmail,
-      from: {
-        email: SENDGRID_FROM_EMAIL,
-        name: SENDGRID_FROM_NAME,
+    const brevoPayload = {
+      to: [{ email: recipientEmail }],
+      sender: {
+        email: BREVO_FROM_EMAIL,
+        name: BREVO_FROM_NAME,
       },
       subject,
-      html,
-      text,
+      htmlContent: html,
+      textContent: text,
     };
 
-    await sgMail.send(msg);
+    await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'api-key': BREVO_API_KEY,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(brevoPayload),
+    });
 
     const { error: updateError } = await supabase
       .from('test_email_state')

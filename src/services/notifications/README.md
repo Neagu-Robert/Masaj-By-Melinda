@@ -2,7 +2,7 @@
 
 # Notification System
 
-This module provides a comprehensive notification system for Masaj by Melinda, supporting both email (via SendGrid) and SMS (via Infobip).
+This module provides a comprehensive notification system for Masaj by Melinda, supporting both email (via Brevo) and SMS (via Twilio).
 
 ## Features
 
@@ -20,32 +20,51 @@ This module provides a comprehensive notification system for Masaj by Melinda, s
 The notification system uses Supabase Edge Functions for secure API key handling. The following environment variables need to be set in your Supabase project secrets:
 
 ```
-# SendGrid (Email Notifications)
-SENDGRID_API_KEY=your_sendgrid_api_key
-SENDGRID_FROM_EMAIL=masajbymelinda@gmail.com
-SENDGRID_FROM_NAME=Masaj by Melinda
+# Brevo (Email Notifications)
+BREVO_API_KEY=your_brevo_api_key
+BREVO_FROM_EMAIL=masajbymelinda@gmail.com
+BREVO_FROM_NAME=Masaj by Melinda
 
-# Infobip (SMS Notifications)
-INFOBIP_API_KEY=your_infobip_api_key
-INFOBIP_SENDER_NUMBER=your_infobip_sender_number
+# Twilio (SMS Notifications)
+TWILIO_SID=your_twilio_sid
+TWILIO_AUTH_TOKEN=your_twilio_auth_token
+TWILIO_PHONE_NUMBER=your_twilio_phone_number
+```
+
+### Frontend Environment Variables
+
+For local development, create a `.env.local` file in the root of your project and add the following variables. These are required for the client-side application to function correctly.
+
+```
+# Supabase
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+
+# Twilio (for client-side checks)
+VITE_TWILIO_SID=your_twilio_sid
+VITE_TWILIO_AUTH_TOKEN=your_twilio_auth_token
+VITE_TWILIO_PHONE_NUMBER=your_twilio_phone_number
+
+# Brevo (for client-side checks)
+VITE_BREVO_API_KEY=your_brevo_api_key
 ```
 
 ### Email Implementation
 
-The email functionality is implemented via Supabase Edge Functions that use the SendGrid API. This approach keeps your SendGrid credentials secure on the backend while allowing email notifications from the frontend.
+The email functionality is implemented via Supabase Edge Functions that use the Brevo API. This approach keeps your Brevo credentials secure on the backend while allowing email notifications from the frontend.
 
 The Supabase Edge Function is located at `supabase/functions/send-email/index.ts` and handles:
-- Email message sending via SendGrid API
+- Email message sending via Brevo API
 - HTML and plain text email templates
 - Error handling and response formatting
 - CORS handling for cross-origin requests
 
 ### SMS Implementation
 
-The SMS functionality is implemented via Supabase Edge Functions that use the Infobip API. This approach keeps your Infobip credentials secure on the backend while allowing SMS notifications from the frontend.
+The SMS functionality is implemented via Supabase Edge Functions that use the Twilio API. This approach keeps your Twilio credentials secure on the backend while allowing SMS notifications from the frontend.
 
 The Supabase Edge Function is located at `supabase/functions/send-sms/index.ts` and handles:
-- SMS message sending via Infobip API
+- SMS message sending via Twilio API
 - Error handling and response formatting
 - CORS handling for cross-origin requests
 

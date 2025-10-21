@@ -16,6 +16,7 @@ export const PhoneVerificationProvider = ({ children }: { children: React.ReactN
   const [verificationStatus, setVerificationStatus] = useState<'idle' | 'pending' | 'verified' | 'error'>('idle');
   const [verifiedNumber, setVerifiedNumber] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [verifyingUserId, setVerifyingUserId] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     // For guests, check session storage on initial load
@@ -37,9 +38,14 @@ export const PhoneVerificationProvider = ({ children }: { children: React.ReactN
   const startVerification = async (phone: string, userId?: string) => {
     setVerificationStatus('pending');
     setError(null);
+    setVerifyingUserId(userId);
     try {
+      // Ensure phone number is in E.164 format for Twilio by taking the last 9 digits
+      const last9Digits = phone.replace(/\D/g, '').slice(-9);
+      const formattedPhone = `+40${last9Digits}`;
+      
       const { error: invokeError } = await supabase.functions.invoke('request-phone-verification', {
-        body: { phone, userId },
+        body: { phone: formattedPhone, userId },
       });
 
       if (invokeError) throw new Error(invokeError.message);
@@ -54,18 +60,22 @@ export const PhoneVerificationProvider = ({ children }: { children: React.ReactN
   const submitOtp = async (phone: string, otp: string) => {
     setError(null);
     try {
+      // Ensure phone number is in E.164 format for Twilio
+      const last9Digits = phone.replace(/\D/g, '').slice(-9);
+      const formattedPhone = `+40${last9Digits}`;
+      
       const { data, error: invokeError } = await supabase.functions.invoke('verify-phone-otp', {
-        body: { phone, otp },
+        body: { phone: formattedPhone, otp, userId: verifyingUserId },
       });
 
       if (invokeError) throw new Error(invokeError.message);
       if (data?.error) throw new Error(data.error);
 
       setVerificationStatus('verified');
-      setVerifiedNumber(phone);
+      setVerifiedNumber(formattedPhone);
       // For guests, persist in session storage
       try {
-        sessionStorage.setItem('verifiedPhoneNumber', phone);
+        sessionStorage.setItem('verifiedPhoneNumber', formattedPhone);
       } catch (e) {
         console.error('Could not access session storage:', e);
       }
@@ -81,6 +91,7 @@ export const PhoneVerificationProvider = ({ children }: { children: React.ReactN
     setVerificationStatus('idle');
     setVerifiedNumber(null);
     setError(null);
+    setVerifyingUserId(undefined);
     try {
       sessionStorage.removeItem('verifiedPhoneNumber');
     } catch (e) {

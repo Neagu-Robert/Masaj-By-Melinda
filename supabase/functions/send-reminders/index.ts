@@ -1,18 +1,13 @@
 // @ts-nocheck
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import sgMail from 'https://esm.sh/@sendgrid/mail@8.1.1';
 import { format, addDays } from 'https://esm.sh/date-fns@3.6.0';
 
-const SENDGRID_API_KEY = Deno.env.get('SENDGRID_API_KEY') || '';
-const SENDGRID_FROM_EMAIL = Deno.env.get('SENDGRID_FROM_EMAIL') || 'masajbymelinda@gmail.com';
-const SENDGRID_FROM_NAME = Deno.env.get('SENDGRID_FROM_NAME') || 'Masaj by Melinda';
+const BREVO_API_KEY = Deno.env.get('BREVO_API_KEY') || '';
+const BREVO_FROM_EMAIL = Deno.env.get('BREVO_FROM_EMAIL') || 'masajbymelinda@gmail.com';
+const BREVO_FROM_NAME = Deno.env.get('BREVO_FROM_NAME') || 'Masaj by Melinda';
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
-
-if (SENDGRID_API_KEY) {
-  sgMail.setApiKey(SENDGRID_API_KEY);
-}
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
@@ -161,17 +156,26 @@ serve(async (req) => {
           booking.service_type
         );
         try {
-          const msg = {
-            to: booking.profiles.email,
-            from: {
-              email: SENDGRID_FROM_EMAIL,
-              name: SENDGRID_FROM_NAME
+          const brevoPayload = {
+            to: [{ email: booking.profiles.email }],
+            sender: {
+              email: BREVO_FROM_EMAIL,
+              name: BREVO_FROM_NAME
             },
             subject: 'Reminder: Your Upcoming Appointment - Masaj by Melinda',
-            text: generateReminderEmailText(booking, serviceDetails),
-            html: generateReminderEmailHtml(booking, serviceDetails)
+            textContent: generateReminderEmailText(booking, serviceDetails),
+            htmlContent: generateReminderEmailHtml(booking, serviceDetails)
           };
-          await sgMail.send(msg);
+          
+          await fetch('https://api.brevo.com/v3/smtp/email', {
+            method: 'POST',
+            headers: {
+              'api-key': BREVO_API_KEY,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(brevoPayload),
+          });
+
           // Optionally, log to notification_logs table here
           return { id: booking.id, success: true };
         } catch (error) {

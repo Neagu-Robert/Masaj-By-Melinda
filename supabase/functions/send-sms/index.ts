@@ -1,10 +1,11 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 
-const INFOBIP_API_KEY = Deno.env.get('INFOBIP_API_KEY');
-const INFOBIP_SENDER_NUMBER = Deno.env.get('INFOBIP_SENDER_NUMBER');
+const TWILIO_ACCOUNT_SID = Deno.env.get('TWILIO_SID');
+const TWILIO_AUTH_TOKEN = Deno.env.get('TWILIO_AUTH_TOKEN');
+const TWILIO_PHONE_NUMBER = Deno.env.get('TWILIO_PHONE_NUMBER');
 
-console.log('SMS function loaded. Infobip API key present:', !!INFOBIP_API_KEY);
-console.log('Infobip sender number:', INFOBIP_SENDER_NUMBER);
+console.log('SMS function loaded. Twilio Account SID present:', !!TWILIO_ACCOUNT_SID);
+console.log('Twilio sender number:', TWILIO_PHONE_NUMBER);
 
 serve(async (req) => {
   // CORS headers
@@ -33,69 +34,67 @@ serve(async (req) => {
       }), { status: 400, headers });
     }
 
-    if (!INFOBIP_API_KEY) {
+    if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN) {
       return new Response(JSON.stringify({
         success: false,
-        error: 'Infobip API key is not configured'
+        error: 'Twilio credentials are not configured'
       }), { status: 500, headers });
     }
 
-    if (!INFOBIP_SENDER_NUMBER) {
+    if (!TWILIO_PHONE_NUMBER) {
       return new Response(JSON.stringify({
         success: false,
-        error: 'Infobip sender number is not configured'
+        error: 'Twilio sender number is not configured'
       }), { status: 500, headers });
     }
 
     console.log('Attempting to send SMS to:', to);
     console.log('Message:', message);
-    console.log('From:', INFOBIP_SENDER_NUMBER);
+    console.log('From:', TWILIO_PHONE_NUMBER);
 
-    // Send SMS via Infobip API
-    const response = await fetch('https://api.infobip.com/sms/2/text/advanced', {
+    const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`;
+
+    const body = new URLSearchParams();
+    body.append('To', to);
+    body.append('From', TWILIO_PHONE_NUMBER);
+    body.append('Body', message);
+
+    const authHeader = 'Basic ' + btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`);
+
+    // Send SMS via Twilio API
+    const response = await fetch(twilioUrl, {
       method: 'POST',
       headers: {
-        'Authorization': `App ${INFOBIP_API_KEY}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
+        'Authorization': authHeader,
+        'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: JSON.stringify({
-        messages: [
-          {
-            destinations: [{ to }],
-            from: INFOBIP_SENDER_NUMBER,
-            text: message,
-          },
-        ],
-        // Add webhook for delivery tracking (optional)
-        // webhookUrl: 'https://your-domain.com/sms-webhook'
-      }),
+      body: body.toString(),
     });
 
     const result = await response.json();
-    console.log('Infobip response status:', response.status);
-    console.log('Infobip response body:', JSON.stringify(result, null, 2));
+    console.log('Twilio response status:', response.status);
+    console.log('Twilio response body:', JSON.stringify(result, null, 2));
 
     if (!response.ok) {
-      console.error('Infobip API error:', result);
+      console.error('Twilio API error:', result);
       return new Response(JSON.stringify({
         success: false,
-        error: result?.requestError?.serviceException?.text || 'Failed to send SMS',
+        error: result.message || 'Failed to send SMS',
         details: {
           status: response.status,
           statusText: response.statusText,
-          infobipError: result
+          twilioError: result
         }
       }), { status: 500, headers });
     }
 
-    console.log('SMS sent successfully. Message ID:', result.messages?.[0]?.messageId);
-    console.log('SMS status:', result.messages?.[0]?.status?.groupName);
+    console.log('SMS sent successfully. Message SID:', result.sid);
+    console.log('SMS status:', result.status);
 
     return new Response(JSON.stringify({
       success: true,
-      messageId: result.messages?.[0]?.messageId,
-      status: result.messages?.[0]?.status?.groupName || 'PENDING',
+      messageId: result.sid,
+      status: result.status.toUpperCase(),
       details: result
     }), { status: 200, headers });
 

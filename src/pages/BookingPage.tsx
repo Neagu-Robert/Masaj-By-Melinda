@@ -32,6 +32,7 @@ const BookingPageContent = () => {
   const [selectedService, setSelectedService] = useState<string | undefined>();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
+  const [isPhoneVerified, setIsPhoneVerified] = useState(false);
   const form = useForm({
     defaultValues: {
       fullName: '',
@@ -54,15 +55,17 @@ const BookingPageContent = () => {
       if (user) {
         const { data: profile } = await supabase
           .from('profiles')
-          .select('full_name, phone')
+          .select('full_name, phone, phone_verified')
           .eq('id', user.id)
           .single();
         setProfileInfo({
           fullName: profile?.full_name || '',
           phoneNumber: profile?.phone || ''
         });
+        setIsPhoneVerified(profile?.phone_verified || false);
       } else {
         setProfileInfo(null);
+        setIsPhoneVerified(false);
       }
     }
     fetchProfile();
@@ -117,11 +120,20 @@ const BookingPageContent = () => {
     setIsVerificationModalOpen(true);
   };
 
+  const handleModalClose = () => {
+    setIsVerificationModalOpen(false);
+    const phoneNumber = form.getValues('phoneNumber');
+    const formattedPhone = `+40${phoneNumber.replace(/\s+/g, '')}`;
+    if (isVerified(formattedPhone)) {
+      setIsPhoneVerified(true);
+    }
+  };
+
   const onSubmit = async (data: any) => {
     const phoneNumber = form.getValues('phoneNumber');
     const formattedPhone = `+40${phoneNumber.replace(/\s+/g, '')}`;
 
-    if (!isVerified(formattedPhone)) {
+    if (!isPhoneVerified && !isVerified(formattedPhone)) {
       toast("Eroare de validare", {
         description: "Vă rugăm să vă verificați numărul de telefon înainte de a continua.",
         action: {
@@ -333,7 +345,7 @@ const BookingPageContent = () => {
                 useProfilePhone={useProfilePhone}
                 setUseProfilePhone={setUseProfilePhone}
                 onVerifyPhone={handleVerifyPhone}
-                isPhoneVerified={isVerified(`+40${form.watch('phoneNumber').replace(/\s+/g, '')}`)}
+                isPhoneVerified={isPhoneVerified || isVerified(`+40${form.watch('phoneNumber').replace(/\s+/g, '')}`)}
               />
               
               {/* 2. Service Selection */}
@@ -373,7 +385,7 @@ const BookingPageContent = () => {
       </div>
       <PhoneVerificationModal
         isOpen={isVerificationModalOpen}
-        onClose={() => setIsVerificationModalOpen(false)}
+        onClose={handleModalClose}
         phoneNumber={`+40${form.getValues('phoneNumber').replace(/\s+/g, '')}`}
       />
     </div>

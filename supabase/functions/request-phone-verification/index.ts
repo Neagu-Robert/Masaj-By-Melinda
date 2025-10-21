@@ -1,9 +1,8 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeaders } from '../_shared/cors.ts';
 
-// TODO: Implement a secure OTP generation and hashing mechanism
-const generateOTP = () => '123456'; // Placeholder
-const hashOTP = async (otp: string) => otp; // Placeholder
+const TWILIO_ACCOUNT_SID = Deno.env.get('TWILIO_SID');
+const TWILIO_AUTH_TOKEN = Deno.env.get('TWILIO_AUTH_TOKEN');
+const TWILIO_VERIFY_SID = Deno.env.get('TWILIO_VERIFY_SID');
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -11,7 +10,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { phone, userId } = await req.json();
+    const { phone } = await req.json();
 
     if (!phone || !/^\+40\d{9}$/.test(phone)) {
       return new Response(JSON.stringify({ error: 'Invalid phone number format. Use +40XXXXXXXXX.' }), {
@@ -20,37 +19,36 @@ Deno.serve(async (req) => {
       });
     }
 
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    );
-
-    const otp = generateOTP();
-    const otp_hash = await hashOTP(otp);
-    const expires_at = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 minutes from now
-
-    // Upsert to handle cases where a user requests a new OTP
-    const { error: upsertError } = await supabase.from('otp_verifications').upsert(
-      {
-        phone,
-        otp_hash,
-        expires_at,
-        user_id: userId, // Will be null for guests
-      },
-      { onConflict: 'phone' }
-    );
-
-    if (upsertError) {
-      console.error('Error saving OTP:', upsertError);
-      throw new Error('Could not save OTP information.');
+    if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_VERIFY_SID) {
+      return new Response(JSON.stringify({ error: 'Twilio credentials are not configured.' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500,
+      });
     }
 
-    // TODO: Integrate with Infobip API to send the SMS
-    console.log(`--- SMS to ${phone} ---`);
-    console.log(`Your verification code is: ${otp}`);
-    console.log(`-----------------------`);
+    const twilioUrl = `https://verify.twilio.com/v2/Services/${TWILIO_VERIFY_SID}/Verifications`;
+    const authHeader = 'Basic ' + btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`);
 
-    return new Response(JSON.stringify({ success: true, message: 'OTP sent successfully.' }), {
+    const response = await fetch(twilioUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': authHeader,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        To: phone,
+        Channel: 'sms',
+      }).toString(),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      console.error('Twilio Verify API error:', result);
+      throw new Error(result.message || 'Failed to send verification code.');
+    }
+
+    return new Response(JSON.stringify({ success: true, message: 'Verification code sent successfully.' }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     });

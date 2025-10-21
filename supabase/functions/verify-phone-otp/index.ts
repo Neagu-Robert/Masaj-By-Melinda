@@ -1,8 +1,9 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeaders } from '../_shared/cors.ts';
 
-// TODO: Implement a secure OTP hashing and comparison mechanism
-const verifyOTP = async (submittedOtp: string, storedHash: string) => submittedOtp === storedHash; // Placeholder
+const TWILIO_ACCOUNT_SID = Deno.env.get('TWILIO_SID');
+const TWILIO_AUTH_TOKEN = Deno.env.get('TWILIO_AUTH_TOKEN');
+const TWILIO_VERIFY_SID = Deno.env.get('TWILIO_VERIFY_SID');
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -10,7 +11,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { phone, otp } = await req.json();
+    const { phone, otp, userId } = await req.json();
 
     if (!phone || !otp) {
       return new Response(JSON.stringify({ error: 'Phone number and OTP are required.' }), {
@@ -19,61 +20,60 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_VERIFY_SID) {
+      return new Response(JSON.stringify({ error: 'Twilio credentials are not configured.' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500,
+      });
+    }
+
+    const twilioUrl = `https://verify.twilio.com/v2/Services/${TWILIO_VERIFY_SID}/VerificationCheck`;
+    const authHeader = 'Basic ' + btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`);
+
+    const response = await fetch(twilioUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': authHeader,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        To: phone,
+        Code: otp,
+      }).toString(),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || result.status !== 'approved') {
+      console.error('Twilio Verify API error:', result);
+      const errorMessage = result.message || 'Invalid OTP.';
+      return new Response(JSON.stringify({ error: errorMessage }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400,
+      });
+    }
+
+    // If verification is successful, update the user's profile
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
-    const { data: verification, error: fetchError } = await supabase
-      .from('otp_verifications')
-      .select('*')
-      .eq('phone', phone)
-      .single();
-
-    if (fetchError || !verification) {
-      return new Response(JSON.stringify({ error: 'Invalid phone number or verification not started.' }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 404,
-      });
-    }
-
-    if (new Date() > new Date(verification.expires_at)) {
-      // Clean up expired OTP
-      await supabase.from('otp_verifications').delete().eq('id', verification.id);
-      return new Response(JSON.stringify({ error: 'OTP has expired. Please request a new one.' }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400,
-      });
-    }
-
-    const isValid = await verifyOTP(otp, verification.otp_hash);
-
-    if (!isValid) {
-      return new Response(JSON.stringify({ error: 'Invalid OTP.' }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400,
-      });
-    }
-
-    // If the user is registered, update their profile
-    if (verification.user_id) {
+    if (userId) {
       const { error: profileUpdateError } = await supabase
         .from('profiles')
         .update({
-          phone: verification.phone,
+          phone: phone,
           phone_verified: true,
           phone_verified_at: new Date().toISOString(),
         })
-        .eq('id', verification.user_id);
+        .eq('id', userId);
 
       if (profileUpdateError) {
         console.error('Error updating profile:', profileUpdateError);
-        throw new Error('Failed to update profile verification status.');
+        // Do not throw an error to the client, just log it
       }
     }
-
-    // Clean up the used OTP record
-    await supabase.from('otp_verifications').delete().eq('id', verification.id);
 
     return new Response(JSON.stringify({ success: true, message: 'Phone number verified successfully.' }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
