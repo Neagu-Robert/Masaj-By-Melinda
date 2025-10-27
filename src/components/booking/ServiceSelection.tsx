@@ -84,15 +84,12 @@ const ServiceSelection = ({ form, setSelectedService }: ServiceSelectionProps) =
                       className="grid grid-cols-1 md:grid-cols-2 gap-2"
                     >
                       {massageServices.map((service) => (
-                        <div key={service.id} className="flex items-center space-x-2 rounded-md border border-gray-600 bg-gray-700 p-3 hover:bg-gray-600">
+                        <label htmlFor={service.name} key={service.id} className="flex items-center space-x-2 rounded-md border border-gray-600 bg-gray-700 p-3 hover:bg-gray-600 cursor-pointer">
                           <RadioGroupItem value={service.name} id={service.name} className="border-gray-500 text-[#7E69AB]" />
-                          <label 
-                            htmlFor={service.name} 
-                            className="flex-1 cursor-pointer text-sm font-medium text-white"
-                          >
+                          <span className="flex-1 text-sm font-medium text-white">
                             {service.name}
-                          </label>
-                        </div>
+                          </span>
+                        </label>
                       ))}
                     </RadioGroup>
                   </div>
@@ -109,15 +106,12 @@ const ServiceSelection = ({ form, setSelectedService }: ServiceSelectionProps) =
                       className="grid grid-cols-1 md:grid-cols-2 gap-2"
                     >
                       {deviceServices.map((service) => (
-                        <div key={service.id} className="flex items-center space-x-2 rounded-md border border-gray-600 bg-gray-700 p-3 hover:bg-gray-600">
+                        <label htmlFor={service.name} key={service.id} className="flex items-center space-x-2 rounded-md border border-gray-600 bg-gray-700 p-3 hover:bg-gray-600 cursor-pointer">
                           <RadioGroupItem value={service.name} id={service.name} className="border-gray-500 text-[#7E69AB]" />
-                          <label 
-                            htmlFor={service.name} 
-                            className="flex-1 cursor-pointer text-sm font-medium text-white"
-                          >
+                          <span className="flex-1 text-sm font-medium text-white">
                             {service.name}
-                          </label>
-                        </div>
+                          </span>
+                        </label>
                       ))}
                     </RadioGroup>
                   </div>

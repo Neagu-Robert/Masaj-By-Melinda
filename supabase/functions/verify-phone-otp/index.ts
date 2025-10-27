@@ -13,8 +13,8 @@ Deno.serve(async (req) => {
   try {
     const { phone, otp, userId } = await req.json();
 
-    if (!phone || !otp) {
-      return new Response(JSON.stringify({ error: 'Phone number and OTP are required.' }), {
+    if (!phone || !/^\+40\d{9}$/.test(phone) || !otp) {
+      return new Response(JSON.stringify({ error: 'A valid phone number and OTP are required.' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400,
       });

@@ -41,17 +41,34 @@ Masaj by Melinda is a web application for a professional wellness and massage se
   - Profile calendar shows skipped instances as not-green and lists them as "skipped due to already taken date".
   - Admin calendar shows only `status=true` instances and hides skipped ones.
 
-#### C. Navigation & Layout
+#### C. User Authentication & Profile
+
+- **Authentication:**
+  - Users can register, log in, and reset their password.
+  - Role-based access for `customer` and `admin`.
+  - Support for guest users with session-based phone verification.
+- **Phone Verification:**
+  - OTP-based verification for both registered users and guests.
+  - Verified status is stored for registered users and in the session for guests.
+  - Uses Supabase Edge Functions (`request-phone-verification`, `verify-phone-otp`).
+- **Profile Management (`src/pages/ProfilePage.tsx`):**
+  - Users can view and edit their full name and phone number.
+  - Calendar view of booking history with color-coding for recurring and past/future bookings.
+  - Users can edit, cancel, or make their bookings recurring.
+  - Secure password change functionality.
+  - Manage email notification preferences (e.g., for reminders, updates).
+
+#### D. Navigation & Layout
 
 - Responsive navbar with desktop (inline links) and mobile (hamburger menu) modes.
 - Smooth scrolling and easy navigation between sections/pages.
 - All interactive elements should be touch-friendly on mobile.
 
-#### D. Contact & Information
+#### E. Contact & Information
 
 - Dedicated contact section with business details and a way to reach out for questions or special requests.
 
-#### E. Visual Design
+#### F. Visual Design
 
 - Use images, gradients, and blur effects for a relaxing, professional look.
 - Consistent use of Tailwind CSS utility classes and shadcn/ui components for styling.
@@ -59,23 +76,47 @@ Masaj by Melinda is a web application for a professional wellness and massage se
 - Secondary color: Pink-500
 - Page background theme: dark
 
-#### F. Admin/Management
+#### G. Admin/Management
 
-- Bookings management (`src/pages/admin/Bookings.tsx`):
+- **Bookings Management (`src/pages/admin/Bookings.tsx`):**
   - View bookings with a calendar and per-day list.
   - Create, edit, delete bookings.
   - Create recurring bookings (preview + confirm) using Supabase Functions.
   - Calendar highlights recurring dates with `status=true` only.
 
-- Availabilities management (`src/pages/admin/Availabilities.tsx`):
+- **Availabilities management (`src/pages/admin/Availabilities.tsx`):**
   - View and toggle per-hour availability for each day.
   - Booked slots (from `bookings` + `recurring_bookings` `status=true`) are shown as booked and cannot be toggled.
   - Create recurring availability blocks (daily/weekly/biweekly) to auto-block specific hours over 30/60/90 days with preview + confirm flow.
   - Cancel a recurring availability block to cascade-remove its generated instances.
 
-- Audit Logs (`src/pages/admin/AuditLogs.tsx`):
-  - Admin actions (booking create/update/delete, availability updates, etc.) are logged to `admin_audit_logs`.
-  - Logs resolve the admin's profile (optional) and gracefully handle missing users.
+- **User Management (`src/pages/admin/Users.tsx`):**
+  - View a list of all users with their role, status, and registration date.
+  - Admins can ban or unban customer accounts. Banned users cannot log in.
+  - Admins can permanently delete customer accounts (admin accounts are protected).
+
+- **Analytics (`src/pages/admin/Analytics.tsx`):**
+  - Provides business insights based on booking data from the last 30 days.
+  - Charts include:
+    - Bookings per service (Bar Chart)
+    - Bookings by day of the week and hour (Stacked Bar Chart)
+    - Booking trends over time (Line Chart)
+    - Service distribution (Pie Chart)
+
+- **Audit Logs (`src/pages/admin/AuditLogs.tsx`):**
+  - Admin actions (booking create/update/delete, availability updates, user ban/unban/delete) are logged to `admin_audit_logs`.
+  - Logs record which admin performed the action, the target, and details.
+  - The log viewer allows filtering by action type, target type, and a text search.
+
+#### H. Notifications
+
+- The system sends email notifications for key events.
+- Notification types include:
+  - Booking confirmations, updates, and cancellations.
+  - 24-hour booking reminders.
+  - Password reset requests and confirmations.
+- Users can manage their email notification preferences in their profile.
+- Admins receive SMS notifications for critical events.
 
 ---
 
@@ -95,6 +136,9 @@ Masaj by Melinda is a web application for a professional wellness and massage se
   - `supabase/functions/cancel-recurring-bookings/` – cancel a recurring booking series
   - `supabase/functions/create-recurring-availabilities/` – preview/confirm recurring availability blocks
   - `supabase/functions/cancel-recurring-availabilities/` – cancel a recurring availability series
+  - `supabase/functions/request-phone-verification/` - sends an OTP to a user's phone number.
+  - `supabase/functions/verify-phone-otp/` - verifies an OTP for phone verification.
+  - `supabase/functions/delete-user/` - securely deletes a user and associated data.
   - All functions expose permissive CORS for `authorization, x-client-info, apikey, content-type` headers and run with service role.
 
 ---
@@ -107,6 +151,10 @@ Masaj by Melinda is a web application for a professional wellness and massage se
 - As a user, I want to receive a confirmation after booking, so I know my appointment is set.
 - As an admin, I want to view and manage bookings and service availability.
 - As an admin, I want to create recurring availability blocks (e.g., disable 13:00 for weekdays for 60 days) and cancel them safely.
+- As a user, I want to manage my profile information and change my password.
+- As a user, I want to control which email notifications I receive.
+- As an admin, I want to see analytics to understand business performance.
+- As an admin, I want to be able to ban users who misuse the service.
 - As a visitor, I want to click "Rezervă acum" on a service card and land on the booking page with that service preselected.
 
 ---
@@ -130,7 +178,8 @@ Masaj by Melinda is a web application for a professional wellness and massage se
 - Email/SMS notifications for bookings (done).
 - Analytics dashboard for business insights (done).
 - Secure admin access with security measures (done). 
-- Extended recurrence options (custom weekday sets, monthly patterns) for both bookings and availability blocks.
+- Extended recurrence options (custom weekday sets, monthly patterns) for both bookings and availability blocks.(done)
+- OTP phone verification for users and guests (done).
 
 ---
 
@@ -153,12 +202,16 @@ Masaj by Melinda is a web application for a professional wellness and massage se
   - Admin pages:
     - Bookings: `src/pages/admin/Bookings.tsx` (calendar + day list, recurring booking modal)
     - Availabilities: `src/pages/admin/Availabilities.tsx` (toggle hours, booked overlay, recurring availability modal, active blocks list)
+    - Analytics: `src/pages/admin/Analytics.tsx` (detailed information about business)
+    - Users: `src/pages/admin/Users.tsx` (List of all users, their status and roles)
     - Audit Logs: `src/pages/admin/AuditLogs.tsx`
   - Service cards with “Rezervă acum”:
     - Massage: `src/components/MassageServices.tsx`
     - Devices: `src/components/DeviceTreatments.tsx`
 
 - Contexts & Services
+  - AuthContext: `src/contexts/AuthContext.tsx`
+  - PhoneVerificationContext: `src/contexts/PhoneVerificationContext.tsx`
   - ServicesContext: `src/contexts/ServicesContext.tsx`
   - AvailabilitiesContext: `src/contexts/AvailabilitiesContext.tsx`
   - Recurring services:
@@ -174,6 +227,9 @@ Masaj by Melinda is a web application for a professional wellness and massage se
     - `supabase/functions/cancel-recurring-bookings/`
     - `supabase/functions/create-recurring-availabilities/`
     - `supabase/functions/cancel-recurring-availabilities/`
+    - `supabase/functions/request-phone-verification/`
+    - `supabase/functions/verify-phone-otp/`
+    - `supabase/functions/delete-user/`
   - Migrations:
     - `supabase/migrations/20250808_recurring_bookings.sql`
     - `supabase/migrations/20250813_recurring_availabilities.sql`

@@ -12,7 +12,8 @@ export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [fullName, setFullName] = useState('');
+  const [prenume, setPrenume] = useState('');
+  const [nume, setNume] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
@@ -107,6 +108,7 @@ export default function AuthPage() {
         setError(error.message);
       } else if (data.user) {
         // Wait for the trigger to create the profile row
+        const fullName = `${prenume.trim()} ${nume.trim()}`;
         const { error: updateError } = await supabase
           .from('profiles')
           .update({ full_name: fullName })
@@ -175,15 +177,26 @@ export default function AuthPage() {
           </button>
         </div>
         {!isLogin && (
-          <input
-            className="w-full mb-3 p-2 rounded bg-gray-700 text-white disabled:opacity-50"
-            type="text"
-            placeholder="Full Name"
-            value={fullName}
-            onChange={e => setFullName(e.target.value)}
-            required
-            disabled={isBanned}
-          />
+          <>
+            <input
+              className="w-full mb-3 p-2 rounded bg-gray-700 text-white disabled:opacity-50"
+              type="text"
+              placeholder="Prenume"
+              value={prenume}
+              onChange={e => setPrenume(e.target.value)}
+              required
+              disabled={isBanned}
+            />
+            <input
+              className="w-full mb-3 p-2 rounded bg-gray-700 text-white disabled:opacity-50"
+              type="text"
+              placeholder="Nume"
+              value={nume}
+              onChange={e => setNume(e.target.value)}
+              required
+              disabled={isBanned}
+            />
+          </>
         )}
         {error && <div className="text-red-500 mb-3">{error}</div>}
         {success && <div className="text-green-500 mb-3">{success}</div>}

@@ -31,6 +31,31 @@ const getRedirectUrl = (): string => {
  */
 export const sendPasswordResetEmail = async (email: string): Promise<PasswordResetResult> => {
   try {
+    // First, check if the email exists in the profiles table
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('email', email)
+      .single();
+
+    if (profileError || !profile) {
+      // Handle cases where the RPC call fails or the email is not found
+      if (profileError && profileError.code !== 'PGRST116') { // PGRST116: "The result contains 0 rows"
+        console.error('Error checking email existence:', profileError);
+        return {
+          success: false,
+          message: 'Failed to verify email existence.',
+          error: profileError.message,
+        };
+      }
+      
+      return {
+        success: false,
+        message: 'Email-ul introdus nu este inregistrat, va rugam sa va inregistrati',
+        error: 'Email not registered',
+      };
+    }
+
     const redirectUrl = getRedirectUrl();
     
     console.log('Sending password reset email to:', email);
@@ -52,35 +77,7 @@ export const sendPasswordResetEmail = async (email: string): Promise<PasswordRes
     // Send notification email about password reset request
     // Note: We don't send notifications for password reset requests since we don't have user preferences
     // and it could be spam. Users will get the actual reset email from Supabase.
-    /*
-    try {
-      await notify({
-        type: 'password_reset_requested',
-        recipient: {
-          userId: null, // We don't have user ID at this point
-          email: email,
-          phone: '',
-          name: email.split('@')[0] // Use email prefix as name
-        },
-        data: {
-          bookingId: '',
-          userId: null,
-          userName: email.split('@')[0],
-          userEmail: email,
-          userPhone: '',
-          serviceName: '',
-          serviceId: null,
-          dateTime: new Date().toISOString(),
-          duration: 0,
-          price: 0,
-          status: 'pending'
-        }
-      });
-    } catch (notificationError) {
-      console.error('Error sending password reset notification:', notificationError);
-      // Don't fail the password reset if notification fails
-    }
-    */
+   
 
     return {
       success: true,

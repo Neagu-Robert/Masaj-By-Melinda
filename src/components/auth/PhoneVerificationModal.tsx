@@ -25,8 +25,8 @@ export const PhoneVerificationModal: React.FC<PhoneVerificationModalProps> = ({ 
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px] bg-gray-800 border-gray-700 text-white">
+    <Dialog open={isOpen}>
+      <DialogContent showCloseButton={false} className="sm:max-w-[425px] bg-gray-800 border-gray-700 text-white">
         <DialogHeader>
           <DialogTitle>Verifică numărul de telefon</DialogTitle>
           <DialogDescription>

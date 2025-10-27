@@ -45,10 +45,17 @@ const BookingPageContent = () => {
   const [profileInfo, setProfileInfo] = useState<{ fullName: string; phoneNumber: string | null } | null>(null);
   const [useProfileName, setUseProfileName] = useState(false);
   const [useProfilePhone, setUseProfilePhone] = useState(false);
-  const { isVerified, startVerification, verificationStatus } = usePhoneVerification();
+  const { isVerified, startVerification, verificationStatus, error: verificationError, resetVerification } = usePhoneVerification();
   
   // Initialize the notifications hook
   const { sendBookingConfirmation, sendBookingConfirmationAdmin } = useBookingNotifications();
+
+  useEffect(() => {
+    if (verificationError) {
+      toast("Error", { description: verificationError });
+      resetVerification(); // Clear the error state after showing
+    }
+  }, [verificationError, resetVerification]);
 
   useEffect(() => {
     async function fetchProfile() {
@@ -98,34 +105,92 @@ const BookingPageContent = () => {
       form.setValue('phoneNumber', profileInfo.phoneNumber);
     }
   }, [useProfileName, useProfilePhone, profileInfo, form]);
+
+  const phoneNumberValue = form.watch('phoneNumber');
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const checkVerificationStatus = async () => {
+      if (user && profileInfo?.phoneNumber) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('phone_verified')
+          .eq('id', user.id)
+          .single();
+
+        if (isMounted) {
+          if (profile?.phone_verified && phoneNumberValue === profileInfo.phoneNumber) {
+            setIsPhoneVerified(true);
+          } else {
+            setIsPhoneVerified(false);
+          }
+        }
+      } else {
+        if (isMounted) {
+          // Normalize like the context: strip non-digits, then leading 40 or 0, expect 9 digits
+          let digits = (phoneNumberValue || '').replace(/\D/g, '');
+          if (digits.startsWith('40')) {
+            digits = digits.slice(2);
+          } else if (digits.startsWith('0')) {
+            digits = digits.slice(1);
+          }
+          const normalized = digits.length === 9 ? `+40${digits}` : null;
+          setIsPhoneVerified(normalized ? isVerified(normalized) : false);
+        }
+      }
+    };
+
+    checkVerificationStatus();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [phoneNumberValue, user, profileInfo, isVerified]);
   
   const handleVerifyPhone = async () => {
     const phoneNumber = form.getValues('phoneNumber');
-    const formattedPhone = `+40${phoneNumber.replace(/\s+/g, '')}`;
-    
-    // Check if the number from the profile is already verified
-    if (user && profileInfo?.phoneNumber === phoneNumber) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('phone_verified')
-        .eq('id', user.id)
-        .single();
-      if (profile?.phone_verified) {
-        toast("Info", { description: "Acest număr de telefon este deja verificat în profilul dumneavoastră." });
-        return;
-      }
+    const success = await startVerification(phoneNumber, user?.id);
+    if (success) {
+      setIsVerificationModalOpen(true);
     }
-
-    await startVerification(formattedPhone, user?.id);
-    setIsVerificationModalOpen(true);
   };
 
   const handleModalClose = () => {
     setIsVerificationModalOpen(false);
     const phoneNumber = form.getValues('phoneNumber');
-    const formattedPhone = `+40${phoneNumber.replace(/\s+/g, '')}`;
-    if (isVerified(formattedPhone)) {
+    // Normalize like the context: strip non-digits, then leading 40 or 0, expect 9 digits
+    let digits = phoneNumber.replace(/\D/g, '');
+    if (digits.startsWith('40')) {
+      digits = digits.slice(2);
+    } else if (digits.startsWith('0')) {
+      digits = digits.slice(1);
+    }
+    const normalized = digits.length === 9 ? `+40${digits}` : null;
+    if (normalized && isVerified(normalized)) {
       setIsPhoneVerified(true);
+      // If user is authenticated, update profile phone and phone_verified, then refetch profile data
+      if (user) {
+        (async () => {
+          try {
+            await supabase
+              .from('profiles')
+              .update({ phone: normalized, phone_verified: true, phone_verified_at: new Date().toISOString() })
+              .eq('id', user.id);
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('full_name, phone, phone_verified')
+              .eq('id', user.id)
+              .single();
+            setProfileInfo({ fullName: profile?.full_name || '', phoneNumber: profile?.phone || '' });
+            setUseProfilePhone(true);
+            form.setValue('phoneNumber', profile?.phone || '');
+          } catch (e) {
+            // Ignore errors silently in UI; verification state already true
+            console.error('Post-verify profile refresh failed', e);
+          }
+        })();
+      }
     }
   };
 
@@ -133,7 +198,7 @@ const BookingPageContent = () => {
     const phoneNumber = form.getValues('phoneNumber');
     const formattedPhone = `+40${phoneNumber.replace(/\s+/g, '')}`;
 
-    if (!isPhoneVerified && !isVerified(formattedPhone)) {
+    if (!isPhoneVerified) {
       toast("Eroare de validare", {
         description: "Vă rugăm să vă verificați numărul de telefon înainte de a continua.",
         action: {
@@ -345,7 +410,7 @@ const BookingPageContent = () => {
                 useProfilePhone={useProfilePhone}
                 setUseProfilePhone={setUseProfilePhone}
                 onVerifyPhone={handleVerifyPhone}
-                isPhoneVerified={isPhoneVerified || isVerified(`+40${form.watch('phoneNumber').replace(/\s+/g, '')}`)}
+                isPhoneVerified={isPhoneVerified}
               />
               
               {/* 2. Service Selection */}
@@ -386,7 +451,7 @@ const BookingPageContent = () => {
       <PhoneVerificationModal
         isOpen={isVerificationModalOpen}
         onClose={handleModalClose}
-        phoneNumber={`+40${form.getValues('phoneNumber').replace(/\s+/g, '')}`}
+        phoneNumber={form.getValues('phoneNumber')}
       />
     </div>
   );

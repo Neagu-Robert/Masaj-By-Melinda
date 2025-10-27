@@ -107,7 +107,9 @@ const ContactForm = ({
                     className="pl-10 md:pl-12 h-12 md:h-14 bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 focus:border-[#7E69AB] text-base md:text-lg" 
                     {...field}
                     required
-                    disabled={!!useProfilePhone || isPhoneVerified}
+                    disabled={!!useProfilePhone}
+                    maxLength={15}
+                    title="Introduceti un numar de telefon valid"
                   />
                 </div>
               </FormControl>
@@ -124,7 +126,7 @@ const ContactForm = ({
                       type="button"
                       onClick={onVerifyPhone}
                       className="bg-gray-600 hover:bg-gray-500 text-white text-sm h-auto px-4 py-2"
-                      disabled={!phoneNumber || phoneNumber.length < 10}
+                      disabled={!phoneNumber || phoneNumber.replace(/\D/g, '').length !== 10}
                     >
                       Verifică numărul de telefon
                     </Button>

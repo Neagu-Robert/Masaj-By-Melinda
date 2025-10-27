@@ -327,7 +327,7 @@ export default function BookingFormModal({ open, onClose, booking }: BookingForm
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-gray-900 border-gray-700">
+      <DialogContent showCloseButton={true} className="max-w-4xl max-h-[90vh] overflow-y-auto bg-gray-900 border-gray-700">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold text-violet-300">
             {booking ? 'Edit Booking' : 'Create New Booking'}

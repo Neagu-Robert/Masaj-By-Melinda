@@ -5,6 +5,16 @@ import { Input } from '@/components/ui/input';
 import { PhoneVerificationModal } from '@/components/auth/PhoneVerificationModal';
 import { usePhoneVerification } from '@/contexts/PhoneVerificationContext';
 import { toast } from '@/components/ui/sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface EditProfileModalProps {
   open: boolean;
@@ -25,32 +35,51 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
   isPhoneVerified: initialIsVerified,
   onSuccess,
 }) => {
-  const [fullName, setFullName] = useState(currentName);
+  const [prenume, setPrenume] = useState('');
+  const [nume, setNume] = useState('');
   const [phone, setPhone] = useState(currentPhone || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [phoneVerified, setPhoneVerified] = useState(initialIsVerified);
+  const [showChangePhoneConfirmation, setShowChangePhoneConfirmation] = useState(false);
+  const [isPhoneEditable, setIsPhoneEditable] = useState(!initialIsVerified);
   
   const { startVerification, verificationStatus, isVerified } = usePhoneVerification();
 
   useEffect(() => {
+    const nameParts = currentName.split(' ');
+    setPrenume(nameParts[0] || '');
+    setNume(nameParts.slice(1).join(' ') || '');
     setPhoneVerified(initialIsVerified);
+    setIsPhoneEditable(!initialIsVerified);
     setPhone(currentPhone || '');
-  }, [initialIsVerified, currentPhone]);
+  }, [currentName, initialIsVerified, currentPhone]);
 
   const handleVerifyClick = async () => {
-    const formattedPhone = `+40${phone.replace(/\s+/g, '')}`;
-    await startVerification(formattedPhone, userId);
-    setIsModalOpen(true);
+    const success = await startVerification(phone, userId);
+    if (success) {
+      setIsModalOpen(true);
+    }
   };
   
   const handleModalClose = () => {
     setIsModalOpen(false);
-    const formattedPhone = `+40${phone.replace(/\s+/g, '')}`;
-    if (isVerified(formattedPhone)) {
-        setPhoneVerified(true);
-        toast.success("Success", { description: "Phone number verified successfully." });
+    // Normalize like the context: strip non-digits, then leading 40 or 0, expect 9 digits
+    let digits = phone.replace(/\D/g, '');
+    if (digits.startsWith('40')) {
+      digits = digits.slice(2);
+    } else if (digits.startsWith('0')) {
+      digits = digits.slice(1);
+    }
+    const normalized = digits.length === 9 ? `+40${digits}` : null;
+    if (normalized && isVerified(normalized)) {
+      setPhoneVerified(true);
+      toast.success("Success", { description: "Phone number verified successfully." });
+      // Update parent profile state and close the edit modal so the profile page is shown
+      const fullName = `${prenume.trim()} ${nume.trim()}`.trim();
+      onSuccess(fullName, normalized);
+      onClose();
     }
   };
 
@@ -58,8 +87,9 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
     e.preventDefault();
     setError('');
 
+    const fullName = `${prenume.trim()} ${nume.trim()}`;
     if (!fullName.trim()) {
-      setError('Full name is required.');
+      setError('First and Last name are required.');
       return;
     }
     
@@ -84,6 +114,12 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
     }
   };
 
+  const handleConfirmChangePhone = () => {
+    setIsPhoneEditable(true);
+    setPhoneVerified(false);
+    setShowChangePhoneConfirmation(false);
+  };
+
   if (!open) return null;
 
   const phoneHasChanged = phone.trim() !== (currentPhone || '');
@@ -94,15 +130,27 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
         <div className="bg-gray-900 p-6 md:p-8 rounded-lg shadow-lg w-full max-w-md">
           <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-violet-400 text-center">Edit Profile</h2>
           <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
-            <div>
-              <label className="block text-gray-300 mb-2 text-sm md:text-base">Full Name</label>
-              <Input
-                type="text"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                required
-                className="w-full bg-gray-800 text-white h-12 md:h-10 text-base md:text-sm"
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-gray-300 mb-2 text-sm md:text-base">Prenume</label>
+                <Input
+                  type="text"
+                  value={prenume}
+                  onChange={(e) => setPrenume(e.target.value)}
+                  required
+                  className="w-full bg-gray-800 text-white h-12 md:h-10 text-base md:text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-gray-300 mb-2 text-sm md:text-base">Nume</label>
+                <Input
+                  type="text"
+                  value={nume}
+                  onChange={(e) => setNume(e.target.value)}
+                  required
+                  className="w-full bg-gray-800 text-white h-12 md:h-10 text-base md:text-sm"
+                />
+              </div>
             </div>
             <div>
               <label className="block text-gray-300 mb-2 text-sm md:text-base">Phone Number</label>
@@ -112,30 +160,41 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                   value={phone}
                   onChange={(e) => {
                     setPhone(e.target.value);
+                    if (error) setError('');
                     if (e.target.value.trim() !== (currentPhone || '')) {
                       setPhoneVerified(false);
                     } else {
                       setPhoneVerified(initialIsVerified);
                     }
                   }}
-                  placeholder="Optional"
+                  placeholder="Introduceti un numar de telefon valid"
                   className="w-full bg-gray-800 text-white h-12 md:h-10 text-base md:text-sm"
-                  disabled={phoneVerified && !phoneHasChanged}
+                  disabled={!isPhoneEditable}
                 />
-                {phone && (!phoneVerified || phoneHasChanged) && (
+                {phone && isPhoneEditable && (!phoneVerified || phoneHasChanged) && (
                   <Button
                     type="button"
                     variant="outline"
                     onClick={handleVerifyClick}
                     disabled={phone.length < 10 || verificationStatus === 'pending'}
-                    className="h-12 md:h-10 whitespace-nowrap"
+                    className="h-12 md:h-10 text-sm md:text-base bg-white text-gray-500 hover:text-black"
                   >
                     {verificationStatus === 'pending' ? 'Sending...' : 'Verify'}
                   </Button>
                 )}
               </div>
-               {phone && phoneVerified && !phoneHasChanged && (
-                <p className="text-sm text-green-400 mt-2">Phone number is verified.</p>
+              {phone && phoneVerified && !isPhoneEditable && (
+                <div className="mt-2">
+                  <p className="text-sm text-green-400">Numarul de telefon este verificat.</p>
+                  <Button
+                    type="button"
+                    variant="link"
+                    onClick={() => setShowChangePhoneConfirmation(true)}
+                    className="p-0 h-auto text-violet-400 hover:text-violet-300"
+                  >
+                    Schimba numarul de telefon
+                  </Button>
+                </div>
               )}
             </div>
             {error && <div className="text-red-500 text-sm">{error}</div>}
@@ -153,8 +212,22 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
       <PhoneVerificationModal
         isOpen={isModalOpen}
         onClose={handleModalClose}
-        phoneNumber={`+40${phone.replace(/\s+/g, '')}`}
+        phoneNumber={phone}
       />
+      <AlertDialog open={showChangePhoneConfirmation} onOpenChange={setShowChangePhoneConfirmation}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Esti sigur?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Numarul de telefon este deja verificat, daca il schimbati va trebui sa-l verificati din nou.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Inapoi</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmChangePhone}>Schimba numarul</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };

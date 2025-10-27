@@ -578,7 +578,7 @@ function ProfilePageContent() {
                 currentPhone={profile.phone || ''}
                 isPhoneVerified={profile.phone_verified}
                 onSuccess={(newName, newPhone) => {
-                  setProfile((prev) => ({ ...prev, full_name: newName, phone: newPhone }));
+                  setProfile((prev) => ({ ...prev, full_name: newName, phone: newPhone, phone_verified: true }));
                 }}
               />
               

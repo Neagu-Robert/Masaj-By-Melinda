@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 type PhoneVerificationContextType = {
   verificationStatus: 'idle' | 'pending' | 'verified' | 'error';
   isVerified: (phone: string) => boolean;
-  startVerification: (phone: string, userId?: string) => Promise<void>;
+  startVerification: (phone: string, userId?: string) => Promise<boolean>;
   submitOtp: (phone: string, otp: string) => Promise<boolean>;
   error: string | null;
   resetVerification: () => void;
@@ -35,34 +35,53 @@ export const PhoneVerificationProvider = ({ children }: { children: React.ReactN
     return verificationStatus === 'verified' && verifiedNumber === phone;
   }, [verificationStatus, verifiedNumber]);
 
-  const startVerification = async (phone: string, userId?: string) => {
+  const normalizeAndValidatePhone = (phone: string) => {
+    let digits = phone.replace(/\D/g, '');
+    if (digits.startsWith('40')) {
+      // Already has country code, just use the whole number
+      digits = digits.substring(2);
+    } else if (digits.startsWith('0')) {
+      // Starts with 0, remove it
+      digits = digits.substring(1);
+    }
+    // After normalization, should be 9 digits
+    if (digits.length !== 9) {
+      return null;
+    }
+    return `+40${digits}`;
+  };
+
+  const startVerification = async (phone: string, userId?: string): Promise<boolean> => {
     setVerificationStatus('pending');
     setError(null);
     setVerifyingUserId(userId);
     try {
-      // Ensure phone number is in E.164 format for Twilio by taking the last 9 digits
-      const last9Digits = phone.replace(/\D/g, '').slice(-9);
-      const formattedPhone = `+40${last9Digits}`;
+      const formattedPhone = normalizeAndValidatePhone(phone);
+      if (!formattedPhone) {
+        throw new Error('Invalid phone number format. Please use a valid Romanian number.');
+      }
       
       const { error: invokeError } = await supabase.functions.invoke('request-phone-verification', {
         body: { phone: formattedPhone, userId },
       });
 
       if (invokeError) throw new Error(invokeError.message);
-
+      return true;
       // Status remains 'pending' until OTP is submitted
     } catch (err: any) {
       setError(err.message || 'Failed to send OTP.');
       setVerificationStatus('error');
+      return false;
     }
   };
 
   const submitOtp = async (phone: string, otp: string) => {
     setError(null);
     try {
-      // Ensure phone number is in E.164 format for Twilio
-      const last9Digits = phone.replace(/\D/g, '').slice(-9);
-      const formattedPhone = `+40${last9Digits}`;
+      const formattedPhone = normalizeAndValidatePhone(phone);
+      if (!formattedPhone) {
+        throw new Error('Invalid phone number format during OTP submission.');
+      }
       
       const { data, error: invokeError } = await supabase.functions.invoke('verify-phone-otp', {
         body: { phone: formattedPhone, otp, userId: verifyingUserId },

@@ -17,7 +17,7 @@ Welcome to the official repository for **Masaj by Melinda**, a professional well
 
 ## Project Overview
 
-**Masaj by Melinda** is a web application designed to present and schedule professional massage and device therapy services. Users can explore available treatments, check details, and book appointments directly through a streamlined UI on desktop or mobile. Admins can view bookings and manage service availabilities (requires expansion).
+**Masaj by Melinda** is a web application designed to present and schedule professional massage and device therapy services. Users can explore available treatments, check details, and book appointments directly through a streamlined UI on desktop or mobile. The platform includes robust user authentication, profile management, and a comprehensive admin dashboard for managing the business.
 
 ---
 
@@ -31,36 +31,54 @@ Welcome to the official repository for **Masaj by Melinda**, a professional well
   - Each service/treatment includes name, benefits, duration, price, and images for device therapies.
 
 ### 2. Booking System
-- **Overview:** Users can book sessions by selecting a preferred service, date, and time.
-- **Purpose:** Streamlines appointment scheduling, eliminating the need for calls or manual logging.
+- **Overview:** Users can book sessions by selecting a preferred service, date, and time. The system supports both registered users and guests.
+- **Purpose:** Streamlines appointment scheduling with real-time availability checks to prevent double-booking.
 - **Implementation:**  
   - Multi-step form (contact info, service selection, date & time, booking summary)
-  - Real-time availability: Selectable slots reflect current bookings to prevent double-booking.
-  - Confirmation toast and redirect after booking.
+  - Real-time availability checks.
+  - **Recurring Bookings:** Users and admins can set up weekly or biweekly appointments.
 
-### 3. Responsive Navigation and Layout
+### 3. User Authentication & Profile Management
+- **Overview:** Users can create an account, log in, reset their password, and manage their profile. Guest access is also supported.
+- **Purpose:** Provides a personalized experience, allowing users to view booking history and manage their information.
+- **Implementation:**
+  - Secure user registration and login.
+  - OTP-based phone number verification.
+  - Profile dashboard to edit personal details, change password, and manage notification preferences.
+  - Calendar view of past and upcoming bookings.
+
+### 4. Advanced Admin Dashboard
+- **Overview:** A secure, role-protected area for business management.
+- **Purpose:** To give the site administrator full control over bookings, user management, and business insights.
+- **Implementation:**
+  - **Bookings & Availabilities:** Full CRUD control over appointments and work hours.
+  - **User Management:** View, ban, unban, and delete customer accounts.
+  - **Analytics:** Visual charts displaying booking trends, popular services, and peak hours.
+  - **Audit Logs:** Tracks all significant admin actions for accountability.
+
+### 5. Notification System
+- **Overview:** Automated email and SMS notifications for important events.
+- **Purpose:** Keeps users and admins informed about booking statuses and account changes.
+- **Implementation:**
+  - Emails for booking confirmations, updates, cancellations, and reminders.
+  - Users can customize their email notification preferences in their profile.
+
+### 6. Responsive Navigation and Layout
 - **Overview:** Navbar adapts for desktop (inline links) and mobile (hamburger menu) with smooth scrolling.
 - **Purpose:** Ensure easy access and smooth user journey on all devices.
-- **Implementation:**  
-  - Uses Tailwind for adaptive layout and spacing
-  - All interactive elements sized for touch on mobile
-
-### 4. Contact & Information
-- **Overview:** A dedicated contact section offers details for reaching out with questions or special requests.
-- **Purpose:** Encourages communication and supports users who prefer direct contact.
-
-### 5. Modern Visual Design
-- **Overview:** Images, gradients, and blur effects provide a relaxing and professional feel.
-- **Purpose:** Promote trust and showcase professionalism.
 
 ---
 
 ## Supabase Integration
 
-- **Database:** Uses Supabase (PostgreSQL) to store bookings
-- **Booking Availability:** Queries the database to disable already-booked slots in real time
-- **Insertions:** When booking, user data is inserted with validation to ensure no time collisions
-- **Security:** All client connections use Supabase's anon key; currently bookings are public, but can be protected with authentication if needed.
+- **Database:** Uses Supabase (PostgreSQL) to store bookings, user profiles, availabilities, and application data.
+- **Authentication:** Manages user sign-ups, logins, and row-level security to protect data.
+- **Edge Functions:** Serverless functions handle backend logic for:
+  - Sending OTPs for phone verification.
+  - Creating and managing recurring bookings.
+  - Securely deleting user data.
+  - Sending notifications.
+- **Security:** All client connections use Supabase's anon key, with Row Level Security policies protecting user and admin data.
 
 ---
 
@@ -84,47 +102,30 @@ Welcome to the official repository for **Masaj by Melinda**, a professional well
 
 ---
 
-
-
-
 ## Folder Structure
 
 ```
 src/
-  components/         # UI, booking, and shared components
-  components/booking/ # Multi-step booking form components
-  components/ui/      # Reusable UI primitives (shadcn)
-  integrations/
-    supabase/         # Supabase SDK client
-  pages/              # Routing pages (Index.tsx, BookingPage.tsx, etc.)
+  components/         # Reusable React components
+    admin/            # Components specific to the admin dashboard
+    auth/             # Components for authentication (e.g., OTP modal)
+    booking/          # Components for the multi-step booking form
+    profile/          # Components for the user profile page
+    ui/               # General-purpose UI components (from shadcn/ui)
+  contexts/           # React Context providers for global state management
   hooks/              # Custom React hooks
-  lib/                # Utility functions (e.g., Tailwind class merger)
+  integrations/       # Third-party service integrations (e.g., Supabase client)
+  lib/                # Utility functions and shared libraries
+  pages/              # Top-level page components for routing
+    admin/            # Page components for the admin dashboard
+  services/           # Business logic and API services
+    auth/             # Authentication-related services
+    notifications/    # Logic for sending email/SMS notifications
+    recurring/        # Services for managing recurring bookings
+  supabase/           # Supabase migrations and edge functions
 public/
   lovable-uploads/    # Service and device treatment images
 ```
-
----
-
-## How to Run Locally
-
-1. **Clone the repository**
-   ```sh
-   git clone <YOUR_GIT_URL>
-   cd <YOUR_PROJECT_NAME>
-   ```
-
-2. **Install dependencies**
-   ```sh
-   npm install
-   ```
-
-3. **Run the development server**
-   ```sh
-   npm run dev
-   ```
-
-4. **Open the app**
-   - Visit [http://localhost:8080](http://localhost:8080) in your browser
 
 ---
 

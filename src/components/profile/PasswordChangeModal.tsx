@@ -90,7 +90,7 @@ export default function PasswordChangeModal({ open, onClose }: PasswordChangeMod
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[425px] bg-gray-800 border-gray-700 p-4 md:p-6">
+      <DialogContent showCloseButton={true} className="sm:max-w-[425px] bg-gray-800 border-gray-700 p-4 md:p-6">
         <DialogHeader>
           <DialogTitle className="text-white text-lg md:text-xl">Change Password</DialogTitle>
           <DialogDescription className="text-gray-400 text-sm md:text-base">

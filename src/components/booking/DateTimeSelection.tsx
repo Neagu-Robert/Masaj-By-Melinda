@@ -102,6 +102,11 @@ const DateTimeSelection = ({
     return false;
   };
 
+  const handleDateSelect = (date: Date | undefined) => {
+    setSelectedDate(date);
+    setSelectedTime(''); // Reset time when date changes
+  };
+
   return (
     <Card className="bg-gray-800 border-gray-700">
       <CardHeader className="pb-4">
@@ -119,7 +124,7 @@ const DateTimeSelection = ({
               <Calendar
                 mode="single"
                 selected={selectedDate}
-                onSelect={setSelectedDate}
+                onSelect={handleDateSelect}
                 disabled={isDateDisabled}
                 className="rounded-md border border-gray-600 bg-gray-700 text-violet-200 pointer-events-auto w-full max-w-sm [&_.rdp-day]:text-violet-200 [&_.rdp-day_selected]:bg-violet-600 [&_.rdp-day_selected]:text-white [&_.rdp-day:hover]:bg-violet-600/20 [&_.rdp-day]:h-10 [&_.rdp-day]:w-10 [&_.rdp-day]:text-sm md:[&_.rdp-day]:h-9 md:[&_.rdp-day]:w-9 md:[&_.rdp-day]:text-base"
               />
