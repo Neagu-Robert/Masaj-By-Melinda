@@ -361,6 +361,80 @@ const emailTemplates = {
     return { subject, html, text };
   },
 
+  // Single instance cancelled by user from profile
+  recurring_instance_cancelled_profile: (data: BookingNotificationData): { subject: string; html: string; text: string } => {
+    const subject = `Recurring Instance Cancelled - ${data.serviceName}`;
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #f59e0b;">Recurring Instance Cancelled</h2>
+        <p>Dear ${data.userName},</p>
+        <p>Your request to cancel a single recurring instance has been processed.</p>
+        <div style="background-color: #fffbeb; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="margin-top: 0;">Cancelled Instance:</h3>
+          <p><strong>Service:</strong> ${data.serviceName}</p>
+          <p><strong>Date & Time:</strong> ${data.dateTime}</p>
+          <p style="margin:0;color:#6b7280;font-size:12px;">Note: Only this specific date was cancelled; the series remains active.</p>
+        </div>
+        <p>If you have any questions, please contact us.</p>
+        <p>Best regards,<br>Masaj by Melinda</p>
+      </div>
+    `;
+    const text = `
+      Recurring Instance Cancelled
+      
+      Dear ${data.userName},
+      
+      Your request to cancel a single recurring instance has been processed.
+      
+      Cancelled Instance:
+      - Service: ${data.serviceName}
+      - Date & Time: ${data.dateTime}
+      
+      Note: Only this specific date was cancelled; the series remains active.
+      
+      Best regards,
+      Masaj by Melinda
+    `;
+    return { subject, html, text };
+  },
+
+  // Single instance cancelled by admin
+  recurring_instance_cancelled_admin: (data: BookingNotificationData): { subject: string; html: string; text: string } => {
+    const subject = `Recurring Instance Cancelled by Admin - ${data.serviceName}`;
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #f59e0b;">Recurring Instance Cancelled (Admin)</h2>
+        <p>Dear ${data.userName},</p>
+        <p>A single instance of your recurring series has been cancelled by our staff.</p>
+        <div style="background-color: #fffbeb; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="margin-top: 0;">Cancelled Instance:</h3>
+          <p><strong>Service:</strong> ${data.serviceName}</p>
+          <p><strong>Date & Time:</strong> ${data.dateTime}</p>
+          <p style="margin:0;color:#6b7280;font-size:12px;">Note: Only this specific date was cancelled; the series remains active.</p>
+        </div>
+        <p>If this was unexpected, please contact us.</p>
+        <p>Best regards,<br>Masaj by Melinda</p>
+      </div>
+    `;
+    const text = `
+      Recurring Instance Cancelled (Admin)
+      
+      Dear ${data.userName},
+      
+      A single instance of your recurring series has been cancelled by our staff.
+      
+      Cancelled Instance:
+      - Service: ${data.serviceName}
+      - Date & Time: ${data.dateTime}
+      
+      Note: Only this specific date was cancelled; the series remains active.
+      
+      Best regards,
+      Masaj by Melinda
+    `;
+    return { subject, html, text };
+  },
+
   reminder: (data: BookingNotificationData): { subject: string; html: string; text: string } => {
     const subject = `Appointment Reminder - ${data.serviceName}`;
     const html = `
@@ -489,11 +563,10 @@ const isEmailConfigured = (): boolean => {
 };
 
 // Replace getApiBaseUrl with Supabase Edge Function URL
-const getSupabaseFunctionUrl = (fn) =>
-  `https://dgzmqlwqlfmdbnwqjjjr.functions.supabase.co/${fn}`;
+import { getSupabaseFunctionUrl, supabaseAuthHeader } from '@/lib/supabase-functions';
 
 /**
- * Send an email notification via Express API server
+ * Send a notification email using a Supabase Edge Function.
  */
 export const sendEmailNotification = async (
   payload: NotificationPayload
@@ -528,12 +601,14 @@ export const sendEmailNotification = async (
     // Generate the email content from template
     const emailContent = templateFn(payload.data as BookingNotificationData);
 
-    // Call the Express API server
-    const response = await fetch(getSupabaseFunctionUrl('send-email'), {
+    // Set up the API call
+    const url = getSupabaseFunctionUrl('send-email');
+    const AUTH_HEADER = await supabaseAuthHeader();
+    const options: RequestInit = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRnem1xbHdxbGZtZGJud3FqampyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU2ODcxNDYsImV4cCI6MjA2MTI2MzE0Nn0.Y7sKLnfvQh3t6hoH_TyTVxojWUuKhgwW965Q9cE8pZs',
+        ...AUTH_HEADER
       },
       body: JSON.stringify({
         to: payload.recipient.email,
@@ -541,8 +616,9 @@ export const sendEmailNotification = async (
         htmlContent: emailContent.html,
         textContent: emailContent.text
       })
-    });
+    };
 
+    const response = await fetch(url, options);
     const data = await response.json();
 
     if (!response.ok) {

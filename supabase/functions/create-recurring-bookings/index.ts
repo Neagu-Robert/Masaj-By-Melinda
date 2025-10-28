@@ -12,6 +12,7 @@ type CreateRecurringPayload = {
   recurrenceType: 'weekly' | 'biweekly';
   horizonDays: 30 | 60 | 90;
   confirm?: boolean;
+  selectedDates?: string[];
 };
 
 type BookingRow = {
@@ -88,7 +89,7 @@ serve(async (req) => {
 
   try {
     const payload = (await req.json()) as CreateRecurringPayload;
-    const { bookingId, recurrenceType, horizonDays, confirm } = payload;
+    const { bookingId, recurrenceType, horizonDays, confirm, selectedDates } = payload;
 
     if (!bookingId || !recurrenceType || !horizonDays) {
       return new Response(JSON.stringify({ error: 'Missing required fields' }), { status: 400, headers });
@@ -165,35 +166,56 @@ serve(async (req) => {
     const createdInstances: any[] = [];
     const skippedInstances: any[] = [];
 
-    for (const inst of preview) {
-      const isAvailable = inst.available;
-      if (isAvailable) {
-        const { error: recErr } = await supabase
-          .from('recurring_bookings')
-          .insert([{
-            booking_id: original.id,
-            recurrence_type: recurrenceType,
-            until: format(until, 'yyyy-MM-dd'),
-            day: dayName,
-            hour: inst.time.length === 5 ? `${inst.time}:00` : inst.time,
-            date: inst.date,
-            status: true,
-          }]);
-        if (!recErr) createdInstances.push(inst);
-        else skippedInstances.push({ ...inst, available: false, reason: 'insert_failed' });
+    // Treat provided selectedDates (even empty array) as explicit filter; undefined means all
+    const selectedSet = Array.isArray(selectedDates) ? new Set(selectedDates) : undefined;
+    const instancesToProcess = selectedDates === undefined
+      ? preview
+      : preview.filter((p) => selectedSet!.has(p.date));
+
+    // Batch rows to minimize round trips
+    const availableRows: any[] = [];
+    const unavailableRows: any[] = [];
+    const availableInst: typeof preview = [] as any;
+    const unavailableInst: typeof preview = [] as any;
+
+    for (const inst of instancesToProcess) {
+      const common = {
+        booking_id: original.id,
+        recurrence_type: recurrenceType,
+        until: format(until, 'yyyy-MM-dd'),
+        day: dayName,
+        hour: inst.time.length === 5 ? `${inst.time}:00` : inst.time,
+        date: inst.date,
+      };
+      if (inst.available) {
+        availableRows.push({ ...common, status: true });
+        availableInst.push(inst);
       } else {
-        await supabase
-          .from('recurring_bookings')
-          .insert([{
-            booking_id: original.id,
-            recurrence_type: recurrenceType,
-            until: format(until, 'yyyy-MM-dd'),
-            day: dayName,
-            hour: inst.time.length === 5 ? `${inst.time}:00` : inst.time,
-            date: inst.date,
-            status: false,
-          }]);
-        skippedInstances.push(inst);
+        unavailableRows.push({ ...common, status: false });
+        unavailableInst.push(inst);
+      }
+    }
+
+    if (availableRows.length > 0) {
+      const { error } = await supabase
+        .from('recurring_bookings')
+        .insert(availableRows);
+      if (error) {
+        skippedInstances.push(...availableInst.map((i) => ({ ...i, available: false, reason: 'insert_failed' })));
+      } else {
+        createdInstances.push(...availableInst);
+      }
+    }
+
+    if (unavailableRows.length > 0) {
+      const { error } = await supabase
+        .from('recurring_bookings')
+        .insert(unavailableRows);
+      if (error) {
+        skippedInstances.push(...unavailableInst.map((i) => ({ ...i, available: false, reason: 'insert_failed' })));
+      } else {
+        // These were unavailable by preview rules; still record as skipped for response
+        skippedInstances.push(...unavailableInst);
       }
     }
 

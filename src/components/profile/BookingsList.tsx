@@ -14,12 +14,13 @@ interface Booking {
 interface BookingsListProps {
   selectedDay: Date;
   bookings: Booking[];
-  recurringInstances?: { booking_id: string; date: string; hour: string; status: boolean; service_type?: string }[];
+  recurringInstances?: { id?: string; booking_id: string; date: string; hour: string; status: boolean; service_type?: string }[];
   onEditClick: (booking: Booking) => void;
   onCancelBooking: (booking: Booking) => void;
   onOpenRecurring: (booking: Booking) => void;
   onCancelRecurring: (booking: Booking) => void;
   user: any;
+  onCancelRecurringInstance?: (instance: any) => void;
 }
 
 const BookingsList: React.FC<BookingsListProps> = ({
@@ -30,7 +31,8 @@ const BookingsList: React.FC<BookingsListProps> = ({
   onCancelBooking,
   onOpenRecurring,
   onCancelRecurring,
-  user
+  user,
+  onCancelRecurringInstance
 }) => {
   // Helper to format date and time as 'HH:mm | DD/MM/YYYY'
   function formatBookingDateTime(dateStr: string, timeStr: string) {
@@ -94,14 +96,37 @@ const BookingsList: React.FC<BookingsListProps> = ({
                   <div className="text-xs text-yellow-300">Skipped due to already taken date</div>
                 )}
                 <div className="flex justify-end space-x-2 pt-2 border-t border-gray-700">
-                  {/* Recurring instances cannot be made recurring again; only allow cancel of the whole series */}
+                  {/* Cancel single instance if handler provided and we have instance id */}
+                  {onCancelRecurringInstance && r.id && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onCancelRecurringInstance(r)}
+                      className="text-yellow-300 hover:text-yellow-200 hover:bg-yellow-500/10 transition-colors duration-200"
+                    >
+                      Cancel this recurring
+                    </Button>
+                  )}
+                  {/* Cancel entire series */}
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => onCancelRecurring({ id: r.booking_id } as unknown as Booking)}
+                    onClick={() => {
+                      const root = bookings.find(b => b.id === r.booking_id);
+                      if (root) {
+                        onCancelRecurring(root);
+                      } else {
+                        onCancelRecurring({
+                          id: r.booking_id,
+                          service_type: r.service_type || 'Service',
+                          booking_date: r.date,
+                          booking_time: (r.hour || '').slice(0,5),
+                        } as Booking);
+                      }
+                    }}
                     className="text-violet-300 hover:text-violet-200 hover:bg-violet-500/20 transition-colors duration-200"
                   >
-                    Cancel Recurring
+                    Cancel all recurrings
                   </Button>
                 </div>
               </CardContent>

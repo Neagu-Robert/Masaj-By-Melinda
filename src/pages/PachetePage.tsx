@@ -111,15 +111,19 @@ const PachetePage = () => {
             
             {/* Contact details */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mt-6">
-              <div className="flex items-center gap-3 bg-gray-700 px-6 py-3 rounded-full shadow-sm border border-[#9b87f5]/20 hover:shadow-md transition-shadow">
-                <Phone className="text-[#9b87f5] w-5 h-5" />
-                <span className="text-white font-medium">0771 761 649</span>
-              </div>
+              <a href="tel:0771761649" className="cursor-pointer hover:shadow-lg hover:scale-105 transition-all">
+                <div className="flex items-center gap-3 bg-gray-700 px-6 py-3 rounded-full shadow-sm border border-[#9b87f5]/20 hover:shadow-md transition-shadow">
+                  <Phone className="text-[#9b87f5] w-5 h-5" />
+                  <span className="text-white font-medium">0771 761 649</span>
+                </div>
+              </a>
               
-              <div className="flex items-center gap-3 bg-gray-700 px-6 py-3 rounded-full shadow-sm border border-[#9b87f5]/20 hover:shadow-md transition-shadow">
-                <Mail className="text-[#9b87f5] w-5 h-5" />
-                <span className="text-white font-medium">melindaneagu22@gmail.com</span>
-              </div>
+              <a href="mailto:melindaneagu22@gmail.com" className="cursor-pointer hover:shadow-lg hover:scale-105 transition-all">
+                <div className="flex items-center gap-3 bg-gray-700 px-6 py-3 rounded-full shadow-sm border border-[#9b87f5]/20 hover:shadow-md transition-shadow">
+                  <Mail className="text-[#9b87f5] w-5 h-5" />
+                  <span className="text-white font-medium">melindaneagu22@gmail.com</span>
+                </div>
+              </a>
             </div>
           </div>
         </div>

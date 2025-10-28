@@ -1,26 +1,23 @@
-Features to improve
-1.improve the forgot password functionality:
-- current status: Only checks for email in the database during login, forgets about it .
--update to: After the user introduced their email, upon clicking "Send reset Link" the system should first check if that specific email is registered in the database and only after will it attempt to send a reset link. If the email doesn't appear in the database, then the password can't be changed and will cause errors. 
-If the email in not registered then a message will pop up saying "Email-ul introdus nu este inregistrat, va rugam sa va inregistrati"
+**Improvements**
 
-2.Improve the registration functionality.
--current status: There's only one name input field.
--update to: Users should input their full name. 
- There will be two name input fields, one called "Nume" and the other "Prenume". Both are required. After the input the system will concatenate the two fields ("Prenume"+"Nume") and send them to the database as one just how it was sending it previously without changing any database structure.
+1. Recurring bookings:
+- current status: Users can create recurring booking from their profile pages for already created booking for a certain period of time. If the slots are available the system creates a booking for every week/two weeks for the user for the selected period of time. If the user decides to cancel the recurring then all instances are deleted.
+- update to: The user should be able to delete one recurring booking at a time instead of all of them by clicking on the date it's booked in it's profile page calendar.
+The "cancel recurring" button will be renamed "cancel all recurrings". A new button will be added called "Cancel this recurring" to only cancel that specific booking from the calendar. 
+Upon cancelation for only one recurring booking, the instance for it in the database in the recurring_bookings table will be deleted.
+The admin page will have the same options from now on when viewing all the bookings to cancel one recurring booking at a time.
+Notification changes: Right now email is sent to user and SMS to admin when a recurring is deleted (all instances). A similar type of notification will be sent when only one instance is deleted specifing the exact date and that only one instance was deleted (+ all the other information regarding the booking)
+notification behaviour: Profile page recurring instance deletion -> email+sms sent | admin booking page recurring instance deletion -> only email to user
 
-3. Booking page phone verification.
-- current status: Right now , if a phone number number is verified it appeares in the profile page. Afterwards it can no longer be modified neither in the profile page or in the booking page
-- update to: Users should be able to input any phone number they want into the booking page. If they check the box for "Foloseste numarul din profil" then the Phone number from the profile page will overwritte the text from the field. If they uncheck the box, the phone number will be editable just like the name field above it. Every time a character changes, it should be compared to the phone number from the profile page. If the phone number are identical then it will show the green "Numar verificat" text, if they differ then the "verifica numar de telefon" button will be present.
- also add some more input validation during the phone verification process making sure the number inputed is made out of only numbers and that it has the exact length of a phone number.
- the PhoneVerificationModal should not have a 'x' button in the top right corner since it can't be reopened and could mess up the OTP verification process. It should only dissapear after the phone was verified or if the page got refreshed (in case the OTP SMS got lost)
+2.The profile page:
+- current status: The profile page has an arrow button that brings users back but it redirects to the same page everytime depending to what type of user is logged in (admin/customer)
+- update to: It should remember the last  page you came from and bring you back to the previous page instead of always home.
 
-4. Booking page service and date selection.
-- current service state: When selecting a service, you have to click on the center of the box with the service's name. Even the cursor is on the box and it changes cover due to hover, if it isn't in the center it can't be selected
-- update to: If the cursor is on the box (The hover light is on) the box should be able to be selected.
-- current date state: When selecting a date and time, if you select a hour and then switch to another day the hour stayes the same. Although the system doesn't allow it if the date wouldn't be a valid one, I want that each time the date is changed the hour gets deselected for safety reasons.
+3. Authentication Page:
+- current status: The Auth page is too simplistic, no logo, no name. It can make people belive they got the wrong site.
+- update to: The background image from the main page (index page, where the services are) should also be displayed in the background of the login form. Above the login form should be the "Masaj By Melinda" Title, the same one that appeares on the main (index) page on the top left corner.
 
-5. Profile page personal information update functionality.
-- current status: Once the phone number has been verified only the name can be edited.
-- update to: The name editing should be done with two labels just like during registration, "Nume" and "Prenume" which then concatenates them and sends it to the database. When taking the name from the database it splits it into 2 where the 'SPACE' is and then separetes them in the two fields. 
-The phone number should be changable as well through a different modal. Inside the EditProfile modal, under the phone number (if already verified) will be a button labeled "Schimba numarul de telefon". Upon clicking that button a warning message will appear saying "Numarul este deja verificat, daca il schimbati va trebui sa-l verificati din nou. (Butoane optiuni:Schimba numarul / Inapoi)". After clicking the "Schimba numarul" button a new modal will open to input the new phone number and a button under it to verify it through an OTP.
+4. Contact details:
+- current status: in the footer of the index page and the Pachete page, there are contact details which are clickable, phone number and email address. They do not do anything.
+- update to: the email address button should redirect the user to it's own email app (gmail/yahoo) and set him ready to writte an email to that address.
+The phone number button (on mobile only) would get the user in the phone app with the number dialled.

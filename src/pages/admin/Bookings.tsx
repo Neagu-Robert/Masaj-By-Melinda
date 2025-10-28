@@ -14,7 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Edit, Trash2, Plus, Calendar as CalendarIcon } from "lucide-react";
 import { Calendar as UICalendar } from '@/components/ui/calendar';
-import { previewCreateRecurring, confirmCreateRecurring, cancelRecurring, RecurrenceType } from '@/services/recurring/service';
+import { previewCreateRecurring, confirmCreateRecurring, cancelRecurring, cancelRecurringInstance, RecurrenceType } from '@/services/recurring/service';
 
 export default function Bookings() {
   const { bookings, loading, addBooking, updateBooking, deleteBooking } = useBookings();
@@ -25,7 +25,8 @@ export default function Bookings() {
   const { 
     sendBookingCancellationAdmin,
     sendRecurringCreatedAdmin,
-    sendRecurringCancelledAdmin
+    sendRecurringCancelledAdmin,
+    sendRecurringInstanceCancelledAdmin
   } = useBookingNotifications();
 
   // Recurring UI state (admin)
@@ -35,6 +36,7 @@ export default function Bookings() {
   const [preview, setPreview] = useState<{ date: string; time: string; available: boolean; reason?: string }[] | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [selectedBookingForRecurring, setSelectedBookingForRecurring] = useState<any>(null);
+  const [selectedPreviewDates, setSelectedPreviewDates] = useState<Set<string>>(new Set());
 
   // Calendar selection state
   const [selectedDay, setSelectedDay] = useState<Date>(() => {
@@ -44,7 +46,7 @@ export default function Bookings() {
   });
 
   // Recurring instances for coloring and list
-  const [recurringInstances, setRecurringInstances] = useState<{ booking_id: string; date: string; hour: string; status: boolean; service_type?: string; userName?: string; userEmail?: string; userPhone?: string }[]>([]);
+  const [recurringInstances, setRecurringInstances] = useState<{ id?: string; booking_id: string; date: string; hour: string; status: boolean; service_type?: string; userName?: string; userEmail?: string; userPhone?: string }[]>([]);
 
   // Filter/search state
   const [searchName, setSearchName] = useState("");
@@ -179,9 +181,10 @@ export default function Bookings() {
         if (rootIds.length === 0) { setRecurringInstances([]); return; }
         const { data } = await supabase
           .from('recurring_bookings')
-          .select('booking_id,date,hour,status')
+          .select('id,booking_id,date,hour,status')
           .in('booking_id', rootIds);
         setRecurringInstances((data || []).map((r: any) => ({
+          id: r.id,
           booking_id: r.booking_id,
           date: r.date,
           hour: r.hour,
@@ -237,6 +240,7 @@ export default function Bookings() {
     setRecurrenceType('weekly');
     setHorizon(30);
     setRecurringOpen(true);
+    setSelectedPreviewDates(new Set());
   };
   const previewRecurring = async () => {
     if (!selectedBookingForRecurring) return;
@@ -244,6 +248,8 @@ export default function Bookings() {
     try {
       const result = await previewCreateRecurring(selectedBookingForRecurring.id, recurrenceType, horizon);
       setPreview(result.preview);
+      const defaults = new Set(result.preview.filter(p => p.available).map(p => p.date));
+      setSelectedPreviewDates(defaults);
     } catch (e) {
       toast({ title: 'Error', description: (e as any).message, variant: 'destructive' });
     } finally { setPreviewLoading(false); }
@@ -251,9 +257,11 @@ export default function Bookings() {
   const confirmRecurring = async () => {
     if (!selectedBookingForRecurring) return;
     try {
-      const result = await confirmCreateRecurring(selectedBookingForRecurring.id, recurrenceType, horizon);
+      const dates = Array.from(selectedPreviewDates);
+      const result = await confirmCreateRecurring(selectedBookingForRecurring.id, recurrenceType, horizon, dates);
       setRecurringOpen(false);
       setPreview(null);
+      setSelectedPreviewDates(new Set());
       toast({ title: 'Recurring created', description: `${result.createdCount} instances created.` });
       // Notify user via email only
       try {
@@ -305,6 +313,50 @@ export default function Bookings() {
           status: 'recurring_cancelled_admin',
         });
       } catch (e) { console.error('Admin recurring cancel notify error:', e); }
+    } catch (e) {
+      toast({ title: 'Error', description: (e as any).message, variant: 'destructive' });
+    }
+  };
+
+  const handleTogglePreviewDate = (date: string) => {
+    setSelectedPreviewDates(prev => {
+      const next = new Set(prev);
+      if (next.has(date)) next.delete(date); else next.add(date);
+      return next;
+    });
+  };
+
+  const handleCancelRecurringInstance = async (instance: { id?: string; booking_id: string; date: string; hour: string; service_type?: string; userName?: string; userEmail?: string; userPhone?: string }) => {
+    if (!instance?.id) return;
+    const ok = window.confirm(`Cancel this specific recurring instance on ${instance.date}?`);
+    if (!ok) return;
+    try {
+      await cancelRecurringInstance(instance.id);
+      // Refresh list by removing the cancelled one from state
+      setRecurringInstances(prev => prev.filter(r => r.id !== instance.id));
+      toast({ title: 'Recurring instance cancelled', description: `Instance on ${instance.date} cancelled.` });
+      try {
+        const serviceDetails = getServiceByName(instance.service_type || '');
+        const serviceId = serviceDetails?.id || null;
+        // Find the root booking to get the real userId
+        const root = bookings.find((b: any) => b.id === instance.booking_id);
+        const realUserId = root?.user_id || null;
+        await sendRecurringInstanceCancelledAdmin({
+          bookingId: instance.booking_id,
+          userId: realUserId,
+          userName: instance.userName || '',
+          userEmail: instance.userEmail || '',
+          userPhone: instance.userPhone || '',
+          serviceName: instance.service_type || '',
+          serviceId,
+          serviceProvider: 'Melinda',
+          bookingDate: instance.date,
+          bookingTime: String(instance.hour).slice(0,5),
+          duration: serviceDetails?.duration || 60,
+          price: serviceDetails?.price || 140.0,
+          status: 'recurring_instance_cancelled_admin',
+        });
+      } catch (e) { console.error('Admin single-instance cancel notify error:', e); }
     } catch (e) {
       toast({ title: 'Error', description: (e as any).message, variant: 'destructive' });
     }
@@ -415,11 +467,15 @@ export default function Bookings() {
                             <div className="text-right text-white text-sm">{r.date} at {String(r.hour).slice(0,5)}</div>
                           </div>
                           <div className="flex justify-end gap-2 pt-2 border-t border-gray-700">
-                            {/* Only allow cancelling the recurrence series */}
+                            {r.id && (
+                              <Button variant="ghost" size="sm" className="text-yellow-300 hover:text-yellow-200 hover:bg-yellow-500/10" onClick={() => handleCancelRecurringInstance(r)}>
+                                Cancel this recurring
+                              </Button>
+                            )}
                             <Button variant="ghost" size="sm" className="text-violet-300 hover:text-violet-200 hover:bg-violet-500/20" onClick={() => {
                               const root = bookings.find((b:any) => b.id === r.booking_id);
                               if (root) cancelRecurringAdmin(root);
-                            }}>Cancel Recurring</Button>
+                            }}>Cancel all recurrings</Button>
                           </div>
                         </CardContent>
                       </Card>
@@ -492,11 +548,16 @@ export default function Bookings() {
                     </div>
                     
                     <div className="flex justify-end space-x-2 pt-2 border-t border-gray-700">
+                      {r.id && (
+                        <Button variant="ghost" size="sm" className="text-yellow-300 hover:text-yellow-200 hover:bg-yellow-500/10" onClick={() => handleCancelRecurringInstance(r)}>
+                          Cancel this recurring
+                        </Button>
+                      )}
                       <Button variant="ghost" size="sm" className="text-violet-300 hover:text-violet-200 hover:bg-violet-500/20" onClick={() => {
                         const root = bookings.find((b:any) => b.id === r.booking_id);
                         if (root) cancelRecurringAdmin(root);
                       }}>
-                        Cancel Recurring
+                        Cancel all recurrings
                       </Button>
                     </div>
                   </CardContent>
@@ -593,12 +654,22 @@ export default function Bookings() {
               {preview && (
                 <div className="max-h-64 overflow-auto border border-gray-700 rounded p-3 bg-gray-800">
                   <div className="text-sm text-gray-300 mb-2">Preview ({preview.length} dates)</div>
-                  <ul className="space-y-1 text-sm">
-                    {preview.map((p, idx) => (
-                      <li key={idx} className={p.available ? 'text-green-300' : 'text-gray-400'}>
-                        {p.date} at {p.time} {p.available ? '' : `(unavailable: ${p.reason})`}
-                      </li>
-                    ))}
+                  <ul className="space-y-2 text-sm">
+                    {preview.map((p, idx) => {
+                      const selected = selectedPreviewDates.has(p.date);
+                      return (
+                        <li key={idx} className={`flex items-center justify-between rounded px-2 py-1 ${p.available ? (selected ? 'border border-green-500/60 bg-green-600/10' : 'border border-gray-600/50 bg-gray-700/40') : 'opacity-60'}`}>
+                          <span className={p.available ? 'text-white' : 'text-gray-400'}>
+                            {p.date} at {p.time} {p.available ? '' : `(unavailable: ${p.reason})`}
+                          </span>
+                          {p.available && (
+                            <Button size="sm" variant="ghost" onClick={() => handleTogglePreviewDate(p.date)} className={selected ? 'text-yellow-300 hover:text-yellow-200' : 'text-green-300 hover:text-green-200'}>
+                              {selected ? 'Deselect' : 'Select'}
+                            </Button>
+                          )}
+                        </li>
+                      );
+                    })}
                   </ul>
                   <div className="mt-3">
                     <Button onClick={confirmRecurring} className="bg-green-600 hover:bg-green-700 text-white">Confirm Recurring</Button>

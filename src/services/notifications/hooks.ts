@@ -227,6 +227,48 @@ export const useBookingNotifications = () => {
     return sendBookingNotification('recurring_cancelled_admin', bookingData as any);
   }, [sendBookingNotification]);
 
+  // Single instance cancelled (profile)
+  const sendRecurringInstanceCancelledProfile = useCallback((bookingData: {
+    bookingId: string;
+    userId: string;
+    userName: string;
+    userEmail: string;
+    userPhone?: string;
+    serviceName: string;
+    serviceId?: number | null;
+    serviceProvider?: string;
+    bookingDate: string | Date;
+    bookingTime: string;
+    duration: number;
+    price: number;
+    location?: string;
+    notes?: string;
+    status: string;
+  }) => {
+    return sendBookingNotification('recurring_instance_cancelled_profile', bookingData as any);
+  }, [sendBookingNotification]);
+
+  // Single instance cancelled (admin)
+  const sendRecurringInstanceCancelledAdmin = useCallback((bookingData: {
+    bookingId: string;
+    userId: string;
+    userName: string;
+    userEmail: string;
+    userPhone?: string;
+    serviceName: string;
+    serviceId?: number | null;
+    serviceProvider?: string;
+    bookingDate: string | Date;
+    bookingTime: string;
+    duration: number;
+    price: number;
+    location?: string;
+    notes?: string;
+    status: string;
+  }) => {
+    return sendBookingNotification('recurring_instance_cancelled_admin', bookingData as any);
+  }, [sendBookingNotification]);
+
   /**
    * Send a booking confirmation notification (admin booking)
    */
@@ -331,6 +373,8 @@ export const useBookingNotifications = () => {
     sendRecurringCreatedProfile,
     sendRecurringCancelledProfile,
     sendRecurringCreatedAdmin,
-    sendRecurringCancelledAdmin
+    sendRecurringCancelledAdmin,
+    sendRecurringInstanceCancelledProfile,
+    sendRecurringInstanceCancelledAdmin
   };
 }; 

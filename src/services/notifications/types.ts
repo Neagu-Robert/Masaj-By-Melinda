@@ -9,6 +9,8 @@ export type NotificationType =
   | 'recurring_cancelled_profile'
   | 'recurring_created_admin'
   | 'recurring_cancelled_admin'
+  | 'recurring_instance_cancelled_profile'
+  | 'recurring_instance_cancelled_admin'
   | 'booking_created_admin'
   | 'booking_updated_admin'
   | 'booking_cancelled_admin'

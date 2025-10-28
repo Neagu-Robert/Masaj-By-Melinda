@@ -161,6 +161,8 @@ function BookingComponent() {
 - `booking_updated_admin` - Sent when an admin updates a booking
 - `booking_cancelled_admin` - Sent when an admin cancels a booking
 - `reminder` - Sent as a reminder for upcoming bookings
+- `recurring_instance_cancelled_profile` - Sent when a user cancels a single recurring instance from profile
+- `recurring_instance_cancelled_admin` - Sent when an admin cancels a single recurring instance
 
 ## Automated Reminders
 
@@ -188,3 +190,5 @@ The reminder system is implemented via a Supabase Edge Function (`supabase/funct
 - `booking_updated_admin` - if an admin updates a booking using the admin page, an email is sent to the customer of which the booking belonged to and an sms to the responsible admins.
 - `booking_cancelled_admin` - if an admin cancells a booking using the admin page, an email is sent to the customer of which the booking belonged. No sms is sent to any admins.
 - `booking_reminder` - a reminder email should be sent to the customers one day prior the their booking at 12:00 AM (Bucharest time).  
+- `recurring_instance_cancelled_profile` - When a user cancels a single recurring instance from profile page, an email is sent to the user and an SMS to the admins (similar to full recurring cancellation but for a single date/time)
+- `recurring_instance_cancelled_admin` - When an admin cancels a single recurring instance, only an email is sent to the customer (no SMS to admins)

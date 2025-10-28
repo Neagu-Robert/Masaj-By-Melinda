@@ -16,7 +16,7 @@ import PasswordChangeModal from '@/components/profile/PasswordChangeModal';
 import BookingsList from '@/components/profile/BookingsList';
 import { useBookingNotifications } from '@/services/notifications/hooks';
 import { Calendar as UICalendar } from '@/components/ui/calendar';
-import { previewCreateRecurring, confirmCreateRecurring, cancelRecurring, RecurrenceType } from '@/services/recurring/service';
+import { previewCreateRecurring, confirmCreateRecurring, cancelRecurring, cancelRecurringInstance, RecurrenceType } from '@/services/recurring/service';
 import { toast } from '@/components/ui/use-toast';
 
 function ProfilePageContent() {
@@ -26,6 +26,7 @@ function ProfilePageContent() {
   const [profile, setProfile] = useState(null);
   const [bookings, setBookings] = useState([]);
   const [recurringInstances, setRecurringInstances] = useState<{
+    id?: string;
     booking_id: string;
     date: string;
     hour: string;
@@ -41,13 +42,14 @@ function ProfilePageContent() {
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [isPasswordChangeOpen, setIsPasswordChangeOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { sendRecurringCreatedProfile, sendRecurringCancelledProfile, sendBookingCancellationProfile } = useBookingNotifications();
+  const { sendRecurringCreatedProfile, sendRecurringCancelledProfile, sendBookingCancellationProfile, sendRecurringInstanceCancelledProfile } = useBookingNotifications();
   // Recurring UI state
   const [recurringOpen, setRecurringOpen] = useState(false);
   const [recurrenceType, setRecurrenceType] = useState<RecurrenceType>('weekly');
   const [horizon, setHorizon] = useState<30 | 60 | 90>(30);
   const [preview, setPreview] = useState<{ date: string; time: string; available: boolean; reason?: string }[] | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
+  const [selectedPreviewDates, setSelectedPreviewDates] = useState<Set<string>>(new Set());
   // Calendar selection state
   const [selectedDay, setSelectedDay] = useState<Date>(() => {
     const d = new Date();
@@ -101,13 +103,14 @@ function ProfilePageContent() {
         (recurringRoots || []).forEach((b: any) => { serviceTypeByRoot[b.id] = b.service_type; });
 
         if (recurringRootIds.length > 0) {
-          const { data: recInst } = await supabase
-            .from('recurring_bookings')
-            .select('booking_id,date,hour,status')
+        const { data: recInst } = await supabase
+          .from('recurring_bookings')
+          .select('id,booking_id,date,hour,status')
             .in('booking_id', recurringRootIds);
           if (isMounted && recInst) {
             setRecurringInstances(
               recInst.map((r: any) => ({
+                id: r.id,
                 booking_id: r.booking_id,
                 date: r.date,
                 hour: r.hour,
@@ -137,6 +140,38 @@ function ProfilePageContent() {
     setSelectedBooking(booking);
     setIsModalOpen(true);
   };
+
+  const handleCancelRecurringInstance = async (instance: { id?: string; booking_id: string; date: string; hour: string; service_type?: string }) => {
+    if (!instance?.id) return;
+    const ok = window.confirm(`Cancel this specific recurring instance on ${instance.date}?`);
+    if (!ok) return;
+    try {
+      await cancelRecurringInstance(instance.id);
+      setRefreshTrigger(c => c + 1);
+      try {
+        const serviceDetails = getServiceByName(instance.service_type || '');
+        const serviceId = serviceDetails?.id || null;
+        await sendRecurringInstanceCancelledProfile({
+          bookingId: instance.booking_id,
+          userId: user.id,
+          userName: profile?.full_name || user.email,
+          userEmail: user.email,
+          userPhone: profile?.phone || '',
+          serviceName: instance.service_type || '',
+          serviceId,
+          serviceProvider: 'Melinda',
+          bookingDate: instance.date,
+          bookingTime: String(instance.hour).slice(0,5),
+          duration: serviceDetails?.duration || 60,
+          price: serviceDetails?.price || 140.0,
+          status: 'recurring_instance_cancelled',
+        });
+      } catch (e) { console.error('Error sending single-instance cancel notification:', e); }
+      toast({ title: 'Recurring instance cancelled', description: `Instance on ${instance.date} cancelled.` });
+    } catch (e: any) {
+      toast({ title: 'Error', description: e.message, variant: 'destructive' });
+    }
+  };
   // Recurring: open modal and fetch preview
   const handleOpenRecurring = async (booking: any) => {
     setSelectedBooking(booking);
@@ -144,6 +179,7 @@ function ProfilePageContent() {
     setPreview(null);
     setRecurrenceType('weekly');
     setHorizon(30);
+    setSelectedPreviewDates(new Set());
   };
 
   const handlePreviewRecurring = async () => {
@@ -152,6 +188,8 @@ function ProfilePageContent() {
     try {
       const result = await previewCreateRecurring(selectedBooking.id, recurrenceType, horizon);
       setPreview(result.preview);
+      const defaults = new Set(result.preview.filter(p => p.available).map(p => p.date));
+      setSelectedPreviewDates(defaults);
     } catch (e: any) {
       toast({ title: 'Error', description: e.message, variant: 'destructive' });
     } finally {
@@ -162,15 +200,17 @@ function ProfilePageContent() {
   const handleConfirmRecurring = async () => {
     if (!selectedBooking) return;
     try {
-      const result = await confirmCreateRecurring(selectedBooking.id, recurrenceType, horizon);
+      const selectedDates = Array.from(selectedPreviewDates);
+      const result = await confirmCreateRecurring(selectedBooking.id, recurrenceType, horizon, selectedDates);
       setRecurringOpen(false);
       setPreview(null);
+      setSelectedPreviewDates(new Set());
       setRefreshTrigger(c => c + 1);
-      if (result.skippedCount > 0) {
-        toast({ title: 'Recurring created with skips', description: `${result.createdCount} created, ${result.skippedCount} skipped.` });
-      } else {
-        toast({ title: 'Recurring created', description: `${result.createdCount} instances created.` });
-      }
+      const selectedCount = selectedDates.length || result.createdCount + result.skippedCount;
+      const baseMsg = result.skippedCount > 0
+        ? `${result.createdCount} created, ${result.skippedCount} skipped.`
+        : `${result.createdCount} instances created.`;
+      toast({ title: 'Recurring created', description: `${baseMsg} (${selectedCount} selected)` });
 
       // Send notifications: user email and admin SMS via booking_updated_profile
       try {
@@ -181,7 +221,7 @@ function ProfilePageContent() {
           userId: user.id,
           userName: profile?.full_name || user.email,
           userEmail: user.email,
-          userPhone: profile?.phone_number || '',
+          userPhone: profile?.phone || '',
           serviceName: selectedBooking.service_type,
           serviceId,
           serviceProvider: 'Melinda',
@@ -198,6 +238,14 @@ function ProfilePageContent() {
     } catch (e: any) {
       toast({ title: 'Error', description: e.message, variant: 'destructive' });
     }
+  };
+
+  const handleTogglePreviewDate = (date: string) => {
+    setSelectedPreviewDates(prev => {
+      const next = new Set(prev);
+      if (next.has(date)) next.delete(date); else next.add(date);
+      return next;
+    });
   };
 
   const handleCancelRecurring = async (booking: any) => {
@@ -217,7 +265,7 @@ function ProfilePageContent() {
           userId: user.id,
           userName: profile?.full_name || user.email,
           userEmail: user.email,
-          userPhone: profile?.phone_number || '',
+          userPhone: profile?.phone || '',
           serviceName: booking.service_type,
           serviceId,
           serviceProvider: 'Melinda',
@@ -265,7 +313,7 @@ function ProfilePageContent() {
           userId: user.id,
           userName: profile?.full_name || user.email,
           userEmail: user.email,
-          userPhone: profile?.phone_number || '',
+          userPhone: profile?.phone || '',
           serviceName: booking.service_type,
           serviceId: serviceId,
           serviceProvider: 'Melinda',
@@ -303,10 +351,10 @@ function ProfilePageContent() {
   };
 
   const handleBackClick = () => {
-    if (role === 'admin') {
-      navigate('/admin');
+    if (window.history.length > 1) {
+      navigate(-1);
     } else {
-      navigate('/home');
+      if (role === 'admin') navigate('/admin'); else navigate('/home');
     }
   };
 
@@ -636,6 +684,7 @@ function ProfilePageContent() {
                     onOpenRecurring={handleOpenRecurring}
                     onCancelRecurring={handleCancelRecurring}
                     user={user}
+                    onCancelRecurringInstance={handleCancelRecurringInstance}
                   />
                 </div>
               </div>
@@ -686,12 +735,22 @@ function ProfilePageContent() {
                 {preview && (
                   <div className="max-h-64 overflow-auto border border-gray-700 rounded p-3 bg-gray-800">
                     <div className="text-sm text-gray-300 mb-2">Preview ({preview.length} dates)</div>
-                    <ul className="space-y-1 text-sm">
-                      {preview.map((p, idx) => (
-                        <li key={idx} className={p.available ? 'text-green-300' : 'text-gray-400'}>
-                          {p.date} at {p.time} {p.available ? '' : `(unavailable: ${p.reason})`}
-                        </li>
-                      ))}
+                    <ul className="space-y-2 text-sm">
+                      {preview.map((p, idx) => {
+                        const selected = selectedPreviewDates.has(p.date);
+                        return (
+                          <li key={idx} className={`flex items-center justify-between rounded px-2 py-1 ${p.available ? (selected ? 'border border-green-500/60 bg-green-600/10' : 'border border-gray-600/50 bg-gray-700/40') : 'opacity-60'}`}>
+                            <span className={p.available ? 'text-white' : 'text-gray-400'}>
+                              {p.date} at {p.time} {p.available ? '' : `(unavailable: ${p.reason})`}
+                            </span>
+                            {p.available && (
+                              <Button size="sm" variant="ghost" onClick={() => handleTogglePreviewDate(p.date)} className={selected ? 'text-yellow-300 hover:text-yellow-200' : 'text-green-300 hover:text-green-200'}>
+                                {selected ? 'Deselect' : 'Select'}
+                              </Button>
+                            )}
+                          </li>
+                        );
+                      })}
                     </ul>
                     <div className="mt-3 flex gap-2">
                       {preview.some(p => !p.available) && (

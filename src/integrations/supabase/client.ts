@@ -1,8 +1,15 @@
 
 import { createClient } from '@supabase/supabase-js'
 
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Supabase URL and anon key are required. Make sure to create a .env.local file in the root of the project with VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY variables.')
+}
+
 // Supabase client with public project details
 export const supabase = createClient(
-  'https://dgzmqlwqlfmdbnwqjjjr.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRnem1xbHdxbGZtZGJud3FqampyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU2ODcxNDYsImV4cCI6MjA2MTI2MzE0Nn0.Y7sKLnfvQh3t6hoH_TyTVxojWUuKhgwW965Q9cE8pZs'
+  supabaseUrl,
+  supabaseAnonKey
 )

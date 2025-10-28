@@ -38,7 +38,8 @@ const getUserPreferences = async (userId: string | null): Promise<NotificationPr
       bookingCreationEnabled: data.booking_creation_enabled,
       bookingUpdateEnabled: data.booking_update_enabled,
       bookingCancellationEnabled: data.booking_cancellation_enabled,
-      passwordChangeEnabled: data.password_change_enabled
+      passwordChangeEnabled: data.password_change_enabled,
+      reminderEnabled: (data as any).reminder_enabled ?? true
     };
   } catch (error) {
     console.error('Error fetching user preferences:', error);
@@ -102,15 +103,15 @@ const sendReminderNotifications = async (): Promise<NotificationResult[]> => {
   
   try {
     // Replace getApiBaseUrl with Supabase Edge Function URL
-    const getSupabaseFunctionUrl = (fn) =>
-      `https://dgzmqlwqlfmdbnwqjjjr.functions.supabase.co/${fn}`;
+    const { getSupabaseFunctionUrl, supabaseAuthHeader } = await import('@/lib/supabase-functions');
+    const AUTH_HEADER = await supabaseAuthHeader();
     
     // Call the Vercel API route for reminders
     const response = await fetch(getSupabaseFunctionUrl('send-reminders'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRnem1xbHdxbGZtZGJud3FqampyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU2ODcxNDYsImV4cCI6MjA2MTI2MzE0Nn0.Y7sKLnfvQh3t6hoH_TyTVxojWUuKhgwW965Q9cE8pZs',
+        ...AUTH_HEADER,
       }
     });
 
@@ -290,6 +291,12 @@ export const sendNotification = async (payload: NotificationPayload): Promise<No
       case 'recurring_cancelled_admin':
         shouldSend = preferences.bookingCancellationEnabled;
         break;
+      case 'recurring_instance_cancelled_profile':
+        shouldSend = preferences.bookingCancellationEnabled;
+        break;
+      case 'recurring_instance_cancelled_admin':
+        shouldSend = preferences.bookingCancellationEnabled;
+        break;
       case 'password_changed':
       case 'password_reset_requested':
         shouldSend = preferences.passwordChangeEnabled;
@@ -334,6 +341,23 @@ export const sendNotification = async (payload: NotificationPayload): Promise<No
         }
       }
       // Admin SMS
+      {
+        const adminSmsResults = await sendAdminSmsNotifications(payload.type, enrichedPayload.data);
+        results.push(...adminSmsResults);
+      }
+      break;
+    case 'recurring_instance_cancelled_profile':
+      // Email to customer (respects booking cancellation prefs)
+      if (shouldSendEmailNotification(payload.type) && payload.recipient.email) {
+        try {
+          const emailResult = await sendEmailNotification(enrichedPayload);
+          results.push(emailResult);
+        } catch (error) {
+          console.error('Error sending recurring instance cancelled (profile) email:', error);
+          results.push({ success: false, channel: 'email', error: error as Error, timestamp: Date.now() });
+        }
+      }
+      // Admin SMS (always)
       {
         const adminSmsResults = await sendAdminSmsNotifications(payload.type, enrichedPayload.data);
         results.push(...adminSmsResults);
@@ -451,6 +475,18 @@ export const sendNotification = async (payload: NotificationPayload): Promise<No
           results.push(emailResult);
         } catch (error) {
           console.error('Error sending recurring cancelled (admin) email:', error);
+          results.push({ success: false, channel: 'email', error: error as Error, timestamp: Date.now() });
+        }
+      }
+      break;
+    case 'recurring_instance_cancelled_admin':
+      // Email only to customer (respect cancellation prefs); no admin SMS
+      if (shouldSendEmailNotification(payload.type) && payload.recipient.email) {
+        try {
+          const emailResult = await sendEmailNotification(enrichedPayload);
+          results.push(emailResult);
+        } catch (error) {
+          console.error('Error sending recurring instance cancelled (admin) email:', error);
           results.push({ success: false, channel: 'email', error: error as Error, timestamp: Date.now() });
         }
       }

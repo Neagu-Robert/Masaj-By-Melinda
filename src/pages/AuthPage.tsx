@@ -140,9 +140,13 @@ export default function AuthPage() {
     );
   }
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-900">
-      <form onSubmit={handleAuth} className="bg-gray-800 p-8 rounded shadow-md w-full max-w-sm">
+return (
+  <div className="min-h-screen bg-[url('/lovable-uploads/8659eb40-96fc-4579-9af8-1b649574c3ff.png')] bg-cover bg-center">
+    <div className="min-h-screen w-full flex items-center justify-center backdrop-blur-sm bg-gray-900/60">
+    <form onSubmit={handleAuth} className="bg-gray-800/90 backdrop-blur-md p-8 rounded shadow-md w-full max-w-sm">
+      <div className="text-center mb-4">
+        <div className="text-2xl md:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-400 to-pink-500 mb-2">Masaj by Melinda</div>
+      </div>
         <h2 className="text-2xl font-bold mb-6 text-center text-violet-400">
           {isLogin ? 'Login' : 'Register'}
         </h2>
@@ -244,5 +248,6 @@ export default function AuthPage() {
         </div>
       </form>
     </div>
-  );
+  </div>
+);
 } 

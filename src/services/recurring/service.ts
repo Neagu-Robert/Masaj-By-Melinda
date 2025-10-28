@@ -1,12 +1,5 @@
 // Simple client for recurring bookings Edge Functions
-
-const getSupabaseFunctionUrl = (fn: string) =>
-  `https://dgzmqlwqlfmdbnwqjjjr.functions.supabase.co/${fn}`;
-
-const AUTH_HEADER = {
-  Authorization:
-    'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRnem1xbHdxbGZtZGJud3FqampyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU2ODcxNDYsImV4cCI6MjA2MTI2MzE0Nn0.Y7sKLnfvQh3t6hoH_TyTVxojWUuKhgwW965Q9cE8pZs',
-};
+import { getSupabaseFunctionUrl, supabaseAuthHeader } from '@/lib/supabase-functions';
 
 export type RecurrenceType = 'weekly' | 'biweekly';
 
@@ -15,6 +8,7 @@ export async function previewCreateRecurring(
   recurrenceType: RecurrenceType,
   horizonDays: 30 | 60 | 90
 ) {
+  const AUTH_HEADER = await supabaseAuthHeader();
   const res = await fetch(getSupabaseFunctionUrl('create-recurring-bookings'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...AUTH_HEADER },
@@ -34,12 +28,14 @@ export async function previewCreateRecurring(
 export async function confirmCreateRecurring(
   bookingId: string,
   recurrenceType: RecurrenceType,
-  horizonDays: 30 | 60 | 90
+  horizonDays: 30 | 60 | 90,
+  selectedDates?: string[]
 ) {
+  const AUTH_HEADER = await supabaseAuthHeader();
   const res = await fetch(getSupabaseFunctionUrl('create-recurring-bookings'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...AUTH_HEADER },
-    body: JSON.stringify({ bookingId, recurrenceType, horizonDays, confirm: true }),
+    body: JSON.stringify({ bookingId, recurrenceType, horizonDays, confirm: true, selectedDates }),
   });
   const data = await res.json();
   if (!res.ok || !data.success) {
@@ -55,6 +51,7 @@ export async function confirmCreateRecurring(
 }
 
 export async function cancelRecurring(bookingId: string) {
+  const AUTH_HEADER = await supabaseAuthHeader();
   const res = await fetch(getSupabaseFunctionUrl('cancel-recurring-bookings'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...AUTH_HEADER },
@@ -65,6 +62,26 @@ export async function cancelRecurring(bookingId: string) {
     throw new Error(data.error || `HTTP ${res.status}: ${res.statusText}`);
   }
   return data as { success: true; deletedCount: number };
+}
+
+
+export const cancelRecurringInstance = async (instanceId: number) => {
+  const functionUrl = getSupabaseFunctionUrl('cancel-recurring-instance');
+  const AUTH_HEADER = await supabaseAuthHeader();
+
+  const response = await fetch(functionUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...AUTH_HEADER
+    },
+    body: JSON.stringify({ instanceId }),
+  });
+  const data = await response.json();
+  if (!response.ok || !data.success) {
+    throw new Error(data.error || `HTTP ${response.status}: ${response.statusText}`);
+  }
+  return data as { success: true; deletedInstance: any };
 }
 
 

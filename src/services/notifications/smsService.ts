@@ -49,13 +49,21 @@ const smsTemplates = {
   recurring_cancelled_profile: (data: BookingNotificationData): string => {
     return `Masaj by Melinda: A recurring booking has been cancelled by ${data.userName} for ${data.serviceName} (original ${data.dateTime}).`;
   }
+  ,
+  // Single-instance cancelled by user (notify admins)
+  recurring_instance_cancelled_profile: (data: BookingNotificationData): string => {
+    return `Masaj by Melinda: A single recurring instance has been cancelled by ${data.userName} for ${data.serviceName} on ${data.dateTime}.`;
+  },
+  // Single-instance cancelled by admin (template included for completeness)
+  recurring_instance_cancelled_admin: (data: BookingNotificationData): string => {
+    return `Masaj by Melinda: A single recurring instance has been cancelled by admin for ${data.userName}'s ${data.serviceName} on ${data.dateTime}.`;
+  }
 };
 
 /**
  * Get the API base URL based on environment
  */
-const getSupabaseFunctionUrl = (fn) =>
-  `https://dgzmqlwqlfmdbnwqjjjr.functions.supabase.co/${fn}`;
+import { getSupabaseFunctionUrl, supabaseAuthHeader } from '@/lib/supabase-functions';
 
 /**
  * Check if SMS is properly configured
@@ -109,12 +117,14 @@ export const sendSmsNotification = async (
       ? payload.recipient.phone 
       : `+${payload.recipient.phone}`;
 
+    const AUTH_HEADER = await supabaseAuthHeader();
+
     // Call the Vercel API route
     const response = await fetch(getSupabaseFunctionUrl('send-sms'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRnem1xbHdxbGZtZGJud3FqampyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU2ODcxNDYsImV4cCI6MjA2MTI2MzE0Nn0.Y7sKLnfvQh3t6hoH_TyTVxojWUuKhgwW965Q9cE8pZs',
+        ...AUTH_HEADER,
       },
       body: JSON.stringify({
         to: formattedPhone,
