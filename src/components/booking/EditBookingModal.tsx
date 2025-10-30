@@ -151,7 +151,7 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
     // Validate booking data
     const validation = validateBookingData(bookingDate, bookingTime, serviceType);
     if (!validation.isValid) {
-      setError(validation.error || 'Invalid booking data');
+      setError(validation.error || 'Date de rezervare invalide');
       return;
     }
 
@@ -163,7 +163,7 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
     );
     
     if (doubleBookingCheck.isDoubleBooked) {
-      setError(doubleBookingCheck.error || 'This time slot is already booked');
+      setError(doubleBookingCheck.error || 'Acest interval orar este deja rezervat');
       return;
     }
 
@@ -185,7 +185,7 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
         .eq('id', booking.id);
 
       if (updateError) {
-        setError('Failed to update booking: ' + updateError.message);
+        setError('Eroare la actualizarea rezervării: ' + updateError.message);
         return;
       }
 
@@ -216,7 +216,7 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
       handleClose();
     } catch (error) {
       console.error('Error updating booking:', error);
-      setError('An unexpected error occurred while updating the booking.');
+      setError('A apărut o eroare neașteptată la actualizarea rezervării.');
     } finally {
       setIsSaving(false);
     }
@@ -284,9 +284,9 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-gray-900 border-gray-700">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold text-violet-300">Edit Booking</DialogTitle>
+          <DialogTitle className="text-xl font-bold text-violet-300">Editează Rezervarea</DialogTitle>
           <DialogDescription className="text-gray-400">
-            Change the service, date, or time for this booking and save your changes.
+            Modificați serviciul, data sau ora pentru această rezervare și salvați modificările.
           </DialogDescription>
         </DialogHeader>
         
@@ -294,7 +294,7 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
           {/* Personal Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="first_name" className="text-violet-200">First Name</Label>
+              <Label htmlFor="first_name" className="text-violet-200">Prenume</Label>
               <Input
                 id="first_name"
                 value={booking?.first_name || ''}
@@ -303,7 +303,7 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
               />
             </div>
             <div>
-              <Label htmlFor="last_name" className="text-violet-200">Last Name</Label>
+              <Label htmlFor="last_name" className="text-violet-200">Nume</Label>
               <Input
                 id="last_name"
                 value={booking?.last_name || ''}
@@ -315,7 +315,7 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="phone_number" className="text-violet-200">Phone Number</Label>
+              <Label htmlFor="phone_number" className="text-violet-200">Număr de Telefon</Label>
               <Input
                 id="phone_number"
                 value={booking?.phone_number || ''}
@@ -324,10 +324,10 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
               />
             </div>
             <div>
-              <Label htmlFor="service_type" className="text-violet-200">Service Type</Label>
+              <Label htmlFor="service_type" className="text-violet-200">Tip de Serviciu</Label>
               <Select value={serviceType} onValueChange={setServiceType}>
                 <SelectTrigger className="bg-gray-800 text-white border-gray-600">
-                  <SelectValue placeholder="Select a service" />
+                  <SelectValue placeholder="Selectați un serviciu" />
                 </SelectTrigger>
                 <SelectContent className="bg-gray-800 text-white border-gray-600">
                   {services.map((service) => (
@@ -342,13 +342,13 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
 
           {/* Date and Time Selection */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-violet-300">Date & Time Selection</h3>
+            <h3 className="text-lg font-semibold text-violet-300">Selectare Dată și Oră</h3>
             <div className="flex flex-col space-y-6 md:space-y-0 md:flex-row md:space-x-6">
               {/* Calendar Section */}
               <div className="w-full md:w-1/2">
                 <div className="flex items-center mb-3">
                   <CalendarIcon className="mr-2 h-5 w-5 text-violet-400" />
-                  <span className="font-medium text-violet-200">Select Date</span>
+                  <span className="font-medium text-violet-200">Selectați Data</span>
                 </div>
                 <Calendar
                   mode="single"
@@ -363,16 +363,16 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
               <div className="w-full md:w-1/2">
                 <div className="flex items-center mb-3">
                   <Clock className="mr-2 h-5 w-5 text-violet-400" />
-                  <span className="font-medium text-violet-200">Select Time</span>
+                  <span className="font-medium text-violet-200">Selectați Ora</span>
                 </div>
                 {getOriginalBookingTime() && (
                   <p className="text-violet-400 text-sm mb-2">
-                    Original time: <span className="font-semibold">{getOriginalBookingTime()}</span>
+                    Ora originală: <span className="font-semibold">{getOriginalBookingTime()}</span>
                   </p>
                 )}
                 <Select value={bookingTime} onValueChange={setBookingTime}>
                   <SelectTrigger className="bg-gray-800 text-white border-gray-600">
-                    <SelectValue placeholder="Select a time" />
+                    <SelectValue placeholder="Selectați o oră" />
                   </SelectTrigger>
                   <SelectContent className="bg-gray-800 text-white border-gray-600">
                     {getAvailableHoursForSelectedDate().map((hour) => (
@@ -384,7 +384,7 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
                 </Select>
                 {bookingDate && getAvailableHoursForSelectedDate().length === 0 && (
                   <p className="text-violet-300 text-sm mt-2">
-                    No available time slots for this date.
+                    Nu există intervale orare disponibile pentru această dată.
                   </p>
                 )}
               </div>
@@ -393,10 +393,10 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={handleClose} className="border-gray-600 text-violet-800 hover:bg-gray-700">
-              Cancel
+              Anulează
             </Button>
             <Button onClick={handleSave} className="bg-violet-600 hover:bg-violet-700 text-white">
-              Save Changes
+              Salvează Modificările
             </Button>
           </DialogFooter>
         </div>

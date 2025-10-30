@@ -39,7 +39,7 @@ export default function PasswordChangeModal({ open, onClose }: PasswordChangeMod
 
     // Check if passwords match
     if (!doPasswordsMatch(newPassword, confirmPassword)) {
-      setError('New passwords do not match');
+      setError('Parolele nu se potrivesc');
       setLoading(false);
       return;
     }
@@ -92,22 +92,22 @@ export default function PasswordChangeModal({ open, onClose }: PasswordChangeMod
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent showCloseButton={true} className="sm:max-w-[425px] bg-gray-800 border-gray-700 p-4 md:p-6">
         <DialogHeader>
-          <DialogTitle className="text-white text-lg md:text-xl">Change Password</DialogTitle>
+          <DialogTitle className="text-white text-lg md:text-xl">Schimbă Parola</DialogTitle>
           <DialogDescription className="text-gray-400 text-sm md:text-base">
-            Enter your current password and choose a new password.
+            Introduceți parola curentă și creați o parolă nouă.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
           <div className="space-y-2">
             <label htmlFor="currentPassword" className="text-sm font-medium text-gray-200">
-              Current Password
+              Parolă Curentă
             </label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 md:h-5 md:w-5 text-gray-400" />
               <Input
                 id="currentPassword"
                 type={showCurrentPassword ? 'text' : 'password'}
-                placeholder="Enter current password"
+                placeholder="Introduceți parola curentă"
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
                 className="pl-10 pr-10 bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 focus:border-[#7E69AB] h-12 md:h-10 text-base md:text-sm"
@@ -127,14 +127,14 @@ export default function PasswordChangeModal({ open, onClose }: PasswordChangeMod
 
           <div className="space-y-2">
             <label htmlFor="newPassword" className="text-sm font-medium text-gray-200">
-              New Password
+              Parolă Nouă
             </label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 md:h-5 md:w-5 text-gray-400" />
               <Input
                 id="newPassword"
                 type={showNewPassword ? 'text' : 'password'}
-                placeholder="Enter new password"
+                placeholder="Introduceți parola nouă"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 className="pl-10 pr-10 bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 focus:border-[#7E69AB] h-12 md:h-10 text-base md:text-sm"
@@ -154,14 +154,14 @@ export default function PasswordChangeModal({ open, onClose }: PasswordChangeMod
 
           <div className="space-y-2">
             <label htmlFor="confirmPassword" className="text-sm font-medium text-gray-200">
-              Confirm New Password
+              Confirmați Parola Nouă
             </label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 md:h-5 md:w-5 text-gray-400" />
               <Input
                 id="confirmPassword"
                 type={showConfirmPassword ? 'text' : 'password'}
-                placeholder="Confirm new password"
+                placeholder="Confirmați parola nouă"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 className="pl-10 pr-10 bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 focus:border-[#7E69AB] h-12 md:h-10 text-base md:text-sm"
@@ -209,14 +209,14 @@ export default function PasswordChangeModal({ open, onClose }: PasswordChangeMod
               className="border-gray-600 text-gray-300 hover:bg-gray-700 w-full sm:w-auto h-12 md:h-10"
               disabled={loading}
             >
-              Cancel
+              Anulează
             </Button>
             <Button
               type="submit"
               className="bg-violet-600 hover:bg-violet-700 text-white w-full sm:w-auto h-12 md:h-10"
               disabled={loading}
             >
-              {loading ? 'Changing...' : 'Change Password'}
+              {loading ? 'Se schimbă...' : 'Schimbă Parola'}
             </Button>
           </div>
         </form>

@@ -6,15 +6,15 @@ import { Button } from "@/components/ui/button";
 import { User, Menu, X } from "lucide-react";
 
 const navItems = [
-  { name: "Bookings", path: "/admin/bookings" },
-  { name: "Availabilities", path: "/admin/availabilities" },
-  { name: "Analytics", path: "/admin/analytics" },
-  { name: "Users", path: "/admin/users" },
-  { name: "Audit Logs", path: "/admin/auditlogs" }
+  { name: "Rezervări", path: "/admin/bookings" },
+  { name: "Disponibilități", path: "/admin/availabilities" },
+  { name: "Analize", path: "/admin/analytics" },
+  { name: "Utilizatori", path: "/admin/users" },
+  { name: "Jurnale de Audit", path: "/admin/auditlogs" }
 ];
 
 const actionItems = [
-  { name: "View Site", path: "/home" },
+  { name: "Vezi Site-ul", path: "/home" },
 ]
 
 export default function DashboardLayout() {
@@ -88,7 +88,7 @@ export default function DashboardLayout() {
                 >
                   {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
                 </Button>
-                <h1 className="text-xl md:text-2xl font-semibold text-violet-400">Dashboard</h1>
+                <h1 className="text-xl md:text-2xl font-semibold text-violet-400">Panou de Bord</h1>
               </div>
               <div className="flex items-center space-x-2 md:space-x-4">
                 <Button
@@ -99,7 +99,7 @@ export default function DashboardLayout() {
                 >
                   <User className="h-5 w-5 md:h-6 md:w-6" />
                 </Button>
-                <span className="text-gray-400 text-sm md:text-base hidden sm:block">Admin User</span>
+                <span className="text-gray-400 text-sm md:text-base hidden sm:block">Utilizator Admin</span>
               </div>
             </header>
 
@@ -107,7 +107,7 @@ export default function DashboardLayout() {
             {isMobileMenuOpen && (
               <div className="md:hidden bg-gray-800/90 border-b border-gray-700">
                 <div className="px-4 py-2">
-                  <div className="text-sm font-medium text-gray-400 mb-2 px-2">Navigation</div>
+                  <div className="text-sm font-medium text-gray-400 mb-2 px-2">Navigație</div>
                   <div className="space-y-1">
                     {navItems.map((item) => (
                       <Button
@@ -125,7 +125,7 @@ export default function DashboardLayout() {
                     ))}
                   </div>
                   <div className="mt-4 pt-2 border-t border-gray-700">
-                    <div className="text-sm font-medium text-gray-400 mb-2 px-2">Actions</div>
+                    <div className="text-sm font-medium text-gray-400 mb-2 px-2">Acțiuni</div>
                     <div className="space-y-1">
                       {actionItems.map((item) => (
                         <Button

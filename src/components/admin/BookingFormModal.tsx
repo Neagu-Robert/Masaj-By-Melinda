@@ -130,8 +130,8 @@ export default function BookingFormModal({ open, onClose, booking }: BookingForm
       const validation = validateBookingData(bookingDate, bookingTime, values.service_type);
       if (!validation.isValid) {
         toast({
-          title: "Validation Error",
-          description: validation.error || "Please fill in all required fields",
+          title: "Eroare de Validare",
+          description: validation.error || "Vă rugăm să completați toate câmpurile obligatorii",
           variant: "destructive",
         });
         setIsSubmitting(false);
@@ -149,8 +149,8 @@ export default function BookingFormModal({ open, onClose, booking }: BookingForm
         
         if (doubleBookingCheck.isDoubleBooked) {
           toast({
-            title: "Double Booking Error",
-            description: doubleBookingCheck.error || "This time slot is already booked",
+            title: "Eroare Rezervare Dublă",
+            description: doubleBookingCheck.error || "Acest interval orar este deja rezervat",
             variant: "destructive",
           });
           setIsSubmitting(false);
@@ -172,7 +172,7 @@ export default function BookingFormModal({ open, onClose, booking }: BookingForm
           'booking.update.admin',
           'booking',
           booking.id,
-          `Admin updated booking for ${values.service_type} on ${formatDateForDB(bookingDate)} at ${bookingTime}`
+          `Admin a actualizat rezervarea pentru ${values.service_type} pe ${formatDateForDB(bookingDate)} la ${bookingTime}`
         );
 
         // Send admin notification for booking update
@@ -190,15 +190,15 @@ export default function BookingFormModal({ open, onClose, booking }: BookingForm
             bookingTime: bookingTime,
             duration: serviceDetails?.duration || 60,
             price: serviceDetails?.price || 140.00,
-            status: 'updated'
+            status: 'actualizat'
           });
         } catch (notificationError) {
-          console.error('Error sending notification:', notificationError);
+          console.error('Eroare la trimiterea notificării:', notificationError);
         }
 
         toast({
-          title: "Booking Updated",
-          description: "The booking has been updated successfully.",
+          title: "Rezervare Actualizată",
+          description: "Rezervarea a fost actualizată cu succes.",
         });
       } else {
         // Create new booking
@@ -207,8 +207,8 @@ export default function BookingFormModal({ open, onClose, booking }: BookingForm
         
         if (doubleBookingCheck.isDoubleBooked) {
           toast({
-            title: "Double Booking Error",
-            description: doubleBookingCheck.error || "This time slot is already booked",
+            title: "Eroare Rezervare Dublă",
+            description: doubleBookingCheck.error || "Acest interval orar este deja rezervat",
             variant: "destructive",
           });
           setIsSubmitting(false);
@@ -230,7 +230,7 @@ export default function BookingFormModal({ open, onClose, booking }: BookingForm
           'booking.create.admin',
           'booking',
           'new',
-          `Admin created booking for ${values.service_type} on ${formatDateForDB(bookingDate)} at ${bookingTime}`
+          `Admin a creat rezervare pentru ${values.service_type} pe ${formatDateForDB(bookingDate)} la ${bookingTime}`
         );
 
         // Send admin notification for new booking
@@ -248,15 +248,15 @@ export default function BookingFormModal({ open, onClose, booking }: BookingForm
             bookingTime: bookingTime,
             duration: serviceDetails?.duration || 60,
             price: serviceDetails?.price || 140.00,
-            status: 'confirmed'
+            status: 'confirmat'
           });
         } catch (notificationError) {
-          console.error('Error sending notification:', notificationError);
+          console.error('Eroare la trimiterea notificării:', notificationError);
         }
 
         toast({
-          title: "Booking Created",
-          description: "The booking has been created successfully.",
+          title: "Rezervare Creată",
+          description: "Rezervarea a fost creată cu succes.",
         });
       }
 
@@ -264,8 +264,8 @@ export default function BookingFormModal({ open, onClose, booking }: BookingForm
     } catch (error) {
       console.error('Error saving booking:', error);
       toast({
-        title: "Error",
-        description: "An error occurred while saving the booking.",
+        title: "Eroare",
+        description: "A apărut o eroare la salvarea rezervării.",
         variant: "destructive",
       });
     } finally {
@@ -330,12 +330,12 @@ export default function BookingFormModal({ open, onClose, booking }: BookingForm
       <DialogContent showCloseButton={true} className="max-w-4xl max-h-[90vh] overflow-y-auto bg-gray-900 border-gray-700">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold text-violet-300">
-            {booking ? 'Edit Booking' : 'Create New Booking'}
+            {booking ? 'Editează Rezervarea' : 'Creează Rezervare Nouă'}
           </DialogTitle>
           <DialogDescription className="text-gray-400">
             {booking
-              ? 'Update the customer details, service, date and time for this booking.'
-              : 'Provide customer details, select a service, and choose a date and time.'}
+              ? 'Actualizați detaliile clientului, serviciul, data și ora pentru această rezervare.'
+              : 'Furnizați detaliile clientului, selectați un serviciu și alegeți o dată și o oră.'}
           </DialogDescription>
         </DialogHeader>
         
@@ -343,7 +343,7 @@ export default function BookingFormModal({ open, onClose, booking }: BookingForm
           {/* Personal Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="first_name" className="text-violet-200">First Name</Label>
+              <Label htmlFor="first_name" className="text-violet-200">Prenume</Label>
               <Input
                 id="first_name"
                 {...form.register('first_name')}
@@ -351,7 +351,7 @@ export default function BookingFormModal({ open, onClose, booking }: BookingForm
               />
             </div>
             <div>
-              <Label htmlFor="last_name" className="text-violet-200">Last Name</Label>
+              <Label htmlFor="last_name" className="text-violet-200">Nume</Label>
               <Input
                 id="last_name"
                 {...form.register('last_name')}
@@ -362,7 +362,7 @@ export default function BookingFormModal({ open, onClose, booking }: BookingForm
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="phone_number" className="text-violet-200">Phone Number</Label>
+              <Label htmlFor="phone_number" className="text-violet-200">Număr de Telefon</Label>
               <Input
                 id="phone_number"
                 {...form.register('phone_number')}
@@ -370,10 +370,10 @@ export default function BookingFormModal({ open, onClose, booking }: BookingForm
               />
             </div>
             <div>
-              <Label htmlFor="service_type" className="text-violet-200">Service Type</Label>
+              <Label htmlFor="service_type" className="text-violet-200">Tip Serviciu</Label>
               <Select value={form.watch('service_type')} onValueChange={(value) => form.setValue('service_type', value)}>
                 <SelectTrigger className="bg-gray-800 text-white border-gray-600">
-                  <SelectValue placeholder="Select a service" />
+                  <SelectValue placeholder="Selectați un serviciu" />
                 </SelectTrigger>
                 <SelectContent className="bg-gray-800 text-white border-gray-600">
                   {services.map((service) => (
@@ -388,13 +388,13 @@ export default function BookingFormModal({ open, onClose, booking }: BookingForm
 
           {/* Date and Time Selection */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-violet-300">Date & Time Selection</h3>
+            <h3 className="text-lg font-semibold text-violet-300">Selectare Dată & Oră</h3>
             <div className="flex flex-col space-y-6 md:space-y-0 md:flex-row md:space-x-6">
               {/* Calendar Section */}
               <div className="w-full md:w-1/2">
                 <div className="flex items-center mb-3">
                   <CalendarIcon className="mr-2 h-5 w-5 text-violet-400" />
-                  <span className="font-medium text-violet-200">Select Date</span>
+                  <span className="font-medium text-violet-200">Selectați Data</span>
                 </div>
                 <div className="flex justify-center">
                   <Calendar
@@ -411,16 +411,16 @@ export default function BookingFormModal({ open, onClose, booking }: BookingForm
               <div className="w-full md:w-1/2">
                 <div className="flex items-center mb-3">
                   <Clock className="mr-2 h-5 w-5 text-violet-400" />
-                  <span className="font-medium text-violet-200">Select Time</span>
+                  <span className="font-medium text-violet-200">Selectați Ora</span>
                 </div>
                 {booking?.booking_time && (
                   <p className="text-violet-400 text-sm mb-2">
-                    Original time: <span className="font-semibold">{booking.booking_time}</span>
+                    Ora originală: <span className="font-semibold">{booking.booking_time}</span>
                   </p>
                 )}
                 <Select value={selectedTime} onValueChange={setSelectedTime}>
                   <SelectTrigger className="bg-gray-800 text-white border-gray-600">
-                    <SelectValue placeholder="Select a time" />
+                    <SelectValue placeholder="Selectați o oră" />
                   </SelectTrigger>
                   <SelectContent className="bg-gray-800 text-white border-gray-600">
                     {selectedDate && getAvailableHoursForSelectedDate().map((hour) => (
@@ -432,7 +432,7 @@ export default function BookingFormModal({ open, onClose, booking }: BookingForm
                 </Select>
                 {selectedDate && getAvailableHoursForSelectedDate().length === 0 && (
                   <p className="text-violet-300 text-sm mt-2">
-                    No available time slots for this date.
+                    Nu există intervale orare disponibile pentru această dată.
                   </p>
                 )}
               </div>
@@ -441,10 +441,10 @@ export default function BookingFormModal({ open, onClose, booking }: BookingForm
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose} className="border-gray-600 text-violet-800 hover:bg-gray-700">
-              Cancel
+              Anulează
             </Button>
             <Button type="submit" className="bg-violet-600 hover:bg-violet-700 text-white">
-              {booking ? 'Update Booking' : 'Create Booking'}
+              {booking ? 'Actualizează Rezervarea' : 'Creează Rezervare'}
             </Button>
           </DialogFooter>
         </form>

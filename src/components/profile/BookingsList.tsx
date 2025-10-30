@@ -60,7 +60,7 @@ const BookingsList: React.FC<BookingsListProps> = ({
   return (
     <div className="bg-gray-800/50 rounded-lg p-4 h-full">
       <h3 className="text-lg font-semibold text-violet-300 mb-4">
-        Bookings for {selectedDay.toLocaleDateString('en-US', { 
+        Rezervări pentru {selectedDay.toLocaleDateString('ro-RO', { 
           weekday: 'long', 
           year: 'numeric', 
           month: 'long', 
@@ -73,7 +73,7 @@ const BookingsList: React.FC<BookingsListProps> = ({
           <div className="flex items-center justify-center h-32 text-gray-400">
             <div className="text-center">
               <Calendar className="h-12 w-12 mx-auto mb-2 opacity-50" />
-              <p>No bookings for this date.</p>
+              <p>Nu există rezervări pentru această dată.</p>
             </div>
           </div>
         ) : (
@@ -84,16 +84,16 @@ const BookingsList: React.FC<BookingsListProps> = ({
               <CardContent className="p-4 space-y-3">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
-                    <div className="text-sm text-gray-400 mb-1">Service (recurring)</div>
-                    <div className="text-white font-medium">{r.service_type || 'Service'}</div>
+                    <div className="text-sm text-gray-400 mb-1">Serviciu (recurent)</div>
+                    <div className="text-white font-medium">{r.service_type || 'Serviciu'}</div>
                   </div>
                   <div className="text-right">
-                    <div className="text-sm text-gray-400 mb-1">Date</div>
+                    <div className="text-sm text-gray-400 mb-1">Data</div>
                     <div className="text-white text-sm">{formatBookingDateTime(r.date, r.hour?.slice(0,5) || '00:00')}</div>
                   </div>
                 </div>
                 {!r.status && (
-                  <div className="text-xs text-yellow-300">Skipped due to already taken date</div>
+                  <div className="text-xs text-yellow-300">Omis din cauza datei deja ocupate</div>
                 )}
                 <div className="flex justify-end space-x-2 pt-2 border-t border-gray-700">
                   {/* Cancel single instance if handler provided and we have instance id */}
@@ -104,7 +104,7 @@ const BookingsList: React.FC<BookingsListProps> = ({
                       onClick={() => onCancelRecurringInstance(r)}
                       className="text-yellow-300 hover:text-yellow-200 hover:bg-yellow-500/10 transition-colors duration-200"
                     >
-                      Cancel this recurring
+                      Anulează această recurență
                     </Button>
                   )}
                   {/* Cancel entire series */}
@@ -118,7 +118,7 @@ const BookingsList: React.FC<BookingsListProps> = ({
                       } else {
                         onCancelRecurring({
                           id: r.booking_id,
-                          service_type: r.service_type || 'Service',
+                          service_type: r.service_type || 'Serviciu',
                           booking_date: r.date,
                           booking_time: (r.hour || '').slice(0,5),
                         } as Booking);
@@ -126,7 +126,7 @@ const BookingsList: React.FC<BookingsListProps> = ({
                     }}
                     className="text-violet-300 hover:text-violet-200 hover:bg-violet-500/20 transition-colors duration-200"
                   >
-                    Cancel all recurrings
+                    Anulează toate recurențele
                   </Button>
                 </div>
               </CardContent>
@@ -139,11 +139,11 @@ const BookingsList: React.FC<BookingsListProps> = ({
               <CardContent className="p-4 space-y-3">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
-                    <div className="text-sm text-gray-400 mb-1">Service</div>
+                    <div className="text-sm text-gray-400 mb-1">Serviciu</div>
                     <div className="text-white font-medium">{booking.service_type}</div>
                   </div>
                   <div className="text-right">
-                    <div className="text-sm text-gray-400 mb-1">Date</div>
+                    <div className="text-sm text-gray-400 mb-1">Data</div>
                     <div className="text-white text-sm">{formatBookingDateTime(booking.booking_date, booking.booking_time)}</div>
                   </div>
                 </div>
@@ -151,20 +151,20 @@ const BookingsList: React.FC<BookingsListProps> = ({
                   {/* Only allow edit/cancel for concrete booking rows */}
                   <Button variant="ghost" size="sm" onClick={() => onEditClick(booking)} className="text-white hover:text-gray-300 hover:bg-gray-700/50 transition-colors duration-200 text-xs px-2 py-1">
                     <Edit className="h-3 w-3 mr-1" />
-                    Edit
+                    Editează
                   </Button>
                   <Button variant="ghost" size="sm" onClick={() => onCancelBooking(booking)} className="text-red-400 hover:text-red-300 hover:bg-red-500/20 transition-colors duration-200 text-xs px-2 py-1">
                     <Trash2 className="h-3 w-3 mr-1" />
-                    Cancel
+                    Anulează
                   </Button>
                   {user && (
                     booking.recurring ? (
                       <Button variant="ghost" size="sm" onClick={() => onCancelRecurring(booking)} className="text-violet-300 hover:text-violet-200 hover:bg-violet-500/20 transition-colors duration-200 text-xs px-2 py-1">
-                        Cancel Recurring
+                        Anulează Recurența
                       </Button>
                     ) : (
                       <Button variant="ghost" size="sm" onClick={() => onOpenRecurring(booking)} className="text-green-300 hover:text-green-200 hover:bg-green-500/20 transition-colors duration-200 text-xs px-2 py-1">
-                        Make Recurring
+                        Fă Recurent
                       </Button>
                     )
                   )}

@@ -66,7 +66,7 @@ const SERVICE_COLORS = [
 const HOUR_RANGE = [
   "08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "20:00"
 ];
-const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const DAYS = ["Luni", "Marți", "Miercuri", "Joi", "Vineri", "Sâmbătă", "Duminică"];
 
 function getLast30DaysDate() {
   const d = new Date();
@@ -156,37 +156,37 @@ export default function Analytics() {
 
   return (
     <div className="max-w-4xl mx-auto p-4 bg-gray-900 min-h-screen">
-      <h2 className="text-2xl font-bold mb-6 text-violet-400">Analytics</h2>
+      <h2 className="text-2xl font-bold mb-6 text-violet-400">Analize</h2>
       <div className="bg-gray-800/50 rounded-lg shadow-lg p-6 mb-8">
-        <h3 className="text-lg font-semibold mb-4 text-violet-300">Bookings per Service (Last 30 Days)</h3>
+        <h3 className="text-lg font-semibold mb-4 text-violet-300">Rezervări pe Serviciu (Ultimele 30 de zile)</h3>
         {loading ? (
-          <p className="text-gray-400">Loading analytics...</p>
+          <p className="text-gray-400">Se încarcă analizele...</p>
         ) : error ? (
-          <p className="text-red-500">Error: {error}</p>
+          <p className="text-red-500">Eroare: {error}</p>
         ) : (
           <ResponsiveContainer width="100%" height={350}>
             <BarChart data={serviceData} margin={{ top: 16, right: 24, left: 0, bottom: 32 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="service" angle={-15} textAnchor="end" interval={0} tick={{ fontSize: 11 }} height={60} dy={10} />
-              <YAxis label={{ value: "Bookings", angle: -90, position: "insideLeft", fontSize: 14 }} allowDecimals={false} domain={[0, 10]} />
+              <YAxis label={{ value: "Rezervări", angle: -90, position: "insideLeft", fontSize: 14 }} allowDecimals={false} domain={[0, 10]} />
               <Tooltip />
-              <Bar dataKey="count" name="Bookings" fill="#a78bfa" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="count" name="Rezervări" fill="#a78bfa" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         )}
       </div>
       <div className="bg-gray-800/50 rounded-lg shadow-lg p-6 mb-8">
-        <h3 className="text-lg font-semibold mb-4 text-violet-300">Bookings by Day of Week & Hour (Last 30 Days)</h3>
+        <h3 className="text-lg font-semibold mb-4 text-violet-300">Rezervări pe Zi și Oră (Ultimele 30 de zile)</h3>
         {loading ? (
-          <p className="text-gray-400">Loading analytics...</p>
+          <p className="text-gray-400">Se încarcă analizele...</p>
         ) : error ? (
-          <p className="text-red-500">Error: {error}</p>
+          <p className="text-red-500">Eroare: {error}</p>
         ) : (
           <ResponsiveContainer width="100%" height={350}>
             <BarChart data={hourlyData} margin={{ top: 16, right: 24, left: 0, bottom: 32 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="day" tick={{ fontSize: 11 }} height={50} dy={8} />
-              <YAxis label={{ value: "Bookings", angle: -90, position: "insideLeft", fontSize: 14 }} allowDecimals={false} domain={[0, 10]} />
+              <YAxis label={{ value: "Rezervări", angle: -90, position: "insideLeft", fontSize: 14 }} allowDecimals={false} domain={[0, 10]} />
               <Tooltip />
               {/* One bar per hour slot */}
               {HOUR_RANGE.map((h, idx) => (
@@ -197,32 +197,32 @@ export default function Analytics() {
         )}
       </div>
       <div className="bg-gray-800/50 rounded-lg shadow-lg p-6 mb-8">
-        <h3 className="text-lg font-semibold mb-4 text-violet-300">Bookings Over Time (Last 30 Days)</h3>
+        <h3 className="text-lg font-semibold mb-4 text-violet-300">Evoluția Rezervărilor (Ultimele 30 de zile)</h3>
         {loading ? (
-          <p className="text-gray-400">Loading analytics...</p>
+          <p className="text-gray-400">Se încarcă analizele...</p>
         ) : error ? (
-          <p className="text-red-500">Error: {error}</p>
+          <p className="text-red-500">Eroare: {error}</p>
         ) : (
           <ResponsiveContainer width="100%" height={350}>
             <LineChart data={lineData} margin={{ top: 16, right: 24, left: 0, bottom: 32 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="date" tick={{ fontSize: 11 }} interval={3} height={50} dy={8} />
-              <YAxis label={{ value: "Bookings", angle: -90, position: "insideLeft", fontSize: 14 }} allowDecimals={false} domain={[0, 10]} />
+              <YAxis label={{ value: "Rezervări", angle: -90, position: "insideLeft", fontSize: 14 }} allowDecimals={false} domain={[0, 10]} />
               <Tooltip />
-              <Line type="monotone" dataKey="count" stroke="#a78bfa" strokeWidth={3} dot={{ r: 4, fill: '#a78bfa' }} name="Bookings" />
+              <Line type="monotone" dataKey="count" stroke="#a78bfa" strokeWidth={3} dot={{ r: 4, fill: '#a78bfa' }} name="Rezervări" />
             </LineChart>
           </ResponsiveContainer>
         )}
       </div>
       <div className="bg-gray-800/50 rounded-lg shadow-lg p-6 mb-8">
-        <h3 className="text-lg font-semibold mb-4 text-violet-300">Booking Distribution by Service (Last 30 Days)</h3>
+        <h3 className="text-lg font-semibold mb-4 text-violet-300">Distribuția Rezervărilor pe Serviciu (Ultimele 30 de zile)</h3>
         {loading ? (
-          <p className="text-gray-400">Loading analytics...</p>
+          <p className="text-gray-400">Se încarcă analizele...</p>
         ) : error ? (
-          <p className="text-red-500">Error: {error}</p>
+          <p className="text-red-500">Eroare: {error}</p>
         ) : (
           <ResponsiveContainer width="100%" height={350}>
-            <PieChart aria-label="Booking Distribution by Service">
+            <PieChart aria-label="Distribuția Rezervărilor pe Serviciu">
               <Pie
                 data={serviceData.filter(d => d.count > 0)} // Only render slices with data
                 dataKey="count"
@@ -240,7 +240,7 @@ export default function Analytics() {
                   <Cell key={`cell-${idx}`} fill={SERVICE_COLORS[SERVICE_TYPES.indexOf(entry.service) % SERVICE_COLORS.length]} />
                 ))}
               </Pie>
-              <Tooltip formatter={(value) => `${value} bookings`} />
+              <Tooltip formatter={(value) => `${value} rezervări`} />
             </PieChart>
           </ResponsiveContainer>
         )}

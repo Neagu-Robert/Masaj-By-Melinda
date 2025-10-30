@@ -17,46 +17,46 @@ import { logNotification } from './loggingService';
 const smsTemplates = {
   // Customer creates booking - Admin receives SMS with customer info
   booking_created_customer: (data: BookingNotificationData): string => {
-    return `Masaj by Melinda: New booking created by customer ${data.userName}. Service: ${data.serviceName}, Date: ${data.dateTime}, Duration: ${data.duration} min.`;
+    return `Masaj by Melinda: Rezervare nouă creată de clientul ${data.userName}. Serviciu: ${data.serviceName}, Dată: ${data.dateTime}, Durată: ${data.duration} min.`;
   },
 
   // User updates booking from profile - Admin receives SMS with updated info
   booking_updated_profile: (data: BookingNotificationData): string => {
-    return `Masaj by Melinda: Booking updated by ${data.userName}. New details: ${data.serviceName} on ${data.dateTime}, Duration: ${data.duration} min.`;
+    return `Masaj by Melinda: Rezervare actualizată de ${data.userName}. Detalii noi: ${data.serviceName} pe ${data.dateTime}, Durată: ${data.duration} min.`;
   },
 
   // User cancels booking from profile - Admin receives SMS with cancellation info
   booking_cancelled_profile: (data: BookingNotificationData): string => {
-    return `Masaj by Melinda: Booking cancelled by ${data.userName}. Cancelled booking: ${data.serviceName} on ${data.dateTime}.`;
+    return `Masaj by Melinda: Rezervare anulată de ${data.userName}. Rezervare anulată: ${data.serviceName} pe ${data.dateTime}.`;
   },
 
   // Admin creates booking - Admin receives SMS with booking info
   booking_created_admin: (data: BookingNotificationData): string => {
-    return `Masaj by Melinda: New booking created by admin. Customer: ${data.userName}, Service: ${data.serviceName}, Date: ${data.dateTime}, Duration: ${data.duration} min.`;
+    return `Masaj by Melinda: Rezervare nouă creată de admin. Client: ${data.userName}, Serviciu: ${data.serviceName}, Dată: ${data.dateTime}, Durată: ${data.duration} min.`;
   },
 
   // Admin updates booking - Admin receives SMS with updated info
   booking_updated_admin: (data: BookingNotificationData): string => {
-    return `Masaj by Melinda: Booking updated by admin. Customer: ${data.userName}, Service: ${data.serviceName}, Date: ${data.dateTime}, Duration: ${data.duration} min.`;
+    return `Masaj by Melinda: Rezervare actualizată de admin. Client: ${data.userName}, Serviciu: ${data.serviceName}, Dată: ${data.dateTime}, Durată: ${data.duration} min.`;
   }
   ,
   // Recurring enabled by user
   recurring_created_profile: (data: BookingNotificationData): string => {
     const meta = data.notes ? ` (${data.notes})` : '';
-    return `Masaj by Melinda: A recurring booking has been enabled by ${data.userName} for ${data.serviceName} starting ${data.dateTime}${meta}.`;
+    return `Masaj by Melinda: O rezervare recurentă a fost activată de ${data.userName} pentru ${data.serviceName} începând cu ${data.dateTime}${meta}.`;
   },
   // Recurring cancelled by user
   recurring_cancelled_profile: (data: BookingNotificationData): string => {
-    return `Masaj by Melinda: A recurring booking has been cancelled by ${data.userName} for ${data.serviceName} (original ${data.dateTime}).`;
+    return `Masaj by Melinda: O rezervare recurentă a fost anulată de ${data.userName} pentru ${data.serviceName} (original ${data.dateTime}).`;
   }
   ,
   // Single-instance cancelled by user (notify admins)
   recurring_instance_cancelled_profile: (data: BookingNotificationData): string => {
-    return `Masaj by Melinda: A single recurring instance has been cancelled by ${data.userName} for ${data.serviceName} on ${data.dateTime}.`;
+    return `Masaj by Melinda: O singură instanță recurentă a fost anulată de ${data.userName} pentru ${data.serviceName} pe ${data.dateTime}.`;
   },
   // Single-instance cancelled by admin (template included for completeness)
   recurring_instance_cancelled_admin: (data: BookingNotificationData): string => {
-    return `Masaj by Melinda: A single recurring instance has been cancelled by admin for ${data.userName}'s ${data.serviceName} on ${data.dateTime}.`;
+    return `Masaj by Melinda: O singură instanță recurentă a fost anulată de admin pentru ${data.userName} - ${data.serviceName} pe ${data.dateTime}.`;
   }
 };
 
@@ -83,21 +83,21 @@ export const sendSmsNotification = async (
   payload: NotificationPayload
 ): Promise<NotificationResult> => {
   if (!isSmsConfigured()) {
-    console.error('SMS notifications are not configured or enabled');
+    console.error('Notificările SMS nu sunt configurate sau activate');
     return {
       success: false,
       channel: 'sms',
-      error: new Error('SMS notifications are not configured or enabled'),
+      error: new Error('Notificările SMS nu sunt configurate sau activate'),
       timestamp: Date.now()
     };
   }
 
   if (!payload.recipient.phone) {
-    console.error('Recipient phone number is required');
+    console.error('Numărul de telefon al destinatarului este obligatoriu');
     return {
       success: false,
       channel: 'sms',
-      error: new Error('Recipient phone number is required'),
+      error: new Error('Numărul de telefon al destinatarului este obligatoriu'),
       timestamp: Date.now()
     };
   }
@@ -106,7 +106,7 @@ export const sendSmsNotification = async (
     // Get the appropriate template
     const templateFn = smsTemplates[payload.type];
     if (!templateFn) {
-      throw new Error(`SMS template not found for notification type: ${payload.type}`);
+      throw new Error(`Șablonul SMS nu a fost găsit pentru tipul de notificare: ${payload.type}`);
     }
 
     // Generate the SMS content from template
@@ -135,19 +135,19 @@ export const sendSmsNotification = async (
     // Handle CORS and network errors
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('SMS API error:', response.status, response.statusText, errorText);
+      console.error('Eroare API SMS:', response.status, response.statusText, errorText);
       
       if (response.status === 0 || response.status === 403) {
-        throw new Error('CORS or network error - SMS service temporarily unavailable');
+        throw new Error('Eroare CORS sau de rețea - serviciul SMS este temporar indisponibil');
       }
       
-      throw new Error(`SMS API error: ${response.status} ${response.statusText}`);
+      throw new Error(`Eroare API SMS: ${response.status} ${response.statusText}`);
     }
 
     const data = await response.json();
 
     if (!data.success) {
-      throw new Error(data.error || 'Failed to send SMS');
+      throw new Error(data.error || 'Eroare la trimiterea SMS-ului');
     }
 
     // Log the successful notification
@@ -175,7 +175,7 @@ export const sendSmsNotification = async (
     };
 
   } catch (error) {
-    console.error('Error sending SMS notification:', error);
+    console.error('Eroare la trimiterea notificării SMS:', error);
 
     // Log the failed attempt
     await logNotification({
@@ -206,11 +206,11 @@ export const retrySmsNotification = async (
   retryCount = 0
 ): Promise<NotificationResult> => {
   if (retryCount >= MAX_RETRY_ATTEMPTS) {
-    console.error(`Max retry attempts (${MAX_RETRY_ATTEMPTS}) reached for SMS notification`);
+    console.error(`S-au atins numărul maxim de reîncercări (${MAX_RETRY_ATTEMPTS}) pentru notificarea SMS`);
     return {
       success: false,
       channel: 'sms',
-      error: new Error(`Max retry attempts (${MAX_RETRY_ATTEMPTS}) reached`),
+      error: new Error(`S-au atins numărul maxim de reîncercări (${MAX_RETRY_ATTEMPTS})`),
       timestamp: Date.now()
     };
   }
@@ -219,19 +219,19 @@ export const retrySmsNotification = async (
   const delay = RETRY_DELAY_MS * Math.pow(2, retryCount);
   await new Promise(resolve => setTimeout(resolve, delay));
 
-  console.log(`Retrying SMS notification (attempt ${retryCount + 1}/${MAX_RETRY_ATTEMPTS})`);
+  console.log(`Se reîncearcă notificarea SMS (încercarea ${retryCount + 1}/${MAX_RETRY_ATTEMPTS})`);
   
   try {
     const result = await sendSmsNotification(payload);
     
     // If SMS was accepted but we want to be extra sure, we could add additional verification
     if (result.success && result.details) {
-      console.log('SMS retry successful with details:', result.details);
+      console.log('Reîncercarea SMS a avut succes, cu detalii:', result.details);
     }
     
     return result;
   } catch (error) {
-    console.error(`SMS retry ${retryCount + 1} failed:`, error);
+    console.error(`Reîncercarea SMS ${retryCount + 1} a eșuat:`, error);
     return retrySmsNotification(payload, retryCount + 1);
   }
 }; 

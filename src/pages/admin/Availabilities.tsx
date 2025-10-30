@@ -226,12 +226,12 @@ export default function Availabilities() {
       });
     });
     if (upserts.length === 0) {
-      toast.info("No changes to save.");
+      toast.info("Nu sunt modificări de salvat.");
       return;
     }
     try {
       await upsertAvailabilities(upserts);
-      toast.success("Availabilities saved successfully!");
+      toast.success("Disponibilitățile au fost salvate cu succes!");
 
       // Log the action
       await logAdminAction(
@@ -243,23 +243,23 @@ export default function Availabilities() {
       );
     } catch (error) {
       console.error("Error saving availabilities:", error);
-      toast.error("Failed to save availabilities.");
+      toast.error("Salvarea disponibilităților a eșuat.");
     }
   };
 
   return (
     <div className="min-h-screen bg-gray-900 text-white p-4 md:p-6">
-      <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-violet-400">Manage Availabilities</h2>
+      <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-violet-400">Gestionare Disponibilități</h2>
       <div className="flex items-center justify-between mb-4 md:mb-6">
-        <button onClick={() => setCurrentMonth(subMonths(currentMonth, 1))} className="px-3 py-2 bg-gray-700 rounded hover:bg-gray-600 transition-colors">Prev</button>
+        <button onClick={() => setCurrentMonth(subMonths(currentMonth, 1))} className="px-3 py-2 bg-gray-700 rounded hover:bg-gray-600 transition-colors">Înapoi</button>
         <span className="text-lg md:text-xl font-semibold">{monthStr}</span>
-        <button onClick={() => setCurrentMonth(addMonths(currentMonth, 1))} className="px-3 py-2 bg-gray-700 rounded hover:bg-gray-600 transition-colors">Next</button>
+        <button onClick={() => setCurrentMonth(addMonths(currentMonth, 1))} className="px-3 py-2 bg-gray-700 rounded hover:bg-gray-600 transition-colors">Următorul</button>
       </div>
-      {loading && <div className="mb-4 text-violet-400">Loading...</div>}
+      {loading && <div className="mb-4 text-violet-400">Se încarcă...</div>}
       
       {/* Calendar grid */}
       <div className="grid grid-cols-7 gap-2 mb-6 text-xs md:text-base">
-        {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(d => (
+        {["Lun", "Mar", "Mie", "Joi", "Vin", "Sâm", "Dum"].map(d => (
           <div key={d} className="text-center text-gray-400 text-sm md:text-base font-medium">{d}</div>
         ))}
         {days.map(day => {
@@ -296,7 +296,7 @@ export default function Availabilities() {
                 disabled={selectedDay < today}
                 className={`px-4 py-2 rounded bg-gray-700 hover:bg-gray-600 transition-colors flex-1 md:flex-none ${selectedDay < today ? "cursor-not-allowed opacity-50" : ""}`}
               >
-                Toggle whole day {isDayAllOff(selectedDay) ? "on" : "off"}
+                Comută toată ziua {isDayAllOff(selectedDay) ? "pornit" : "oprit"}
               </button>
               <button
                 onClick={() => {
@@ -310,7 +310,7 @@ export default function Availabilities() {
                 }}
                 className={`px-4 py-2 rounded bg-violet-600 hover:bg-violet-700 transition-colors flex-1 md:flex-none`}
               >
-                Recurring block
+                Blocare recurentă
               </button>
             </div>
           </div>
@@ -326,7 +326,7 @@ export default function Availabilities() {
                   key={hour}
                   onClick={() => toggleHour(selectedDay, hour)}
                   disabled={past || booked}
-                  title={booked ? 'Booked' : undefined}
+                  title={booked ? 'Rezervat' : undefined}
                   className={`px-3 py-3 md:py-4 rounded font-mono transition-colors text-sm md:text-base font-medium
                     ${past ? "bg-gray-700/50 text-gray-500 cursor-not-allowed" : booked ? "bg-red-600 text-white cursor-not-allowed" : available ? "bg-violet-400 text-gray-900 hover:bg-violet-300" : "bg-gray-700 text-gray-400 hover:bg-gray-600"}
                   `}
@@ -341,10 +341,10 @@ export default function Availabilities() {
       {/* Active recurring blocks list */}
       <div className="bg-gray-800 rounded p-4 md:p-6 mb-4 md:mb-6">
         <div className="flex items-center justify-between mb-3">
-          <span className="text-lg font-semibold text-violet-300">Active recurring blocks (this range)</span>
+          <span className="text-lg font-semibold text-violet-300">Blocări recurente active (în acest interval)</span>
         </div>
         {activeRecurring.length === 0 ? (
-          <div className="text-gray-400">No active recurring blocks overlapping this month.</div>
+          <div className="text-gray-400">Niciun blocaj recurent activ care se suprapune cu această lună.</div>
         ) : (
           <div className="space-y-2">
             {activeRecurring.map((r) => (
@@ -358,7 +358,7 @@ export default function Availabilities() {
                   onClick={async () => {
                     try {
                       await cancelRecurringAvailability(r.id);
-                      toast.success('Recurring block cancelled');
+                      toast.success('Blocajul recurent a fost anulat');
                       const monthStart = format(startOfMonth(currentMonth), "yyyy-MM-dd");
                       const monthEnd = format(endOfMonth(currentMonth), "yyyy-MM-dd");
                       await fetchAvailabilities(monthStart, monthEnd);
@@ -370,12 +370,12 @@ export default function Availabilities() {
                       setActiveRecurring(data || []);
                     } catch (e) {
                       console.error(e);
-                      toast.error('Failed to cancel recurring block');
+                      toast.error('Anularea blocajului recurent a eșuat');
                     }
                   }}
                   className="px-3 py-1 rounded bg-red-600 hover:bg-red-700 text-white text-sm"
                 >
-                  Cancel
+                  Anulează
                 </button>
               </div>
             ))}
@@ -388,49 +388,49 @@ export default function Availabilities() {
         disabled={!dirty || loading}
         className={`mt-4 md:mt-6 px-6 py-3 md:py-4 rounded bg-violet-400 text-gray-900 font-bold transition-opacity text-base md:text-lg w-full md:w-auto ${dirty && !loading ? "opacity-100 hover:bg-violet-300" : "opacity-50 cursor-not-allowed"}`}
       >
-        {loading ? "Saving..." : "Save"}
+        {loading ? "Se salvează..." : "Salvează"}
       </button>
       {/* Recurring Modal */}
       {recurringOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
           <div className="bg-gray-900 border border-gray-700 rounded-lg w-full max-w-lg p-6">
-            <h3 className="text-xl font-semibold text-violet-300 mb-4">Create recurring block</h3>
+            <h3 className="text-xl font-semibold text-violet-300 mb-4">Creează blocaj recurent</h3>
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm text-gray-300 mb-1">Recurrence</label>
+                  <label className="block text-sm text-gray-300 mb-1">Recurență</label>
                   <select value={recurrenceType} onChange={(e)=> setRecurrenceType(e.target.value as RecurrenceTypeAvail)} className="w-full bg-gray-800 text-white border border-gray-600 rounded px-3 py-2">
-                    <option value="daily">Daily</option>
-                    <option value="weekly">Weekly</option>
-                    <option value="biweekly">Biweekly</option>
+                    <option value="daily">Zilnic</option>
+                    <option value="weekly">Săptămânal</option>
+                    <option value="biweekly">La două săptămâni</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-300 mb-1">Duration</label>
+                  <label className="block text-sm text-gray-300 mb-1">Durată</label>
                   <select value={horizon} onChange={(e)=> setHorizon(Number(e.target.value) as 30|60|90)} className="w-full bg-gray-800 text-white border border-gray-600 rounded px-3 py-2">
-                    <option value={30}>30 days</option>
-                    <option value={60}>60 days</option>
-                    <option value={90}>90 days</option>
+                    <option value={30}>30 de zile</option>
+                    <option value={60}>60 de zile</option>
+                    <option value={90}>90 de zile</option>
                   </select>
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm text-gray-300 mb-1">Hour</label>
+                  <label className="block text-sm text-gray-300 mb-1">Oră</label>
                   <select value={recurringHour} onChange={(e)=> setRecurringHour(e.target.value)} className="w-full bg-gray-800 text-white border border-gray-600 rounded px-3 py-2">
                     {HOURS.map(h => <option key={h} value={h}>{h}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-300 mb-1">Start date</label>
+                  <label className="block text-sm text-gray-300 mb-1">Data de început</label>
                   <input type="date" value={recurringStartDate || ''} onChange={(e)=> setRecurringStartDate(e.target.value || undefined)} className="w-full bg-gray-800 text-white border border-gray-600 rounded px-3 py-2" />
                 </div>
               </div>
               {(recurrenceType === 'weekly' || recurrenceType === 'biweekly') && (
                 <div>
-                  <label className="block text-sm text-gray-300 mb-2">Weekdays</label>
+                  <label className="block text-sm text-gray-300 mb-2">Zilele săptămânii</label>
                   <div className="grid grid-cols-7 gap-2 text-sm text-gray-200">
-                    {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map((d, idx) => (
+                    {['Dum','Lun','Mar','Mie','Joi','Vin','Sâm'].map((d, idx) => (
                       <label key={d} className="flex items-center gap-1">
                         <input type="checkbox" checked={weekdays.includes(idx)} onChange={(e)=> setWeekdays(prev => e.target.checked ? [...prev, idx] : prev.filter(x => x !== idx))} />
                         {d}
@@ -447,23 +447,23 @@ export default function Availabilities() {
                       const res = await previewCreateRecurringAvailability(recurringHour, recurrenceType, horizon, recurringStartDate, weekdays);
                       setPreview(res.preview || []);
                     } catch (e:any) {
-                      toast.error(e.message || 'Preview failed');
+                      toast.error(e.message || 'Previzualizarea a eșuat');
                     } finally { setPreviewLoading(false); }
                   }}
                   className="px-4 py-2 rounded bg-violet-600 hover:bg-violet-700 text-white"
                   disabled={previewLoading}
                 >
-                  {previewLoading ? 'Previewing...' : 'Preview'}
+                  {previewLoading ? 'Se previzualizează...' : 'Previzualizare'}
                 </button>
-                <button onClick={()=> setRecurringOpen(false)} className="px-4 py-2 rounded border border-gray-600 text-gray-300 hover:bg-gray-800">Close</button>
+                <button onClick={()=> setRecurringOpen(false)} className="px-4 py-2 rounded border border-gray-600 text-gray-300 hover:bg-gray-800">Închide</button>
               </div>
               {preview && (
                 <div className="max-h-64 overflow-auto border border-gray-700 rounded p-3 bg-gray-800">
-                  <div className="text-sm text-gray-300 mb-2">Preview ({preview.length} dates)</div>
+                  <div className="text-sm text-gray-300 mb-2">Previzualizare ({preview.length} date)</div>
                   <ul className="space-y-1 text-sm">
                     {preview.map((p, idx) => (
                       <li key={idx} className={p.available ? 'text-green-300' : 'text-gray-400'}>
-                        {p.date} at {p.time} {p.available ? '' : `(unavailable: ${p.reason})`}
+                        {p.date} la {p.time} {p.available ? '' : `(indisponibil: ${p.reason})`}
                       </li>
                     ))}
                   </ul>
@@ -472,7 +472,7 @@ export default function Availabilities() {
                       onClick={async ()=>{
                         try {
                           const res = await confirmCreateRecurringAvailability(recurringHour, recurrenceType, horizon, recurringStartDate, weekdays);
-                          toast.success(`Created ${res.createdCount} blocks, skipped ${res.skippedCount}`);
+                          toast.success(`S-au creat ${res.createdCount} blocaje, s-au omis ${res.skippedCount}`);
                           setRecurringOpen(false);
                           setPreview(null);
                           const monthStart = format(startOfMonth(currentMonth), "yyyy-MM-dd");
@@ -486,12 +486,12 @@ export default function Availabilities() {
                           setActiveRecurring(data || []);
                         } catch (e:any) {
                           console.error(e);
-                          toast.error(e.message || 'Failed to create');
+                          toast.error(e.message || 'Crearea a eșuat');
                         }
                       }}
                       className="px-4 py-2 rounded bg-green-600 hover:bg-green-700 text-white"
                     >
-                      Confirm
+                      Confirmă
                     </button>
                   </div>
                 </div>

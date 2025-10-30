@@ -60,7 +60,7 @@ export default function Bookings() {
     setModalOpen(true);
   };
   const handleDelete = async (id: string) => {
-    if (!window.confirm("Are you sure you want to delete this booking?")) return;
+    if (!window.confirm("Sigur doriți să ștergeți această rezervare?")) return;
     
     try {
       // Get booking details before deletion
@@ -72,7 +72,7 @@ export default function Bookings() {
       
       // Delete the booking
       await deleteBooking(id);
-      toast({ title: "Booking deleted" });
+      toast({ title: "Rezervare ștearsă" });
       
       // Log the admin action
       await logAdminAction(
@@ -117,7 +117,7 @@ export default function Bookings() {
       }
     } catch (error) {
       console.error("Error deleting booking:", error);
-      toast({ title: "Failed to delete booking." });
+      toast({ title: "Eroare la ștergerea rezervării." });
     }
   };
   const handleCreate = () => {
@@ -132,10 +132,10 @@ export default function Bookings() {
   const handleModalSave = async (values: any) => {
     if (selectedBooking) {
       await updateBooking(selectedBooking.id, values);
-      toast({ title: "Booking updated" });
+      toast({ title: "Rezervare actualizată" });
     } else {
       await addBooking(values);
-      toast({ title: "Booking created" });
+      toast({ title: "Rezervare creată" });
     }
     setModalOpen(false);
     setSelectedBooking(null);
@@ -251,7 +251,7 @@ export default function Bookings() {
       const defaults = new Set(result.preview.filter(p => p.available).map(p => p.date));
       setSelectedPreviewDates(defaults);
     } catch (e) {
-      toast({ title: 'Error', description: (e as any).message, variant: 'destructive' });
+      toast({ title: 'Eroare', description: (e as any).message, variant: 'destructive' });
     } finally { setPreviewLoading(false); }
   };
   const confirmRecurring = async () => {
@@ -262,7 +262,7 @@ export default function Bookings() {
       setRecurringOpen(false);
       setPreview(null);
       setSelectedPreviewDates(new Set());
-      toast({ title: 'Recurring created', description: `${result.createdCount} instances created.` });
+      toast({ title: 'Recurență creată', description: `${result.createdCount} instanțe create.` });
       // Notify user via email only
       try {
         const serviceDetails = getServiceByName(selectedBookingForRecurring.service_type);
@@ -285,15 +285,15 @@ export default function Bookings() {
         });
       } catch (e) { console.error('Admin recurring create notify error:', e); }
     } catch (e) {
-      toast({ title: 'Error', description: (e as any).message, variant: 'destructive' });
+      toast({ title: 'Eroare', description: (e as any).message, variant: 'destructive' });
     }
   };
   const cancelRecurringAdmin = async (booking: any) => {
     try {
-      const ok = window.confirm('Cancel recurring and remove all future instances?');
+      const ok = window.confirm('Anulați recurența și eliminați toate instanțele viitoare?');
       if (!ok) return;
       const res = await cancelRecurring(booking.id);
-      toast({ title: 'Recurring cancelled', description: `${res.deletedCount} future instances removed.` });
+      toast({ title: 'Recurență anulată', description: `${res.deletedCount} instanțe viitoare eliminate.` });
       try {
         const serviceDetails = getServiceByName(booking.service_type);
         const serviceId = serviceDetails?.id || null;
@@ -314,7 +314,7 @@ export default function Bookings() {
         });
       } catch (e) { console.error('Admin recurring cancel notify error:', e); }
     } catch (e) {
-      toast({ title: 'Error', description: (e as any).message, variant: 'destructive' });
+      toast({ title: 'Eroare', description: (e as any).message, variant: 'destructive' });
     }
   };
 
@@ -328,13 +328,13 @@ export default function Bookings() {
 
   const handleCancelRecurringInstance = async (instance: { id?: string; booking_id: string; date: string; hour: string; service_type?: string; userName?: string; userEmail?: string; userPhone?: string }) => {
     if (!instance?.id) return;
-    const ok = window.confirm(`Cancel this specific recurring instance on ${instance.date}?`);
+    const ok = window.confirm(`Anulați această instanță recurentă specifică din ${instance.date}?`);
     if (!ok) return;
     try {
       await cancelRecurringInstance(instance.id);
       // Refresh list by removing the cancelled one from state
       setRecurringInstances(prev => prev.filter(r => r.id !== instance.id));
-      toast({ title: 'Recurring instance cancelled', description: `Instance on ${instance.date} cancelled.` });
+      toast({ title: 'Instanță recurentă anulată', description: `Instanța din ${instance.date} anulată.` });
       try {
         const serviceDetails = getServiceByName(instance.service_type || '');
         const serviceId = serviceDetails?.id || null;
@@ -358,26 +358,26 @@ export default function Bookings() {
         });
       } catch (e) { console.error('Admin single-instance cancel notify error:', e); }
     } catch (e) {
-      toast({ title: 'Error', description: (e as any).message, variant: 'destructive' });
+      toast({ title: 'Eroare', description: (e as any).message, variant: 'destructive' });
     }
   };
 
   return (
     <div className="max-w-6xl mx-auto p-4 bg-gray-900 min-h-screen">
-      <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-violet-400">Bookings</h2>
+      <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-violet-400">Rezervări</h2>
       
       {/* Filter/Search UI */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-3 md:gap-4 mb-4 md:mb-6">
         <Input
           type="text"
-          placeholder="Search by name"
+          placeholder="Caută după nume"
           value={searchName}
           onChange={e => setSearchName(e.target.value)}
           className="bg-gray-800/50 text-white border-gray-700 h-10 md:h-9"
         />
         <Input
           type="text"
-          placeholder="Search by email"
+          placeholder="Caută după email"
           value={searchEmail}
           onChange={e => setSearchEmail(e.target.value)}
           className="bg-gray-800/50 text-white border-gray-700 h-10 md:h-9"
@@ -390,10 +390,10 @@ export default function Bookings() {
         />
         <Select value={searchService} onValueChange={setSearchService}>
           <SelectTrigger className="bg-gray-800/50 text-white border-gray-700 h-10 md:h-9">
-            <SelectValue placeholder="All Services" />
+            <SelectValue placeholder="Toate Serviciile" />
           </SelectTrigger>
           <SelectContent className="bg-gray-800/90 text-white">
-            <SelectItem value="all">All Services</SelectItem>
+            <SelectItem value="all">Toate Serviciile</SelectItem>
             {serviceTypes.map((type: string) => (
               <SelectItem key={type} value={type}>{type}</SelectItem>
             ))}
@@ -403,7 +403,7 @@ export default function Bookings() {
       
       <Button onClick={handleCreate} className="mb-4 md:mb-6 bg-violet-600 hover:bg-violet-700 text-white h-10 md:h-9 w-full md:w-auto">
         <Plus className="h-4 w-4 mr-2" />
-        Add Booking
+        Adaugă Rezervare
       </Button>
       
       {/* Calendar - Visible on both mobile and desktop */}
@@ -411,7 +411,7 @@ export default function Bookings() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Calendar */}
           <div className="bg-gray-800/50 rounded-lg p-4">
-            <div className="mb-3 text-gray-300 flex items-center"><CalendarIcon className="h-4 w-4 mr-2"/>Select date</div>
+            <div className="mb-3 text-gray-300 flex items-center"><CalendarIcon className="h-4 w-4 mr-2"/>Selectați data</div>
             <div className="flex justify-center">
               <UICalendar
                 mode="single"
@@ -441,7 +441,7 @@ export default function Bookings() {
 
           {/* Desktop Day list - Hidden on mobile */}
           <div className="bg-gray-800/50 rounded-lg p-4 min-h-[300px] hidden md:block">
-            <h3 className="text-lg font-semibold text-violet-300 mb-4">Bookings for {selectedDay.toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' })}</h3>
+            <h3 className="text-lg font-semibold text-violet-300 mb-4">Rezervări pentru {selectedDay.toLocaleDateString('ro-RO', { weekday:'long', year:'numeric', month:'long', day:'numeric' })}</h3>
             <div className="space-y-3 max-h-[520px] overflow-y-auto pr-2">
               {(() => {
                 const dayKey = selectedDay.getTime();
@@ -451,8 +451,8 @@ export default function Bookings() {
                 const dayRecurring = recurringInstances
                   .filter(r => r.status && (() => { const d = parseLocalDate(r.date); return d.getTime()===dayKey; })())
                   .sort((a,b)=> parseLocalDate(a.date).getTime()-parseLocalDate(b.date).getTime());
-                if (loading) return <div className="text-gray-400">Loading...</div>;
-                if (dayBookings.length===0 && dayRecurring.length===0) return <div className="text-gray-400">No bookings for this date.</div>;
+                if (loading) return <div className="text-gray-400">Se încarcă...</div>;
+                if (dayBookings.length===0 && dayRecurring.length===0) return <div className="text-gray-400">Nu există rezervări pentru această dată.</div>;
                 return (
                   <>
                     {dayRecurring.map((r, idx) => (
@@ -460,22 +460,22 @@ export default function Bookings() {
                         <CardContent className="p-4 space-y-2">
                           <div className="flex justify-between items-start">
                             <div>
-                              <div className="text-sm text-gray-400">Recurring</div>
+                              <div className="text-sm text-gray-400">Recurent</div>
                               <div className="text-white font-medium">{r.service_type}</div>
                               <div className="text-xs text-gray-400">{r.userName} ({r.userEmail}) {r.userPhone ? `• ${r.userPhone}` : ''}</div>
                             </div>
-                            <div className="text-right text-white text-sm">{r.date} at {String(r.hour).slice(0,5)}</div>
+                            <div className="text-right text-white text-sm">{r.date} la {String(r.hour).slice(0,5)}</div>
                           </div>
                           <div className="flex justify-end gap-2 pt-2 border-t border-gray-700">
                             {r.id && (
                               <Button variant="ghost" size="sm" className="text-yellow-300 hover:text-yellow-200 hover:bg-yellow-500/10" onClick={() => handleCancelRecurringInstance(r)}>
-                                Cancel this recurring
+                                Anulează această recurență
                               </Button>
                             )}
                             <Button variant="ghost" size="sm" className="text-violet-300 hover:text-violet-200 hover:bg-violet-500/20" onClick={() => {
                               const root = bookings.find((b:any) => b.id === r.booking_id);
                               if (root) cancelRecurringAdmin(root);
-                            }}>Cancel all recurrings</Button>
+                            }}>Anulează toate recurențele</Button>
                           </div>
                         </CardContent>
                       </Card>
@@ -489,15 +489,15 @@ export default function Bookings() {
                               <div className="text-xs text-gray-400">{b.profiles?.email || '-'} • {b.phone_number}</div>
                               <div className="text-sm text-gray-300">{b.service_type}</div>
                             </div>
-                            <div className="text-right text-white text-sm">{b.booking_date} at {b.booking_time}</div>
+                            <div className="text-right text-white text-sm">{b.booking_date} la {b.booking_time}</div>
                           </div>
                           <div className="flex justify-end gap-2 pt-2 border-t border-gray-700">
-                            <Button variant="ghost" size="sm" onClick={() => handleEdit(b)} className="text-white hover:text-gray-300">Edit</Button>
-                            <Button variant="ghost" size="sm" onClick={() => handleDelete(b.id)} className="text-red-400 hover:text-red-300">Delete</Button>
+                            <Button variant="ghost" size="sm" onClick={() => handleEdit(b)} className="text-white hover:text-gray-300">Editează</Button>
+                            <Button variant="ghost" size="sm" onClick={() => handleDelete(b.id)} className="text-red-400 hover:text-red-300">Șterge</Button>
                             {b.recurring ? (
-                              <Button variant="ghost" size="sm" className="text-violet-300 hover:text-violet-200" onClick={() => cancelRecurringAdmin(b)}>Cancel Recurring</Button>
+                              <Button variant="ghost" size="sm" className="text-violet-300 hover:text-violet-200" onClick={() => cancelRecurringAdmin(b)}>Anulează Recurența</Button>
                             ) : (
-                              <Button variant="ghost" size="sm" className="text-green-300 hover:text-green-200" onClick={() => openRecurringModal(b)}>Make Recurring</Button>
+                              <Button variant="ghost" size="sm" className="text-green-300 hover:text-green-200" onClick={() => openRecurringModal(b)}>Fă Recurent</Button>
                             )}
                           </div>
                         </CardContent>
@@ -513,9 +513,9 @@ export default function Bookings() {
 
       {/* Mobile Card View - Only show for selected day */}
       <div className="md:hidden space-y-3 mt-6">
-        <h3 className="text-lg font-semibold text-violet-300 mb-4">{selectedDay.toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' })}</h3>
+        <h3 className="text-lg font-semibold text-violet-300 mb-4">{selectedDay.toLocaleDateString('ro-RO', { weekday:'long', year:'numeric', month:'long', day:'numeric' })}</h3>
         {loading ? (
-          <div className="text-center py-8 text-gray-400">Loading...</div>
+          <div className="text-center py-8 text-gray-400">Se încarcă...</div>
         ) : (() => {
           const dayKey = selectedDay.getTime();
           const dayBookings = filteredBookings
@@ -526,7 +526,7 @@ export default function Bookings() {
             .sort((a,b)=> parseLocalDate(a.date).getTime()-parseLocalDate(b.date).getTime());
           
           if (dayBookings.length === 0 && dayRecurring.length === 0) {
-            return <div className="text-center py-8 text-gray-400">No bookings for this date.</div>;
+            return <div className="text-center py-8 text-gray-400">Nu există rezervări pentru această dată.</div>;
           }
           
           return (
@@ -537,12 +537,12 @@ export default function Bookings() {
                   <CardContent className="p-4 space-y-3">
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
-                        <div className="text-sm text-gray-400 mb-1">Recurring</div>
+                        <div className="text-sm text-gray-400 mb-1">Recurent</div>
                         <div className="text-white font-medium">{r.service_type}</div>
                         <div className="text-xs text-gray-400">{r.userName} ({r.userEmail})</div>
                       </div>
                       <div className="text-right">
-                        <div className="text-sm text-gray-400 mb-1">Time</div>
+                        <div className="text-sm text-gray-400 mb-1">Oră</div>
                         <div className="text-white text-sm">{String(r.hour).slice(0,5)}</div>
                       </div>
                     </div>
@@ -550,14 +550,14 @@ export default function Bookings() {
                     <div className="flex justify-end space-x-2 pt-2 border-t border-gray-700">
                       {r.id && (
                         <Button variant="ghost" size="sm" className="text-yellow-300 hover:text-yellow-200 hover:bg-yellow-500/10" onClick={() => handleCancelRecurringInstance(r)}>
-                          Cancel this recurring
+                          Anulează această recurență
                         </Button>
                       )}
                       <Button variant="ghost" size="sm" className="text-violet-300 hover:text-violet-200 hover:bg-violet-500/20" onClick={() => {
                         const root = bookings.find((b:any) => b.id === r.booking_id);
                         if (root) cancelRecurringAdmin(root);
                       }}>
-                        Cancel all recurrings
+                        Anulează toate recurențele
                       </Button>
                     </div>
                   </CardContent>
@@ -570,11 +570,11 @@ export default function Bookings() {
                   <CardContent className="p-4 space-y-3">
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
-                        <div className="text-sm text-gray-400 mb-1">Name</div>
+                        <div className="text-sm text-gray-400 mb-1">Nume</div>
                         <div className="text-white font-medium">{b.first_name} {b.last_name}</div>
                       </div>
                       <div className="text-right">
-                        <div className="text-sm text-gray-400 mb-1">Time</div>
+                        <div className="text-sm text-gray-400 mb-1">Oră</div>
                         <div className="text-white text-sm">{b.booking_time}</div>
                       </div>
                     </div>
@@ -585,32 +585,32 @@ export default function Bookings() {
                         <div className="text-white text-sm">{b.profiles?.email || '-'}</div>
                       </div>
                       <div className="text-right">
-                        <div className="text-sm text-gray-400 mb-1">Phone</div>
+                        <div className="text-sm text-gray-400 mb-1">Telefon</div>
                         <div className="text-white text-sm">{b.phone_number}</div>
                       </div>
                     </div>
                     
                     <div>
-                      <div className="text-sm text-gray-400 mb-1">Service</div>
+                      <div className="text-sm text-gray-400 mb-1">Serviciu</div>
                       <div className="text-violet-300 font-medium">{b.service_type}</div>
                     </div>
                     
                     <div className="flex flex-wrap justify-end gap-2 pt-2 border-t border-gray-700">
                       <Button variant="ghost" size="sm" onClick={() => handleEdit(b)} className="text-white hover:text-gray-300 text-xs px-2 py-1">
                         <Edit className="h-3 w-3 mr-1" />
-                        Edit
+                        Editează
                       </Button>
                       <Button variant="ghost" size="sm" onClick={() => handleDelete(b.id)} className="text-red-400 hover:text-red-300 text-xs px-2 py-1">
                         <Trash2 className="h-3 w-3 mr-1" />
-                        Delete
+                        Șterge
                       </Button>
                       {b.recurring ? (
                         <Button variant="ghost" size="sm" className="text-violet-300 hover:text-violet-200 text-xs px-2 py-1" onClick={() => cancelRecurringAdmin(b)}>
-                          Cancel Recurring
+                          Anulează Recurența
                         </Button>
                       ) : (
                         <Button variant="ghost" size="sm" className="text-green-300 hover:text-green-200 text-xs px-2 py-1" onClick={() => openRecurringModal(b)}>
-                          Make Recurring
+                          Fă Recurent
                         </Button>
                       )}
                     </div>
@@ -628,43 +628,53 @@ export default function Bookings() {
       {recurringOpen && selectedBookingForRecurring && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
           <div className="bg-gray-900 border border-gray-700 rounded-lg w-full max-w-lg p-6">
-            <h3 className="text-xl font-semibold text-violet-300 mb-4">Make Recurring</h3>
+            <h3 className="text-xl font-semibold text-violet-300 mb-4">Fă Recurent</h3>
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm text-gray-300 mb-1">Recurrence</label>
-                  <select value={recurrenceType} onChange={(e)=> setRecurrenceType(e.target.value as RecurrenceType)} className="w-full bg-gray-800 text-white border border-gray-600 rounded px-3 py-2">
-                    <option value="weekly">Weekly</option>
-                    <option value="biweekly">Biweekly</option>
-                  </select>
+                  <label className="block text-sm text-gray-300 mb-1">Recurență</label>
+                  <Select value={recurrenceType} onValueChange={(v) => setRecurrenceType(v as RecurrenceType)}>
+                    <SelectTrigger className="w-full bg-gray-800 text-white border border-gray-600">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-800/90 text-white">
+                      <SelectItem value="weekly">Săptămânal</SelectItem>
+                      <SelectItem value="biweekly">La două săptămâni</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-300 mb-1">Duration</label>
-                  <select value={horizon} onChange={(e)=> setHorizon(Number(e.target.value) as 30|60|90)} className="w-full bg-gray-800 text-white border border-gray-600 rounded px-3 py-2">
-                    <option value={30}>30 days</option>
-                    <option value={60}>60 days</option>
-                    <option value={90}>90 days</option>
-                  </select>
+                  <label className="block text-sm text-gray-300 mb-1">Durată</label>
+                  <Select value={String(horizon)} onValueChange={(v) => setHorizon(Number(v) as 30 | 60 | 90)}>
+                    <SelectTrigger className="w-full bg-gray-800 text-white border border-gray-600">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-800/90 text-white">
+                      <SelectItem value="30">30 zile</SelectItem>
+                      <SelectItem value="60">60 zile</SelectItem>
+                      <SelectItem value="90">90 zile</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <Button onClick={previewRecurring} disabled={previewLoading} className="bg-violet-600 hover:bg-violet-700 text-white">{previewLoading ? 'Previewing...' : 'Preview'}</Button>
-                <Button variant="outline" onClick={() => setRecurringOpen(false)} className="border-gray-600 text-gray-300 hover:bg-gray-800">Close</Button>
+                <Button onClick={previewRecurring} disabled={previewLoading} className="bg-violet-600 hover:bg-violet-700 text-white">{previewLoading ? 'Se previzualizează...' : 'Previzualizare'}</Button>
+                <Button variant="outline" onClick={() => setRecurringOpen(false)} className="border-gray-600 text-gray-300 hover:bg-gray-800">Închide</Button>
               </div>
               {preview && (
                 <div className="max-h-64 overflow-auto border border-gray-700 rounded p-3 bg-gray-800">
-                  <div className="text-sm text-gray-300 mb-2">Preview ({preview.length} dates)</div>
+                  <div className="text-sm text-gray-300 mb-2">Previzualizare ({preview.length} date)</div>
                   <ul className="space-y-2 text-sm">
                     {preview.map((p, idx) => {
                       const selected = selectedPreviewDates.has(p.date);
                       return (
                         <li key={idx} className={`flex items-center justify-between rounded px-2 py-1 ${p.available ? (selected ? 'border border-green-500/60 bg-green-600/10' : 'border border-gray-600/50 bg-gray-700/40') : 'opacity-60'}`}>
                           <span className={p.available ? 'text-white' : 'text-gray-400'}>
-                            {p.date} at {p.time} {p.available ? '' : `(unavailable: ${p.reason})`}
+                            {p.date} la {p.time} {p.available ? '' : `(indisponibil: ${p.reason})`}
                           </span>
                           {p.available && (
                             <Button size="sm" variant="ghost" onClick={() => handleTogglePreviewDate(p.date)} className={selected ? 'text-yellow-300 hover:text-yellow-200' : 'text-green-300 hover:text-green-200'}>
-                              {selected ? 'Deselect' : 'Select'}
+                              {selected ? 'Deselectează' : 'Selectează'}
                             </Button>
                           )}
                         </li>
@@ -672,7 +682,7 @@ export default function Bookings() {
                     })}
                   </ul>
                   <div className="mt-3">
-                    <Button onClick={confirmRecurring} className="bg-green-600 hover:bg-green-700 text-white">Confirm Recurring</Button>
+                    <Button onClick={confirmRecurring} className="bg-green-600 hover:bg-green-700 text-white">Confirmă Recurența</Button>
                   </div>
                 </div>
               )}

@@ -40,24 +40,24 @@ export default function ForgotPasswordPage() {
       <Card className="bg-gray-800 border-gray-700 w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold text-violet-400">
-            Reset Password
+            Resetare Parolă
           </CardTitle>
           <p className="text-gray-400 mt-2">
-            Enter your email address and we'll send you a link to reset your password.
+            Introduceți adresa de email și vă vom trimite un link pentru resetarea parolei.
           </p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <label htmlFor="email" className="text-sm font-medium text-gray-200">
-                Email Address
+                Adresă Email
               </label>
               <div className="relative">
                 <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                 <Input
                   id="email"
                   type="email"
-                  placeholder="Enter your email"
+                  placeholder="Introduceți emailul"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="pl-10 bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 focus:border-[#7E69AB]"
@@ -84,7 +84,7 @@ export default function ForgotPasswordPage() {
               className="w-full bg-violet-600 hover:bg-violet-700 text-white"
               disabled={loading}
             >
-              {loading ? 'Sending...' : 'Send Reset Link'}
+              {loading ? 'Se trimite...' : 'Trimite Link de Resetare'}
             </Button>
 
             <Button
@@ -94,7 +94,7 @@ export default function ForgotPasswordPage() {
               className="w-full text-violet-400 hover:text-violet-300 hover:bg-violet-900/20"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Login
+              Înapoi la Autentificare
             </Button>
           </form>
         </CardContent>

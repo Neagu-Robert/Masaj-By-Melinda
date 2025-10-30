@@ -90,7 +90,7 @@ export default function Users() {
         u.id === userToUpdate.id ? { ...u, status: newStatus } : u
       ));
 
-      toast.success(`User ${newStatus === 'banned' ? 'banned' : 'unbanned'} successfully`);
+      toast.success(`Utilizator ${newStatus === 'banned' ? 'blocat' : 'deblocat'} cu succes`);
 
       console.log("[AuditLog] Attempting to log action:", {
         adminId: user?.id,
@@ -113,7 +113,7 @@ export default function Users() {
       );
     } catch (err) {
       console.error('Error updating user status:', err);
-      toast.error('Failed to update user status');
+      toast.error('Eroare la actualizarea statusului utilizatorului');
     }
   };
 
@@ -128,7 +128,7 @@ export default function Users() {
 
       // Update local state
       setUsers(users.filter(u => u.id !== userToDelete.id));
-      toast.success('User deleted successfully');
+      toast.success('Utilizator șters cu succes');
       
       console.log("[AuditLog] Attempting to log DELETE:", {
           adminId: user?.id,
@@ -151,19 +151,19 @@ export default function Users() {
     } catch (err) {
       console.error('Error deleting user:', err);
       if (err.message?.includes('foreign key constraint')) {
-        toast.error('Cannot delete user: They have associated data');
+        toast.error('Nu se poate șterge utilizatorul: Are date asociate');
       } else if (err.message?.includes('Unauthorized')) {
-        toast.error('You do not have permission to delete users');
+        toast.error('Nu aveți permisiunea de a șterge utilizatori');
       } else if (err.message?.includes('Can only delete customer accounts')) {
-        toast.error('Cannot delete admin accounts');
+        toast.error('Nu se pot șterge conturile de administrator');
       } else {
-        toast.error('Failed to delete user');
+        toast.error('Eroare la ștergerea utilizatorului');
       }
     }
   };
 
   if (loading) {
-    return <div className="flex justify-center items-center h-full bg-gray-900 text-violet-400">Loading users...</div>;
+    return <div className="flex justify-center items-center h-full bg-gray-900 text-violet-400">Se încarcă utilizatorii...</div>;
   }
 
   if (error) {
@@ -172,17 +172,17 @@ export default function Users() {
 
   return (
     <div className="p-6 bg-gray-900 min-h-screen">
-      <h2 className="text-2xl font-bold mb-6 text-violet-400">User Management</h2>
+      <h2 className="text-2xl font-bold mb-6 text-violet-400">Gestionare Utilizatori</h2>
       <div className="rounded-lg border border-gray-800 bg-gray-800/50 shadow-lg">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="text-white">Name</TableHead>
+              <TableHead className="text-white">Nume</TableHead>
               <TableHead className="text-white">Email</TableHead>
-              <TableHead className="text-white">Role</TableHead>
+              <TableHead className="text-white">Rol</TableHead>
               <TableHead className="text-white">Status</TableHead>
-              <TableHead className="text-white">Created At</TableHead>
-              <TableHead className="text-white">Actions</TableHead>
+              <TableHead className="text-white">Creat La</TableHead>
+              <TableHead className="text-white">Acțiuni</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -197,7 +197,7 @@ export default function Users() {
                       ? 'bg-red-100 text-red-800' 
                       : 'bg-green-100 text-green-800'
                   }`}>
-                    {user.status || 'active'}
+                    {user.status === 'banned' ? 'blocat' : user.status || 'activ'}
                   </span>
                 </TableCell>
                 <TableCell className="text-gray-400">{new Date(user.created_at).toLocaleDateString()}</TableCell>
@@ -212,26 +212,26 @@ export default function Users() {
                             className={user.status === 'banned' ? 'text-green-600' : 'text-red-600'}
                             onClick={() => setSelectedUser(user)}
                           >
-                            {user.status === 'banned' ? 'Unban' : 'Ban'}
+                            {user.status === 'banned' ? 'Deblochează' : 'Blochează'}
                           </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent className="bg-gray-800/90 text-white">
                           <AlertDialogHeader>
                             <AlertDialogTitle>
-                              {user.status === 'banned' ? 'Unban User' : 'Ban User'}
+                              {user.status === 'banned' ? 'Deblochează Utilizatorul' : 'Blochează Utilizatorul'}
                             </AlertDialogTitle>
                             <AlertDialogDescription>
-                              Are you sure you want to {user.status === 'banned' ? 'unban' : 'ban'} this user?
-                              {user.status !== 'banned' && " They will no longer be able to access their account."}
+                              {user.status === 'banned' ? 'Sigur doriți să deblocați acest utilizator?' : 'Sigur doriți să blocați acest utilizator?'}
+                              {user.status !== 'banned' && " Nu vor mai putea accesa contul lor."}
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogCancel>Anulează</AlertDialogCancel>
                             <AlertDialogAction
                               onClick={() => handleUpdateUserStatus(user, user.status === 'banned' ? 'active' : 'banned')}
                               className={user.status === 'banned' ? 'bg-green-600' : 'bg-red-600'}
                             >
-                              {user.status === 'banned' ? 'Unban' : 'Ban'}
+                              {user.status === 'banned' ? 'Deblochează' : 'Blochează'}
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
@@ -245,24 +245,23 @@ export default function Users() {
                             className="text-red-600"
                             onClick={() => setSelectedUser(user)}
                           >
-                            Delete
+                            Șterge
                           </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent className="bg-gray-800/90 text-white">
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Delete User</AlertDialogTitle>
+                            <AlertDialogTitle>Șterge Utilizatorul</AlertDialogTitle>
                             <AlertDialogDescription>
-                              This will permanently delete the user's account and all associated data.
-                              This action cannot be undone.
+                              Aceasta va șterge permanent contul utilizatorului și toate datele asociate. Această acțiune nu poate fi anulată.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogCancel>Anulează</AlertDialogCancel>
                             <AlertDialogAction
                               onClick={() => handleDeleteUser(user)}
                               className="bg-red-600"
                             >
-                              Delete
+                              Șterge
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>

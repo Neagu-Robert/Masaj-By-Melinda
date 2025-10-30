@@ -44,7 +44,7 @@ export const sendPasswordResetEmail = async (email: string): Promise<PasswordRes
         console.error('Error checking email existence:', profileError);
         return {
           success: false,
-          message: 'Failed to verify email existence.',
+          message: 'Nu s-a putut verifica existența emailului.',
           error: profileError.message,
         };
       }
@@ -52,24 +52,24 @@ export const sendPasswordResetEmail = async (email: string): Promise<PasswordRes
       return {
         success: false,
         message: 'Email-ul introdus nu este inregistrat, va rugam sa va inregistrati',
-        error: 'Email not registered',
+        error: 'Email neînregistrat',
       };
     }
 
     const redirectUrl = getRedirectUrl();
     
-    console.log('Sending password reset email to:', email);
-    console.log('Redirect URL:', redirectUrl);
+    console.log('Trimitere email de resetare a parolei către:', email);
+    console.log('URL de Redirecționare:', redirectUrl);
     
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: redirectUrl,
     });
 
     if (error) {
-      console.error('Supabase password reset error:', error);
+      console.error('Eroare la resetarea parolei Supabase:', error);
       return {
         success: false,
-        message: 'Failed to send password reset email',
+        message: 'Eroare la trimiterea emailului de resetare a parolei',
         error: error.message,
       };
     }
@@ -81,14 +81,14 @@ export const sendPasswordResetEmail = async (email: string): Promise<PasswordRes
 
     return {
       success: true,
-      message: 'Password reset email sent successfully. Please check your email.',
+      message: 'Emailul de resetare a parolei a fost trimis cu succes. Vă rugăm să verificați emailul.',
     };
   } catch (error) {
-    console.error('Error sending password reset email:', error);
+    console.error('Eroare la trimiterea emailului de resetare a parolei:', error);
     return {
       success: false,
-      message: 'An unexpected error occurred',
-      error: error instanceof Error ? error.message : 'Unknown error',
+      message: 'A apărut o eroare neașteptată',
+      error: error instanceof Error ? error.message : 'Eroare necunoscută',
     };
   }
 };
@@ -105,21 +105,21 @@ export const resetPassword = async (newPassword: string): Promise<PasswordResetR
     if (error) {
       return {
         success: false,
-        message: 'Failed to reset password',
+        message: 'Eroare la resetarea parolei',
         error: error.message,
       };
     }
 
     return {
       success: true,
-      message: 'Password reset successfully. You can now log in with your new password.',
+      message: 'Parola a fost resetată cu succes. Vă puteți autentifica acum cu noua parolă.',
     };
   } catch (error) {
-    console.error('Error resetting password:', error);
+    console.error('Eroare la resetarea parolei:', error);
     return {
       success: false,
-      message: 'An unexpected error occurred',
-      error: error instanceof Error ? error.message : 'Unknown error',
+      message: 'A apărut o eroare neașteptată',
+      error: error instanceof Error ? error.message : 'Eroare necunoscută',
     };
   }
 };
@@ -137,8 +137,8 @@ export const changePassword = async (
     if (!user) {
       return {
         success: false,
-        message: 'User not authenticated',
-        error: 'User must be logged in to change password',
+        message: 'Utilizator neautentificat',
+        error: 'Utilizatorul trebuie să fie autentificat pentru a schimba parola',
       };
     }
 
@@ -151,8 +151,8 @@ export const changePassword = async (
     if (signInError) {
       return {
         success: false,
-        message: 'Current password is incorrect',
-        error: 'Please enter your current password correctly',
+        message: 'Parola curentă este incorectă',
+        error: 'Vă rugăm să introduceți corect parola curentă',
       };
     }
 
@@ -164,7 +164,7 @@ export const changePassword = async (
     if (updateError) {
       return {
         success: false,
-        message: 'Failed to change password',
+        message: 'Eroare la schimbarea parolei',
         error: updateError.message,
       };
     }
@@ -190,24 +190,24 @@ export const changePassword = async (
           dateTime: new Date().toISOString(),
           duration: 0,
           price: 0,
-          status: 'completed'
+          status: 'completat'
         }
       });
     } catch (notificationError) {
-      console.error('Error sending password change notification:', notificationError);
+      console.error('Eroare la trimiterea notificării de schimbare a parolei:', notificationError);
       // Don't fail the password change if notification fails
     }
 
     return {
       success: true,
-      message: 'Password changed successfully.',
+      message: 'Parola a fost schimbată cu succes.',
     };
   } catch (error) {
-    console.error('Error changing password:', error);
+    console.error('Eroare la schimbarea parolei:', error);
     return {
       success: false,
-      message: 'An unexpected error occurred',
-      error: error instanceof Error ? error.message : 'Unknown error',
+      message: 'A apărut o eroare neașteptată',
+      error: error instanceof Error ? error.message : 'Eroare necunoscută',
     };
   }
 };
@@ -219,23 +219,23 @@ export const validatePassword = (password: string): { isValid: boolean; errors: 
   const errors: string[] = [];
 
   if (password.length < 8) {
-    errors.push('Password must be at least 8 characters long');
+    errors.push('Parola trebuie să aibă cel puțin 8 caractere');
   }
 
   if (!/[A-Z]/.test(password)) {
-    errors.push('Password must contain at least one uppercase letter');
+    errors.push('Parola trebuie să conțină cel puțin o literă mare');
   }
 
   if (!/[a-z]/.test(password)) {
-    errors.push('Password must contain at least one lowercase letter');
+    errors.push('Parola trebuie să conțină cel puțin o literă mică');
   }
 
   if (!/[0-9]/.test(password)) {
-    errors.push('Password must contain at least one number');
+    errors.push('Parola trebuie să conțină cel puțin un număr');
   }
 
   if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
-    errors.push('Password must contain at least one special character');
+    errors.push('Parola trebuie să conțină cel puțin un caracter special');
   }
 
   return {

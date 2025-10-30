@@ -72,7 +72,7 @@ const Navbar = () => {
                 className="text-gray-300 hover:text-white hover:bg-white/10"
                 onClick={() => handleNavigation('/admin')}
               >
-                Back to Dashboard
+                Înapoi la Meniul Admin
               </Button>
             )}
             <Button 
@@ -132,7 +132,7 @@ const Navbar = () => {
                   className="w-full justify-start h-12 text-gray-300 hover:text-white hover:bg-white/10 text-base"
                   onClick={() => handleNavigation('/admin')}
                 >
-                  Back to Dashboard
+                  Înapoi la Meniul Admin
                 </Button>
               )}
               <Button 
@@ -166,7 +166,7 @@ const Navbar = () => {
                   className="w-full justify-start h-12 bg-[#9b87f5] text-white hover:bg-[#7E69AB] text-base"
                   onClick={() => handleNavigation('/profile')}
                 >
-                  <User className="mr-3 h-5 w-5" /> Profile
+                  <User className="mr-3 h-5 w-5" /> Profil
                 </Button>
               )}
             </div>

@@ -162,23 +162,23 @@ export const validateBookingData = (
   serviceType: string
 ): { isValid: boolean; error?: string } => {
   if (!bookingDate) {
-    return { isValid: false, error: 'Please select a date' };
+    return { isValid: false, error: 'Vă rugăm să selectați o dată' };
   }
   
   if (!isDateAvailable(bookingDate)) {
-    return { isValid: false, error: 'Selected date is not available' };
+    return { isValid: false, error: 'Data selectată nu este disponibilă' };
   }
   
   if (!bookingTime) {
-    return { isValid: false, error: 'Please select a time' };
+    return { isValid: false, error: 'Vă rugăm să selectați o oră' };
   }
   
   if (!isTimeAvailableForDate(bookingDate, bookingTime)) {
-    return { isValid: false, error: 'Selected time is not available for this date' };
+    return { isValid: false, error: 'Ora selectată nu este disponibilă pentru această dată' };
   }
   
   if (!serviceType) {
-    return { isValid: false, error: 'Please select a service' };
+    return { isValid: false, error: 'Vă rugăm să selectați un serviciu' };
   }
   
   return { isValid: true };
@@ -209,16 +209,16 @@ export const checkForDoubleBooking = async (
     
     if (error) {
       console.error('Error checking for double booking:', error);
-      return { isDoubleBooked: false, error: 'Error checking availability' };
+      return { isDoubleBooked: false, error: 'Eroare la verificarea disponibilității' };
     }
     
     if (data && data.length > 0) {
-      return { isDoubleBooked: true, error: 'This time slot is already booked' };
+      return { isDoubleBooked: true, error: 'Acest interval orar este deja rezervat' };
     }
     
     return { isDoubleBooked: false };
   } catch (error) {
     console.error('Error in checkForDoubleBooking:', error);
-    return { isDoubleBooked: false, error: 'Error checking availability' };
+    return { isDoubleBooked: false, error: 'Eroare la verificarea disponibilității' };
   }
 }; 

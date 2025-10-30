@@ -13,201 +13,201 @@ import { logNotification } from './loggingService';
 // Email templates
 const emailTemplates = {
   booking_created_customer: (data: BookingNotificationData): { subject: string; html: string; text: string } => {
-    const subject = `Booking Confirmation - ${data.serviceName}`;
+    const subject = `Confirmare Rezervare - ${data.serviceName}`;
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #8b5cf6;">Booking Confirmation</h2>
-        <p>Dear ${data.userName},</p>
-        <p>Your booking has been confirmed successfully!</p>
+        <h2 style="color: #8b5cf6;">Confirmare Rezervare</h2>
+        <p>Dragă ${data.userName},</p>
+        <p>Rezervarea dumneavoastră a fost confirmată cu succes!</p>
         <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
-          <h3 style="margin-top: 0;">Booking Details:</h3>
-          <p><strong>Service:</strong> ${data.serviceName}</p>
-          <p><strong>Date & Time:</strong> ${data.dateTime}</p>
-          <p><strong>Duration:</strong> ${data.duration} minutes</p>
-          <p><strong>Price:</strong> ${data.price} RON</p>
+          <h3 style="margin-top: 0;">Detalii Rezervare:</h3>
+          <p><strong>Serviciu:</strong> ${data.serviceName}</p>
+          <p><strong>Dată și Oră:</strong> ${data.dateTime}</p>
+          <p><strong>Durată:</strong> ${data.duration} minute</p>
+          <p><strong>Preț:</strong> ${data.price} RON</p>
           <p><strong>Status:</strong> ${data.status}</p>
         </div>
-        <p>We look forward to seeing you!</p>
-        <p>Best regards,<br>Masaj by Melinda</p>
+        <p>Vă așteptăm cu drag!</p>
+        <p>Cu respect,<br>Masaj by Melinda</p>
       </div>
     `;
     const text = `
-      Booking Confirmation
+      Confirmare Rezervare
       
-      Dear ${data.userName},
+      Dragă ${data.userName},
       
-      Your booking has been confirmed successfully!
+      Rezervarea dumneavoastră a fost confirmată cu succes!
       
-      Booking Details:
-      - Service: ${data.serviceName}
-      - Date & Time: ${data.dateTime}
-      - Duration: ${data.duration} minutes
-      - Price: ${data.price} RON
+      Detalii Rezervare:
+      - Serviciu: ${data.serviceName}
+      - Dată și Oră: ${data.dateTime}
+      - Durată: ${data.duration} minute
+      - Preț: ${data.price} RON
       - Status: ${data.status}
       
-      We look forward to seeing you!
+      Vă așteptăm cu drag!
       
-      Best regards,
+      Cu respect,
       Masaj by Melinda
     `;
     return { subject, html, text };
   },
 
   booking_updated_profile: (data: BookingNotificationData): { subject: string; html: string; text: string } => {
-    const subject = `Booking Updated - ${data.serviceName}`;
+    const subject = `Rezervare Actualizată - ${data.serviceName}`;
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #8b5cf6;">Booking Updated</h2>
-        <p>Dear ${data.userName},</p>
-        <p>Your booking has been updated successfully!</p>
+        <h2 style="color: #8b5cf6;">Rezervare Actualizată</h2>
+        <p>Dragă ${data.userName},</p>
+        <p>Rezervarea dumneavoastră a fost actualizată cu succes!</p>
         <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
-          <h3 style="margin-top: 0;">Updated Booking Details:</h3>
-          <p><strong>Service:</strong> ${data.serviceName}</p>
-          <p><strong>Date & Time:</strong> ${data.dateTime}</p>
-          <p><strong>Duration:</strong> ${data.duration} minutes</p>
-          <p><strong>Price:</strong> ${data.price} RON</p>
+          <h3 style="margin-top: 0;">Detalii Actualizate ale Rezervării:</h3>
+          <p><strong>Serviciu:</strong> ${data.serviceName}</p>
+          <p><strong>Dată și Oră:</strong> ${data.dateTime}</p>
+          <p><strong>Durată:</strong> ${data.duration} minute</p>
+          <p><strong>Preț:</strong> ${data.price} RON</p>
           <p><strong>Status:</strong> ${data.status}</p>
         </div>
-        <p>If you have any questions, please contact us.</p>
-        <p>Best regards,<br>Masaj by Melinda</p>
+        <p>Dacă aveți întrebări, vă rugăm să ne contactați.</p>
+        <p>Cu respect,<br>Masaj by Melinda</p>
       </div>
     `;
     const text = `
-      Booking Updated
+      Rezervare Actualizată
       
-      Dear ${data.userName},
+      Dragă ${data.userName},
       
-      Your booking has been updated successfully!
+      Rezervarea dumneavoastră a fost actualizată cu succes!
       
-      Updated Booking Details:
-      - Service: ${data.serviceName}
-      - Date & Time: ${data.dateTime}
-      - Duration: ${data.duration} minutes
-      - Price: ${data.price} RON
+      Detalii Actualizate ale Rezervării:
+      - Serviciu: ${data.serviceName}
+      - Dată și Oră: ${data.dateTime}
+      - Durată: ${data.duration} minute
+      - Preț: ${data.price} RON
       - Status: ${data.status}
       
-      If you have any questions, please contact us.
+      Dacă aveți întrebări, vă rugăm să ne contactați.
       
-      Best regards,
+      Cu respect,
       Masaj by Melinda
     `;
     return { subject, html, text };
   },
 
   booking_updated_admin: (data: BookingNotificationData): { subject: string; html: string; text: string } => {
-    const subject = `Booking Updated by Admin - ${data.serviceName}`;
+    const subject = `Rezervare Actualizată de Admin - ${data.serviceName}`;
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #8b5cf6;">Booking Updated</h2>
-        <p>Dear ${data.userName},</p>
-        <p>Your booking has been updated by our staff.</p>
+        <h2 style="color: #8b5cf6;">Rezervare Actualizată</h2>
+        <p>Dragă ${data.userName},</p>
+        <p>Rezervarea dumneavoastră a fost actualizată de către personalul nostru.</p>
         <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
-          <h3 style="margin-top: 0;">Updated Booking Details:</h3>
-          <p><strong>Service:</strong> ${data.serviceName}</p>
-          <p><strong>Date & Time:</strong> ${data.dateTime}</p>
-          <p><strong>Duration:</strong> ${data.duration} minutes</p>
-          <p><strong>Price:</strong> ${data.price} RON</p>
+          <h3 style="margin-top: 0;">Detalii Actualizate ale Rezervării:</h3>
+          <p><strong>Serviciu:</strong> ${data.serviceName}</p>
+          <p><strong>Dată și Oră:</strong> ${data.dateTime}</p>
+          <p><strong>Durată:</strong> ${data.duration} minute</p>
+          <p><strong>Preț:</strong> ${data.price} RON</p>
           <p><strong>Status:</strong> ${data.status}</p>
         </div>
-        <p>If you have any questions about these changes, please contact us.</p>
-        <p>Best regards,<br>Masaj by Melinda</p>
+        <p>Dacă aveți întrebări despre aceste modificări, vă rugăm să ne contactați.</p>
+        <p>Cu respect,<br>Masaj by Melinda</p>
       </div>
     `;
     const text = `
-      Booking Updated by Admin
+      Rezervare Actualizată de Admin
       
-      Dear ${data.userName},
+      Dragă ${data.userName},
       
-      Your booking has been updated by our staff.
+      Rezervarea dumneavoastră a fost actualizată de către personalul nostru.
       
-      Updated Booking Details:
-      - Service: ${data.serviceName}
-      - Date & Time: ${data.dateTime}
-      - Duration: ${data.duration} minutes
-      - Price: ${data.price} RON
+      Detalii Actualizate ale Rezervării:
+      - Serviciu: ${data.serviceName}
+      - Dată și Oră: ${data.dateTime}
+      - Durată: ${data.duration} minute
+      - Preț: ${data.price} RON
       - Status: ${data.status}
       
-      If you have any questions about these changes, please contact us.
+      Dacă aveți întrebări despre aceste modificări, vă rugăm să ne contactați.
       
-      Best regards,
+      Cu respect,
       Masaj by Melinda
     `;
     return { subject, html, text };
   },
 
   booking_cancelled_profile: (data: BookingNotificationData): { subject: string; html: string; text: string } => {
-    const subject = `Booking Cancelled - ${data.serviceName}`;
+    const subject = `Rezervare Anulată - ${data.serviceName}`;
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #ef4444;">Booking Cancelled</h2>
-        <p>Dear ${data.userName},</p>
-        <p>Your booking has been cancelled.</p>
+        <h2 style="color: #ef4444;">Rezervare Anulată</h2>
+        <p>Dragă ${data.userName},</p>
+        <p>Rezervarea dumneavoastră a fost anulată.</p>
         <div style="background-color: #fef2f2; padding: 20px; border-radius: 8px; margin: 20px 0;">
-          <h3 style="margin-top: 0;">Cancelled Booking Details:</h3>
-          <p><strong>Service:</strong> ${data.serviceName}</p>
-          <p><strong>Date & Time:</strong> ${data.dateTime}</p>
-          <p><strong>Duration:</strong> ${data.duration} minutes</p>
-          <p><strong>Price:</strong> ${data.price} RON</p>
+          <h3 style="margin-top: 0;">Detalii Rezervare Anulată:</h3>
+          <p><strong>Serviciu:</strong> ${data.serviceName}</p>
+          <p><strong>Dată și Oră:</strong> ${data.dateTime}</p>
+          <p><strong>Durată:</strong> ${data.duration} minute</p>
+          <p><strong>Preț:</strong> ${data.price} RON</p>
         </div>
-        <p>If you have any questions or would like to reschedule, please contact us.</p>
-        <p>Best regards,<br>Masaj by Melinda</p>
+        <p>Dacă aveți întrebări sau doriți să reprogramați, vă rugăm să ne contactați.</p>
+        <p>Cu respect,<br>Masaj by Melinda</p>
       </div>
     `;
     const text = `
-      Booking Cancelled
+      Rezervare Anulată
       
-      Dear ${data.userName},
+      Dragă ${data.userName},
       
-      Your booking has been cancelled.
+      Rezervarea dumneavoastră a fost anulată.
       
-      Cancelled Booking Details:
-      - Service: ${data.serviceName}
-      - Date & Time: ${data.dateTime}
-      - Duration: ${data.duration} minutes
-      - Price: ${data.price} RON
+      Detalii Rezervare Anulată:
+      - Serviciu: ${data.serviceName}
+      - Dată și Oră: ${data.dateTime}
+      - Durată: ${data.duration} minute
+      - Preț: ${data.price} RON
       
-      If you have any questions or would like to reschedule, please contact us.
+      Dacă aveți întrebări sau doriți să reprogramați, vă rugăm să ne contactați.
       
-      Best regards,
+      Cu respect,
       Masaj by Melinda
     `;
     return { subject, html, text };
   },
 
   booking_cancelled_admin: (data: BookingNotificationData): { subject: string; html: string; text: string } => {
-    const subject = `Booking Cancelled by Admin - ${data.serviceName}`;
+    const subject = `Rezervare Anulată de Admin - ${data.serviceName}`;
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #ef4444;">Booking Cancelled</h2>
-        <p>Dear ${data.userName},</p>
-        <p>Your booking has been cancelled by our staff.</p>
+        <h2 style="color: #ef4444;">Rezervare Anulată</h2>
+        <p>Dragă ${data.userName},</p>
+        <p>Rezervarea dumneavoastră a fost anulată de către personalul nostru.</p>
         <div style="background-color: #fef2f2; padding: 20px; border-radius: 8px; margin: 20px 0;">
-          <h3 style="margin-top: 0;">Cancelled Booking Details:</h3>
-          <p><strong>Service:</strong> ${data.serviceName}</p>
-          <p><strong>Date & Time:</strong> ${data.dateTime}</p>
-          <p><strong>Duration:</strong> ${data.duration} minutes</p>
-          <p><strong>Price:</strong> ${data.price} RON</p>
+          <h3 style="margin-top: 0;">Detalii Rezervare Anulată:</h3>
+          <p><strong>Serviciu:</strong> ${data.serviceName}</p>
+          <p><strong>Dată și Oră:</strong> ${data.dateTime}</p>
+          <p><strong>Durată:</strong> ${data.duration} minute</p>
+          <p><strong>Preț:</strong> ${data.price} RON</p>
         </div>
-        <p>If you have any questions about this cancellation, please contact us.</p>
-        <p>Best regards,<br>Masaj by Melinda</p>
+        <p>Dacă aveți întrebări despre această anulare, vă rugăm să ne contactați.</p>
+        <p>Cu respect,<br>Masaj by Melinda</p>
       </div>
     `;
     const text = `
-      Booking Cancelled by Admin
+      Rezervare Anulată de Admin
       
-      Dear ${data.userName},
+      Dragă ${data.userName},
       
-      Your booking has been cancelled by our staff.
+      Rezervarea dumneavoastră a fost anulată de către personalul nostru.
       
-      Cancelled Booking Details:
-      - Service: ${data.serviceName}
-      - Date & Time: ${data.dateTime}
-      - Duration: ${data.duration} minutes
-      - Price: ${data.price} RON
+      Detalii Rezervare Anulată:
+      - Serviciu: ${data.serviceName}
+      - Dată și Oră: ${data.dateTime}
+      - Durată: ${data.duration} minute
+      - Preț: ${data.price} RON
       
-      If you have any questions about this cancellation, please contact us.
+      Dacă aveți întrebări despre această anulare, vă rugăm să ne contactați.
       
-      Best regards,
+      Cu respect,
       Masaj by Melinda
     `;
     return { subject, html, text };
@@ -215,37 +215,37 @@ const emailTemplates = {
 
   // Recurring created by user from profile
   recurring_created_profile: (data: BookingNotificationData): { subject: string; html: string; text: string } => {
-    const subject = `Recurring Enabled - ${data.serviceName}`;
+    const subject = `Recurență Activată - ${data.serviceName}`;
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #10b981;">Recurring Booking Enabled</h2>
-        <p>Dear ${data.userName},</p>
-        <p>Your booking has been set to recur.</p>
+        <h2 style="color: #10b981;">Rezervare Recurentă Activată</h2>
+        <p>Dragă ${data.userName},</p>
+        <p>Rezervarea dumneavoastră a fost setată să fie recurentă.</p>
         <div style="background-color: #f0fdf4; padding: 20px; border-radius: 8px; margin: 20px 0;">
-          <h3 style="margin-top: 0;">Recurring Details:</h3>
-          <p><strong>Service:</strong> ${data.serviceName}</p>
-          <p><strong>Start:</strong> ${data.dateTime}</p>
-          <p><strong>Recurrence:</strong> ${data.notes || 'Weekly/Biweekly'}</p>
+          <h3 style="margin-top: 0;">Detalii Recurență:</h3>
+          <p><strong>Serviciu:</strong> ${data.serviceName}</p>
+          <p><strong>Început:</strong> ${data.dateTime}</p>
+          <p><strong>Recurență:</strong> ${data.notes || 'Săptămânal/La două săptămâni'}</p>
         </div>
-        <p>You can disable the recurrence at any time from your profile.</p>
-        <p>Best regards,<br>Masaj by Melinda</p>
+        <p>Puteți dezactiva recurența oricând din profilul dumneavoastră.</p>
+        <p>Cu respect,<br>Masaj by Melinda</p>
       </div>
     `;
     const text = `
-      Recurring Booking Enabled
+      Rezervare Recurentă Activată
       
-      Dear ${data.userName},
+      Dragă ${data.userName},
       
-      Your booking has been set to recur.
+      Rezervarea dumneavoastră a fost setată să fie recurentă.
       
-      Recurring Details:
-      - Service: ${data.serviceName}
-      - Start: ${data.dateTime}
-      - Recurrence: ${data.notes || 'Weekly/Biweekly'}
+      Detalii Recurență:
+      - Serviciu: ${data.serviceName}
+      - Început: ${data.dateTime}
+      - Recurență: ${data.notes || 'Săptămânal/La două săptămâni'}
       
-      You can disable the recurrence at any time from your profile.
+      Puteți dezactiva recurența oricând din profilul dumneavoastră.
       
-      Best regards,
+      Cu respect,
       Masaj by Melinda
     `;
     return { subject, html, text };
@@ -253,35 +253,35 @@ const emailTemplates = {
 
   // Recurring cancelled by user from profile
   recurring_cancelled_profile: (data: BookingNotificationData): { subject: string; html: string; text: string } => {
-    const subject = `Recurring Disabled - ${data.serviceName}`;
+    const subject = `Recurență Dezactivată - ${data.serviceName}`;
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #ef4444;">Recurring Booking Disabled</h2>
-        <p>Dear ${data.userName},</p>
-        <p>Your recurring booking has been cancelled. Future recurring instances have been removed.</p>
+        <h2 style="color: #ef4444;">Rezervare Recurentă Dezactivată</h2>
+        <p>Dragă ${data.userName},</p>
+        <p>Rezervarea dumneavoastră recurentă a fost anulată. Instanțele viitoare au fost eliminate.</p>
         <div style="background-color: #fef2f2; padding: 20px; border-radius: 8px; margin: 20px 0;">
-          <h3 style="margin-top: 0;">Cancelled Recurrence:</h3>
-          <p><strong>Service:</strong> ${data.serviceName}</p>
+          <h3 style="margin-top: 0;">Recurență Anulată:</h3>
+          <p><strong>Serviciu:</strong> ${data.serviceName}</p>
           <p><strong>Original:</strong> ${data.dateTime}</p>
         </div>
-        <p>If this was a mistake, you can re-enable recurrence from your profile.</p>
-        <p>Best regards,<br>Masaj by Melinda</p>
+        <p>Dacă a fost o greșeală, puteți reactiva recurența din profilul dumneavoastră.</p>
+        <p>Cu respect,<br>Masaj by Melinda</p>
       </div>
     `;
     const text = `
-      Recurring Booking Disabled
+      Rezervare Recurentă Dezactivată
       
-      Dear ${data.userName},
+      Dragă ${data.userName},
       
-      Your recurring booking has been cancelled. Future recurring instances have been removed.
+      Rezervarea dumneavoastră recurentă a fost anulată. Instanțele viitoare au fost eliminate.
       
-      Cancelled Recurrence:
-      - Service: ${data.serviceName}
+      Recurență Anulată:
+      - Serviciu: ${data.serviceName}
       - Original: ${data.dateTime}
       
-      If this was a mistake, you can re-enable recurrence from your profile.
+      Dacă a fost o greșeală, puteți reactiva recurența din profilul dumneavoastră.
       
-      Best regards,
+      Cu respect,
       Masaj by Melinda
     `;
     return { subject, html, text };
@@ -289,37 +289,37 @@ const emailTemplates = {
 
   // Recurring created by admin
   recurring_created_admin: (data: BookingNotificationData): { subject: string; html: string; text: string } => {
-    const subject = `Recurring Enabled by Admin - ${data.serviceName}`;
+    const subject = `Recurență Activată de Admin - ${data.serviceName}`;
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #10b981;">Recurring Booking Enabled (Admin)</h2>
-        <p>Dear ${data.userName},</p>
-        <p>Your booking has been set to recur by our staff.</p>
+        <h2 style="color: #10b981;">Rezervare Recurentă Activată (Admin)</h2>
+        <p>Dragă ${data.userName},</p>
+        <p>Rezervarea dumneavoastră a fost setată să fie recurentă de către personalul nostru.</p>
         <div style="background-color: #f0fdf4; padding: 20px; border-radius: 8px; margin: 20px 0;">
-          <h3 style="margin-top: 0;">Recurring Details:</h3>
-          <p><strong>Service:</strong> ${data.serviceName}</p>
-          <p><strong>Start:</strong> ${data.dateTime}</p>
-          <p><strong>Recurrence:</strong> ${data.notes || 'Weekly/Biweekly'}</p>
+          <h3 style="margin-top: 0;">Detalii Recurență:</h3>
+          <p><strong>Serviciu:</strong> ${data.serviceName}</p>
+          <p><strong>Început:</strong> ${data.dateTime}</p>
+          <p><strong>Recurență:</strong> ${data.notes || 'Săptămânal/La două săptămâni'}</p>
         </div>
-        <p>If this was not intended, please contact us.</p>
-        <p>Best regards,<br>Masaj by Melinda</p>
+        <p>Dacă nu a fost intenționat, vă rugăm să ne contactați.</p>
+        <p>Cu respect,<br>Masaj by Melinda</p>
       </div>
     `;
     const text = `
-      Recurring Booking Enabled (Admin)
+      Rezervare Recurentă Activată (Admin)
       
-      Dear ${data.userName},
+      Dragă ${data.userName},
       
-      Your booking has been set to recur by our staff.
+      Rezervarea dumneavoastră a fost setată să fie recurentă de către personalul nostru.
       
-      Recurring Details:
-      - Service: ${data.serviceName}
-      - Start: ${data.dateTime}
-      - Recurrence: ${data.notes || 'Weekly/Biweekly'}
+      Detalii Recurență:
+      - Serviciu: ${data.serviceName}
+      - Început: ${data.dateTime}
+      - Recurență: ${data.notes || 'Săptămânal/La două săptămâni'}
       
-      If this was not intended, please contact us.
+      Dacă nu a fost intenționat, vă rugăm să ne contactați.
       
-      Best regards,
+      Cu respect,
       Masaj by Melinda
     `;
     return { subject, html, text };
@@ -327,35 +327,35 @@ const emailTemplates = {
 
   // Recurring cancelled by admin
   recurring_cancelled_admin: (data: BookingNotificationData): { subject: string; html: string; text: string } => {
-    const subject = `Recurring Disabled by Admin - ${data.serviceName}`;
+    const subject = `Recurență Dezactivată de Admin - ${data.serviceName}`;
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #ef4444;">Recurring Booking Disabled (Admin)</h2>
-        <p>Dear ${data.userName},</p>
-        <p>Your recurring booking has been cancelled by our staff. Future recurring instances have been removed.</p>
+        <h2 style="color: #ef4444;">Rezervare Recurentă Dezactivată (Admin)</h2>
+        <p>Dragă ${data.userName},</p>
+        <p>Rezervarea dumneavoastră recurentă a fost anulată de către personalul nostru. Instanțele viitoare au fost eliminate.</p>
         <div style="background-color: #fef2f2; padding: 20px; border-radius: 8px; margin: 20px 0;">
-          <h3 style="margin-top: 0;">Cancelled Recurrence:</h3>
-          <p><strong>Service:</strong> ${data.serviceName}</p>
+          <h3 style="margin-top: 0;">Recurență Anulată:</h3>
+          <p><strong>Serviciu:</strong> ${data.serviceName}</p>
           <p><strong>Original:</strong> ${data.dateTime}</p>
         </div>
-        <p>If this was not intended, please contact us.</p>
-        <p>Best regards,<br>Masaj by Melinda</p>
+        <p>Dacă nu a fost intenționat, vă rugăm să ne contactați.</p>
+        <p>Cu respect,<br>Masaj by Melinda</p>
       </div>
     `;
     const text = `
-      Recurring Booking Disabled (Admin)
+      Rezervare Recurentă Dezactivată (Admin)
       
-      Dear ${data.userName},
+      Dragă ${data.userName},
       
-      Your recurring booking has been cancelled by our staff. Future recurring instances have been removed.
+      Rezervarea dumneavoastră recurentă a fost anulată de către personalul nostru. Instanțele viitoare au fost eliminate.
       
-      Cancelled Recurrence:
-      - Service: ${data.serviceName}
+      Recurență Anulată:
+      - Serviciu: ${data.serviceName}
       - Original: ${data.dateTime}
       
-      If this was not intended, please contact us.
+      Dacă nu a fost intenționat, vă rugăm să ne contactați.
       
-      Best regards,
+      Cu respect,
       Masaj by Melinda
     `;
     return { subject, html, text };
@@ -363,36 +363,36 @@ const emailTemplates = {
 
   // Single instance cancelled by user from profile
   recurring_instance_cancelled_profile: (data: BookingNotificationData): { subject: string; html: string; text: string } => {
-    const subject = `Recurring Instance Cancelled - ${data.serviceName}`;
+    const subject = `Instanță Recurentă Anulată - ${data.serviceName}`;
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #f59e0b;">Recurring Instance Cancelled</h2>
-        <p>Dear ${data.userName},</p>
-        <p>Your request to cancel a single recurring instance has been processed.</p>
+        <h2 style="color: #f59e0b;">Instanță Recurentă Anulată</h2>
+        <p>Dragă ${data.userName},</p>
+        <p>Cererea dumneavoastră de a anula o singură instanță recurentă a fost procesată.</p>
         <div style="background-color: #fffbeb; padding: 20px; border-radius: 8px; margin: 20px 0;">
-          <h3 style="margin-top: 0;">Cancelled Instance:</h3>
-          <p><strong>Service:</strong> ${data.serviceName}</p>
-          <p><strong>Date & Time:</strong> ${data.dateTime}</p>
-          <p style="margin:0;color:#6b7280;font-size:12px;">Note: Only this specific date was cancelled; the series remains active.</p>
+          <h3 style="margin-top: 0;">Instanță Anulată:</h3>
+          <p><strong>Serviciu:</strong> ${data.serviceName}</p>
+          <p><strong>Dată și Oră:</strong> ${data.dateTime}</p>
+          <p style="margin:0;color:#6b7280;font-size:12px;">Notă: Doar această dată specifică a fost anulată; seria rămâne activă.</p>
         </div>
-        <p>If you have any questions, please contact us.</p>
-        <p>Best regards,<br>Masaj by Melinda</p>
+        <p>Dacă aveți întrebări, vă rugăm să ne contactați.</p>
+        <p>Cu respect,<br>Masaj by Melinda</p>
       </div>
     `;
     const text = `
-      Recurring Instance Cancelled
+      Instanță Recurentă Anulată
       
-      Dear ${data.userName},
+      Dragă ${data.userName},
       
-      Your request to cancel a single recurring instance has been processed.
+      Cererea dumneavoastră de a anula o singură instanță recurentă a fost procesată.
       
-      Cancelled Instance:
-      - Service: ${data.serviceName}
-      - Date & Time: ${data.dateTime}
+      Instanță Anulată:
+      - Serviciu: ${data.serviceName}
+      - Dată și Oră: ${data.dateTime}
       
-      Note: Only this specific date was cancelled; the series remains active.
+      Notă: Doar această dată specifică a fost anulată; seria rămâne activă.
       
-      Best regards,
+      Cu respect,
       Masaj by Melinda
     `;
     return { subject, html, text };
@@ -400,151 +400,151 @@ const emailTemplates = {
 
   // Single instance cancelled by admin
   recurring_instance_cancelled_admin: (data: BookingNotificationData): { subject: string; html: string; text: string } => {
-    const subject = `Recurring Instance Cancelled by Admin - ${data.serviceName}`;
+    const subject = `Instanță Recurentă Anulată de Admin - ${data.serviceName}`;
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #f59e0b;">Recurring Instance Cancelled (Admin)</h2>
-        <p>Dear ${data.userName},</p>
-        <p>A single instance of your recurring series has been cancelled by our staff.</p>
+        <h2 style="color: #f59e0b;">Instanță Recurentă Anulată (Admin)</h2>
+        <p>Dragă ${data.userName},</p>
+        <p>O singură instanță a seriei dumneavoastră recurente a fost anulată de către personalul nostru.</p>
         <div style="background-color: #fffbeb; padding: 20px; border-radius: 8px; margin: 20px 0;">
-          <h3 style="margin-top: 0;">Cancelled Instance:</h3>
-          <p><strong>Service:</strong> ${data.serviceName}</p>
-          <p><strong>Date & Time:</strong> ${data.dateTime}</p>
-          <p style="margin:0;color:#6b7280;font-size:12px;">Note: Only this specific date was cancelled; the series remains active.</p>
+          <h3 style="margin-top: 0;">Instanță Anulată:</h3>
+          <p><strong>Serviciu:</strong> ${data.serviceName}</p>
+          <p><strong>Dată și Oră:</strong> ${data.dateTime}</p>
+          <p style="margin:0;color:#6b7280;font-size:12px;">Notă: Doar această dată specifică a fost anulată; seria rămâne activă.</p>
         </div>
-        <p>If this was unexpected, please contact us.</p>
-        <p>Best regards,<br>Masaj by Melinda</p>
+        <p>Dacă a fost neașteptat, vă rugăm să ne contactați.</p>
+        <p>Cu respect,<br>Masaj by Melinda</p>
       </div>
     `;
     const text = `
-      Recurring Instance Cancelled (Admin)
+      Instanță Recurentă Anulată (Admin)
       
-      Dear ${data.userName},
+      Dragă ${data.userName},
       
-      A single instance of your recurring series has been cancelled by our staff.
+      O singură instanță a seriei dumneavoastră recurente a fost anulată de către personalul nostru.
       
-      Cancelled Instance:
-      - Service: ${data.serviceName}
-      - Date & Time: ${data.dateTime}
+      Instanță Anulată:
+      - Serviciu: ${data.serviceName}
+      - Dată și Oră: ${data.dateTime}
       
-      Note: Only this specific date was cancelled; the series remains active.
+      Notă: Doar această dată specifică a fost anulată; seria rămâne activă.
       
-      Best regards,
+      Cu respect,
       Masaj by Melinda
     `;
     return { subject, html, text };
   },
 
   reminder: (data: BookingNotificationData): { subject: string; html: string; text: string } => {
-    const subject = `Appointment Reminder - ${data.serviceName}`;
+    const subject = `Memento Programare - ${data.serviceName}`;
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #8b5cf6;">Appointment Reminder</h2>
-        <p>Dear ${data.userName},</p>
-        <p>This is a friendly reminder about your upcoming appointment tomorrow.</p>
+        <h2 style="color: #8b5cf6;">Memento Programare</h2>
+        <p>Dragă ${data.userName},</p>
+        <p>Acesta este un memento prietenos despre programarea dumneavoastră de mâine.</p>
         <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
-          <h3 style="margin-top: 0;">Appointment Details:</h3>
-          <p><strong>Service:</strong> ${data.serviceName}</p>
-          <p><strong>Date & Time:</strong> ${data.dateTime}</p>
-          <p><strong>Duration:</strong> ${data.duration} minutes</p>
-          <p><strong>Price:</strong> ${data.price} RON</p>
+          <h3 style="margin-top: 0;">Detalii Programare:</h3>
+          <p><strong>Serviciu:</strong> ${data.serviceName}</p>
+          <p><strong>Dată și Oră:</strong> ${data.dateTime}</p>
+          <p><strong>Durată:</strong> ${data.duration} minute</p>
+          <p><strong>Preț:</strong> ${data.price} RON</p>
         </div>
-        <p>We look forward to seeing you!</p>
-        <p>Best regards,<br>Masaj by Melinda</p>
+        <p>Vă așteptăm cu drag!</p>
+        <p>Cu respect,<br>Masaj by Melinda</p>
       </div>
     `;
     const text = `
-      Appointment Reminder
+      Memento Programare
       
-      Dear ${data.userName},
+      Dragă ${data.userName},
       
-      This is a friendly reminder about your upcoming appointment tomorrow.
+      Acesta este un memento prietenos despre programarea dumneavoastră de mâine.
       
-      Appointment Details:
-      - Service: ${data.serviceName}
-      - Date & Time: ${data.dateTime}
-      - Duration: ${data.duration} minutes
-      - Price: ${data.price} RON
+      Detalii Programare:
+      - Serviciu: ${data.serviceName}
+      - Dată și Oră: ${data.dateTime}
+      - Durată: ${data.duration} minute
+      - Preț: ${data.price} RON
       
-      We look forward to seeing you!
+      Vă așteptăm cu drag!
       
-      Best regards,
+      Cu respect,
       Masaj by Melinda
     `;
     return { subject, html, text };
   },
 
   password_changed: (data: BookingNotificationData): { subject: string; html: string; text: string } => {
-    const subject = `Password Changed Successfully`;
+    const subject = `Parolă Schimbată cu Succes`;
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #10b981;">Password Changed</h2>
-        <p>Dear ${data.userName},</p>
-        <p>Your password has been successfully changed.</p>
+        <h2 style="color: #10b981;">Parolă Schimbată</h2>
+        <p>Dragă ${data.userName},</p>
+        <p>Parola dumneavoastră a fost schimbată cu succes.</p>
         <div style="background-color: #f0fdf4; padding: 20px; border-radius: 8px; margin: 20px 0;">
-          <h3 style="margin-top: 0;">Account Security Update:</h3>
-          <p><strong>Account:</strong> ${data.userEmail}</p>
-          <p><strong>Change Date:</strong> ${data.dateTime}</p>
+          <h3 style="margin-top: 0;">Actualizare Securitate Cont:</h3>
+          <p><strong>Cont:</strong> ${data.userEmail}</p>
+          <p><strong>Data Modificării:</strong> ${data.dateTime}</p>
         </div>
-        <p>If you did not make this change, please contact us immediately for assistance.</p>
-        <p>Best regards,<br>Masaj by Melinda</p>
+        <p>Dacă nu ați făcut această modificare, vă rugăm să ne contactați imediat pentru asistență.</p>
+        <p>Cu respect,<br>Masaj by Melinda</p>
       </div>
     `;
     const text = `
-      Password Changed Successfully
+      Parolă Schimbată cu Succes
       
-      Dear ${data.userName},
+      Dragă ${data.userName},
       
-      Your password has been successfully changed.
+      Parola dumneavoastră a fost schimbată cu succes.
       
-      Account Security Update:
-      - Account: ${data.userEmail}
-      - Change Date: ${data.dateTime}
+      Actualizare Securitate Cont:
+      - Cont: ${data.userEmail}
+      - Data Modificării: ${data.dateTime}
       
-      If you did not make this change, please contact us immediately for assistance.
+      Dacă nu ați făcut această modificare, vă rugăm să ne contactați imediat pentru asistență.
       
-      Best regards,
+      Cu respect,
       Masaj by Melinda
     `;
     return { subject, html, text };
   },
 
   password_reset_requested: (data: BookingNotificationData): { subject: string; html: string; text: string } => {
-    const subject = `Password Reset Requested`;
+    const subject = `Resetare Parolă Solicitată`;
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #f59e0b;">Password Reset Succesfuly</h2>
-        <p>Dear ${data.userName},</p>
-        <p>We received a request to reset your password for your Masaj by Melinda account.</p>
+        <h2 style="color: #f59e0b;">Resetare Parolă Solicitată</h2>
+        <p>Dragă ${data.userName},</p>
+        <p>Am primit o cerere de resetare a parolei pentru contul dumneavoastră Masaj by Melinda.</p>
         <div style="background-color: #fffbeb; padding: 20px; border-radius: 8px; margin: 20px 0;">
-          <h3 style="margin-top: 0;">Account Information:</h3>
-          <p><strong>Account:</strong> ${data.userEmail}</p>
-          <p><strong>Request Date:</strong> ${data.dateTime}</p>
+          <h3 style="margin-top: 0;">Informații Cont:</h3>
+          <p><strong>Cont:</strong> ${data.userEmail}</p>
+          <p><strong>Data Solicitării:</strong> ${data.dateTime}</p>
         </div>
-        <p>If you did not request this password reset, please ignore this email. Your password will remain unchanged.</p>
-        <p>If you did request this reset, please check your email for the reset link and follow the instructions.</p>
-        <p>For security reasons, password reset links expire after a short time.</p>
-        <p>Best regards,<br>Masaj by Melinda</p>
+        <p>Dacă nu ați solicitat această resetare de parolă, vă rugăm să ignorați acest email. Parola dumneavoastră va rămâne neschimbată.</p>
+        <p>Dacă ați solicitat această resetare, vă rugăm să verificați emailul pentru linkul de resetare și să urmați instrucțiunile.</p>
+        <p>Din motive de securitate, linkurile de resetare a parolei expiră după o perioadă scurtă de timp.</p>
+        <p>Cu respect,<br>Masaj by Melinda</p>
       </div>
     `;
     const text = `
-      Password Reset Requested
+      Resetare Parolă Solicitată
       
-      Dear ${data.userName},
+      Dragă ${data.userName},
       
-      We received a request to reset your password for your Masaj by Melinda account.
+      Am primit o cerere de resetare a parolei pentru contul dumneavoastră Masaj by Melinda.
       
-      Account Information:
-      - Account: ${data.userEmail}
-      - Request Date: ${data.dateTime}
+      Informații Cont:
+      - Cont: ${data.userEmail}
+      - Data Solicitării: ${data.dateTime}
       
-      If you did not request this password reset, please ignore this email. Your password will remain unchanged.
+      Dacă nu ați solicitat această resetare de parolă, vă rugăm să ignorați acest email. Parola dumneavoastră va rămâne neschimbată.
       
-      If you did request this reset, please check your email for the reset link and follow the instructions.
+      Dacă ați solicitat această resetare, vă rugăm să verificați emailul pentru linkul de resetare și să urmați instrucțiunile.
       
-      For security reasons, password reset links expire after a short time.
+      Din motive de securitate, linkurile de resetare a parolei expiră după o perioadă scurtă de timp.
       
-      Best regards,
+      Cu respect,
       Masaj by Melinda
     `;
     return { subject, html, text };
@@ -572,21 +572,21 @@ export const sendEmailNotification = async (
   payload: NotificationPayload
 ): Promise<NotificationResult> => {
   if (!isEmailConfigured()) {
-    console.error('Email notifications are not configured or enabled');
+    console.error('Notificările prin email nu sunt configurate sau activate');
     return {
       success: false,
       channel: 'email',
-      error: new Error('Email notifications are not configured or enabled'),
+      error: new Error('Notificările prin email nu sunt configurate sau activate'),
       timestamp: Date.now()
     };
   }
 
   if (!payload.recipient.email) {
-    console.error('Recipient email is required');
+    console.error('Emailul destinatarului este obligatoriu');
     return {
       success: false,
       channel: 'email',
-      error: new Error('Recipient email is required'),
+      error: new Error('Emailul destinatarului este obligatoriu'),
       timestamp: Date.now()
     };
   }
@@ -595,7 +595,7 @@ export const sendEmailNotification = async (
     // Get the appropriate template
     const templateFn = emailTemplates[payload.type];
     if (!templateFn) {
-      throw new Error(`Email template not found for notification type: ${payload.type}`);
+      throw new Error(`Șablonul de email nu a fost găsit pentru tipul de notificare: ${payload.type}`);
     }
 
     // Generate the email content from template
@@ -626,7 +626,7 @@ export const sendEmailNotification = async (
     }
 
     if (!data.success) {
-      throw new Error(data.error || 'Failed to send email');
+      throw new Error(data.error || 'Eroare la trimiterea emailului');
     }
 
     // Log the successful notification
@@ -649,7 +649,7 @@ export const sendEmailNotification = async (
     };
 
   } catch (error) {
-    console.error('Error sending email notification:', error);
+    console.error('Eroare la trimiterea notificării prin email:', error);
 
     // Log the failed attempt
     await logNotification({
@@ -680,7 +680,7 @@ export const retryEmailNotification = async (
   retryCount = 0
 ): Promise<NotificationResult> => {
   if (retryCount >= 3) { // Fixed retry count for Express API
-    const error = new Error(`Maximum retry attempts (3) reached for email notification type: ${payload.type}`);
+    const error = new Error(`Numărul maxim de reîncercări (3) a fost atins pentru notificarea prin email de tipul: ${payload.type}`);
     
     // Log the final failed attempt
     await logNotification({
@@ -706,7 +706,7 @@ export const retryEmailNotification = async (
   try {
     return await sendEmailNotification(payload);
   } catch (error) {
-    console.error(`Email retry ${retryCount + 1}/3 failed:`, error);
+    console.error(`Reîncercare email ${retryCount + 1}/3 eșuată:`, error);
     
     // Exponential backoff for retries
     const delay = Math.pow(2, retryCount) * 1000;

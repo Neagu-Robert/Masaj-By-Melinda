@@ -53,7 +53,7 @@ export default function ResetPasswordPage() {
 
     // Check if passwords match
     if (!doPasswordsMatch(newPassword, confirmPassword)) {
-      setError('Passwords do not match');
+      setError('Parolele nu se potrivesc');
       setLoading(false);
       return;
     }
@@ -90,24 +90,24 @@ export default function ResetPasswordPage() {
       <Card className="bg-gray-800 border-gray-700 w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold text-violet-400">
-            Set New Password
+            Setați Parolă Nouă
           </CardTitle>
           <p className="text-gray-400 mt-2">
-            Enter your new password below.
+            Introduceți noua parolă mai jos.
           </p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <label htmlFor="newPassword" className="text-sm font-medium text-gray-200">
-                New Password
+                Parolă Nouă
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                 <Input
                   id="newPassword"
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="Enter new password"
+                  placeholder="Introduceți parola nouă"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   className="pl-10 pr-10 bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 focus:border-[#7E69AB]"
@@ -127,14 +127,14 @@ export default function ResetPasswordPage() {
 
             <div className="space-y-2">
               <label htmlFor="confirmPassword" className="text-sm font-medium text-gray-200">
-                Confirm New Password
+                Confirmați Parola Nouă
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                 <Input
                   id="confirmPassword"
                   type={showConfirmPassword ? 'text' : 'password'}
-                  placeholder="Confirm new password"
+                  placeholder="Confirmați parola nouă"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   className="pl-10 pr-10 bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 focus:border-[#7E69AB]"
@@ -179,7 +179,7 @@ export default function ResetPasswordPage() {
               className="w-full bg-violet-600 hover:bg-violet-700 text-white"
               disabled={loading}
             >
-              {loading ? 'Resetting...' : 'Reset Password'}
+              {loading ? 'Se resetează...' : 'Resetează Parola'}
             </Button>
 
             <Button
@@ -189,7 +189,7 @@ export default function ResetPasswordPage() {
               className="w-full text-violet-400 hover:text-violet-300 hover:bg-violet-900/20"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Login
+              Înapoi la Autentificare
             </Button>
           </form>
         </CardContent>

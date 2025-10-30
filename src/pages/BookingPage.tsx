@@ -52,7 +52,7 @@ const BookingPageContent = () => {
 
   useEffect(() => {
     if (verificationError) {
-      toast("Error", { description: verificationError });
+      toast("Eroare", { description: verificationError });
       resetVerification(); // Clear the error state after showing
     }
   }, [verificationError, resetVerification]);

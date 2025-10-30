@@ -52,21 +52,21 @@ export default function NotificationPreferences({ userId, userRole }: Notificati
       const success = await saveNotificationPreferences(userId, preferences);
       if (success) {
         toast({
-          title: "Preferences saved",
-          description: "Your notification preferences have been updated successfully."
+          title: "Preferințe salvate",
+          description: "Preferințele dumneavoastră de notificare au fost actualizate cu succes."
         });
       } else {
         toast({
-          title: "Error",
-          description: "Failed to save notification preferences. Please try again.",
+          title: "Eroare",
+          description: "Eroare la salvarea preferințelor de notificare. Vă rugăm să încercați din nou.",
           variant: "destructive"
         });
       }
     } catch (error) {
       console.error('Error saving preferences:', error);
       toast({
-        title: "Error",
-        description: "An error occurred while saving preferences.",
+        title: "Eroare",
+        description: "A apărut o eroare la salvarea preferințelor.",
         variant: "destructive"
       });
     } finally {
@@ -77,13 +77,13 @@ export default function NotificationPreferences({ userId, userRole }: Notificati
 
 
   if (loading) {
-    return <div className="text-gray-400">Loading notification preferences...</div>;
+    return <div className="text-gray-400">Se încarcă preferințele de notificare...</div>;
   }
 
   return (
     <div className="bg-gray-800/50 p-6 rounded-lg">
       <h3 className="text-xl font-semibold mb-4 text-violet-300">
-        Email Notification Preferences
+        Preferințe Notificări Email
       </h3>
       <div className="space-y-4">
         <div className="flex items-center space-x-3">
@@ -95,7 +95,7 @@ export default function NotificationPreferences({ userId, userRole }: Notificati
             }
           />
           <Label htmlFor="booking-creation" className="text-white">
-            Booking creation
+            Creare rezervare
           </Label>
         </div>
 
@@ -108,7 +108,7 @@ export default function NotificationPreferences({ userId, userRole }: Notificati
             }
           />
           <Label htmlFor="booking-reminders" className="text-white">
-            Booking reminders (email day before)
+            Memento rezervare (email cu o zi înainte)
           </Label>
         </div>
         
@@ -121,7 +121,7 @@ export default function NotificationPreferences({ userId, userRole }: Notificati
             }
           />
           <Label htmlFor="booking-update" className="text-white">
-            Booking update
+            Actualizare rezervare
           </Label>
         </div>
         
@@ -134,7 +134,7 @@ export default function NotificationPreferences({ userId, userRole }: Notificati
             }
           />
           <Label htmlFor="booking-cancellation" className="text-white">
-            Booking cancellation
+            Anulare rezervare
           </Label>
         </div>
         
@@ -147,7 +147,7 @@ export default function NotificationPreferences({ userId, userRole }: Notificati
             }
           />
           <Label htmlFor="password-change" className="text-white">
-            Password changes and reset requests
+            Schimbări de parolă și cereri de resetare
           </Label>
         </div>
         
@@ -157,7 +157,7 @@ export default function NotificationPreferences({ userId, userRole }: Notificati
             disabled={saving}
             className="bg-green-600 hover:bg-green-700 text-white"
           >
-            {saving ? "Saving..." : "Save Preferences"}
+            {saving ? "Se salvează..." : "Salvează Preferințele"}
           </Button>
         </div>
       </div>

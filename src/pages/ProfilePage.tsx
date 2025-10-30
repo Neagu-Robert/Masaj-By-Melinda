@@ -70,7 +70,7 @@ function ProfilePageContent() {
           .single();
 
         if (profileError) {
-          setError('Error fetching profile data.');
+          setError('Eroare la preluarea datelor profilului.');
           console.error(profileError);
           setLoading(false);
           return;
@@ -85,7 +85,7 @@ function ProfilePageContent() {
           .order('created_at', { ascending: false });
         
         if (bookingsError) {
-          setError('Error fetching bookings.');
+          setError('Eroare la preluarea rezervărilor.');
           console.error('Bookings fetch error:', bookingsError);
         } else if (isMounted) {
           setBookings(bookingsData);
@@ -143,10 +143,10 @@ function ProfilePageContent() {
 
   const handleCancelRecurringInstance = async (instance: { id?: string; booking_id: string; date: string; hour: string; service_type?: string }) => {
     if (!instance?.id) return;
-    const ok = window.confirm(`Cancel this specific recurring instance on ${instance.date}?`);
+    const ok = window.confirm(`Anulați această instanță recurentă specifică din ${instance.date}?`);
     if (!ok) return;
     try {
-      await cancelRecurringInstance(instance.id);
+      await cancelRecurringInstance(Number(instance.id));
       setRefreshTrigger(c => c + 1);
       try {
         const serviceDetails = getServiceByName(instance.service_type || '');
@@ -167,9 +167,9 @@ function ProfilePageContent() {
           status: 'recurring_instance_cancelled',
         });
       } catch (e) { console.error('Error sending single-instance cancel notification:', e); }
-      toast({ title: 'Recurring instance cancelled', description: `Instance on ${instance.date} cancelled.` });
+      toast({ title: 'Instanță recurentă anulată', description: `Instanța din ${instance.date} anulată.` });
     } catch (e: any) {
-      toast({ title: 'Error', description: e.message, variant: 'destructive' });
+      toast({ title: 'Eroare', description: e.message, variant: 'destructive' });
     }
   };
   // Recurring: open modal and fetch preview
@@ -191,7 +191,7 @@ function ProfilePageContent() {
       const defaults = new Set(result.preview.filter(p => p.available).map(p => p.date));
       setSelectedPreviewDates(defaults);
     } catch (e: any) {
-      toast({ title: 'Error', description: e.message, variant: 'destructive' });
+      toast({ title: 'Eroare', description: e.message, variant: 'destructive' });
     } finally {
       setPreviewLoading(false);
     }
@@ -208,9 +208,9 @@ function ProfilePageContent() {
       setRefreshTrigger(c => c + 1);
       const selectedCount = selectedDates.length || result.createdCount + result.skippedCount;
       const baseMsg = result.skippedCount > 0
-        ? `${result.createdCount} created, ${result.skippedCount} skipped.`
-        : `${result.createdCount} instances created.`;
-      toast({ title: 'Recurring created', description: `${baseMsg} (${selectedCount} selected)` });
+        ? `${result.createdCount} create, ${result.skippedCount} omise.`
+        : `${result.createdCount} instanțe create.`;
+      toast({ title: 'Recurență creată', description: `${baseMsg} (${selectedCount} selectate)` });
 
       // Send notifications: user email and admin SMS via booking_updated_profile
       try {
@@ -236,7 +236,7 @@ function ProfilePageContent() {
         console.error('Error sending recurring creation notification:', e);
       }
     } catch (e: any) {
-      toast({ title: 'Error', description: e.message, variant: 'destructive' });
+      toast({ title: 'Eroare', description: e.message, variant: 'destructive' });
     }
   };
 
@@ -250,11 +250,11 @@ function ProfilePageContent() {
 
   const handleCancelRecurring = async (booking: any) => {
     try {
-      const ok = window.confirm('Cancel recurring and remove all future instances?');
+      const ok = window.confirm('Anulați recurența și eliminați toate instanțele viitoare?');
       if (!ok) return;
       const res = await cancelRecurring(booking.id);
       setRefreshTrigger(c => c + 1);
-      toast({ title: 'Recurring cancelled', description: `${res.deletedCount} future instances removed.` });
+      toast({ title: 'Recurență anulată', description: `${res.deletedCount} instanțe viitoare eliminate.` });
 
       // Send notifications: user email and admin SMS via booking_updated_profile
       try {
@@ -279,12 +279,12 @@ function ProfilePageContent() {
         console.error('Error sending recurring cancellation notification:', e);
       }
     } catch (e: any) {
-      toast({ title: 'Error', description: e.message, variant: 'destructive' });
+      toast({ title: 'Eroare', description: e.message, variant: 'destructive' });
     }
   };
 
   const handleCancelBooking = async (booking) => {
-    if (!window.confirm('Are you sure you want to cancel this booking?')) {
+    if (!window.confirm('Sigur doriți să anulați această rezervare?')) {
       return;
     }
 
@@ -328,14 +328,14 @@ function ProfilePageContent() {
       }
 
       toast({
-        title: "Booking Cancelled",
-        description: "Your booking has been cancelled successfully.",
+        title: "Rezervare Anulată",
+        description: "Rezervarea dumneavoastră a fost anulată cu succes.",
       });
     } catch (error) {
       console.error('Error cancelling booking:', error);
       toast({
-        title: "Error",
-        description: "Failed to cancel booking. Please try again.",
+        title: "Eroare",
+        description: "Eroare la anularea rezervării. Vă rugăm să încercați din nou.",
         variant: "destructive",
       });
     }
@@ -368,14 +368,14 @@ function ProfilePageContent() {
   };
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white">Loading...</div>;
+    return <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white">Se încarcă...</div>;
   }
 
   if (!user || !profile) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white">
-        <p>You are not logged in.</p>
-        <Button onClick={() => navigate('/')} className="ml-4">Go to Login</Button>
+        <p>Nu sunteți autentificat.</p>
+        <Button onClick={() => navigate('/')} className="ml-4">Mergi la Autentificare</Button>
       </div>
     );
   }
@@ -443,7 +443,7 @@ function ProfilePageContent() {
     <div className="flex h-screen bg-gray-900 text-white">
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex w-64 bg-gray-800 p-6 flex-col">
-        <h2 className="text-2xl font-bold mb-8 text-violet-400">My Account</h2>
+        <h2 className="text-2xl font-bold mb-8 text-violet-400">Contul Meu</h2>
         <nav className="flex flex-col space-y-4">
           <button
             onClick={() => setActiveView('details')}
@@ -452,7 +452,7 @@ function ProfilePageContent() {
             }`}
           >
             <User />
-            <span>Profile Details</span>
+            <span>Detalii Profil</span>
           </button>
           <button
             onClick={() => setActiveView('bookings')}
@@ -461,7 +461,7 @@ function ProfilePageContent() {
             }`}
           >
             <Calendar />
-            <span>Bookings</span>
+            <span>Rezervări</span>
           </button>
         </nav>
         <Button
@@ -469,7 +469,7 @@ function ProfilePageContent() {
           className="w-full mt-auto bg-red-600 hover:bg-red-700 text-white py-2 rounded font-semibold flex items-center justify-center space-x-2"
         >
           <LogOut />
-          <span>Logout</span>
+          <span>Deconectare</span>
         </Button>
       </aside>
 
@@ -480,7 +480,7 @@ function ProfilePageContent() {
             <Button variant="ghost" size="icon" onClick={handleBackClick} className="mr-3 md:mr-0">
               <ArrowLeft className="h-5 w-5 md:h-6 md:w-6" />
             </Button>
-            <h1 className="text-lg md:text-2xl font-semibold">Profile Overview</h1>
+            <h1 className="text-lg md:text-2xl font-semibold">Prezentare Profil</h1>
           </div>
           <div className="flex items-center space-x-2">
             {/* Mobile Menu Button */}
@@ -499,7 +499,7 @@ function ProfilePageContent() {
         {isMobileMenuOpen && (
           <div className="md:hidden bg-gray-800/90 border-b border-gray-700">
             <div className="px-4 py-3">
-              <div className="text-sm font-medium text-gray-400 mb-2 px-2">Navigation</div>
+              <div className="text-sm font-medium text-gray-400 mb-2 px-2">Navigare</div>
               <div className="space-y-1">
                 <Button
                   variant="ghost"
@@ -511,7 +511,7 @@ function ProfilePageContent() {
                   onClick={() => handleViewChange('details')}
                 >
                   <User className="mr-3 h-5 w-5" />
-                  Profile Details
+                  Detalii Profil
                 </Button>
                 <Button
                   variant="ghost"
@@ -523,7 +523,7 @@ function ProfilePageContent() {
                   onClick={() => handleViewChange('bookings')}
                 >
                   <Calendar className="mr-3 h-5 w-5" />
-                  Bookings
+                  Rezervări
                 </Button>
               </div>
               <div className="mt-4 pt-2 border-t border-gray-700">
@@ -533,7 +533,7 @@ function ProfilePageContent() {
                   onClick={handleLogout}
                 >
                   <LogOut className="mr-3 h-5 w-5" />
-                  Logout
+                  Deconectare
                 </Button>
               </div>
             </div>
@@ -546,7 +546,7 @@ function ProfilePageContent() {
           {activeView === 'details' && (
             <section id="profile-details">
               <h2 className="text-xl md:text-3xl font-bold mb-4 md:mb-6 text-violet-300 border-b border-gray-700 pb-2 flex items-center justify-between">
-                Profile Details
+                Detalii Profil
                 <Button
                   variant="ghost"
                   size="icon"
@@ -559,30 +559,30 @@ function ProfilePageContent() {
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 bg-gray-800/50 p-4 md:p-6 rounded-lg mb-6">
                 <div>
-                  <label className="text-sm font-medium text-gray-400">Full Name</label>
-                  <p className="text-base md:text-lg mt-1">{profile.full_name || 'Not provided'}</p>
+                  <label className="text-sm font-medium text-gray-400">Nume Complet</label>
+                  <p className="text-base md:text-lg mt-1">{profile.full_name || 'Necompletat'}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-400">Email Address</label>
+                  <label className="text-sm font-medium text-gray-400">Adresă Email</label>
                   <p className="text-base md:text-lg mt-1">{user.email}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-400">Phone Number</label>
+                  <label className="text-sm font-medium text-gray-400">Număr de Telefon</label>
                   <div className="flex items-center space-x-2">
-                    <p className="text-base md:text-lg mt-1">{profile.phone || 'Not provided'}</p>
+                    <p className="text-base md:text-lg mt-1">{profile.phone || 'Necompletat'}</p>
                     {profile.phone && (
                       <span className={`text-xs font-medium px-2 py-1 rounded-full ${
                         profile.phone_verified 
                           ? 'bg-green-500/20 text-green-300' 
                           : 'bg-yellow-500/20 text-yellow-300'
                       }`}>
-                        {profile.phone_verified ? 'Verified' : 'Not Verified'}
+                        {profile.phone_verified ? 'Verificat' : 'Neverificat'}
                       </span>
                     )}
                   </div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-400">Account Role</label>
+                  <label className="text-sm font-medium text-gray-400">Rol Cont</label>
                   <p className="text-base md:text-lg mt-1 capitalize">{role}</p>
                 </div>
               </div>
@@ -590,17 +590,17 @@ function ProfilePageContent() {
               {/* Password Change Section */}
               <div className="bg-gray-800/50 p-4 md:p-6 rounded-lg mb-6">
                 <div className="flex flex-col md:flex-row md:items-center justify-between mb-4">
-                  <h3 className="text-base md:text-lg font-semibold text-violet-300 mb-2 md:mb-0">Password</h3>
+                  <h3 className="text-base md:text-lg font-semibold text-violet-300 mb-2 md:mb-0">Parolă</h3>
                   <Button
                     variant="outline"
                     onClick={() => setIsPasswordChangeOpen(true)}
                     className="border-gray-600 text-gray-800 hover:bg-gray-700 w-full md:w-auto"
                   >
-                    Change Password
+                    Schimbă Parola
                   </Button>
                 </div>
                 <p className="text-gray-400 text-sm">
-                  Keep your account secure by regularly updating your password.
+                  Păstrați-vă contul în siguranță actualizând periodic parola.
                 </p>
               </div>
               
@@ -612,8 +612,8 @@ function ProfilePageContent() {
               {role === 'admin' && (
                 <div className="bg-blue-900/20 border border-blue-700/50 rounded-lg p-4 mt-4">
                   <p className="text-blue-300 text-sm">
-                    <strong>Note:</strong> SMS notifications are always sent to the Head admin regardless of preferences. 
-                    Email preferences only control email notifications.
+                    <strong>Notă:</strong> Notificările SMS sunt întotdeauna trimise către administratorul principal indiferent de preferințe. 
+                    Preferințele de email controlează doar notificările prin email.
                   </p>
                 </div>
               )}
@@ -639,13 +639,13 @@ function ProfilePageContent() {
 
           {activeView === 'bookings' && (
             <section id="booking-history">
-              <h2 className="text-xl md:text-3xl font-bold mb-4 md:mb-6 text-violet-300 border-b border-gray-700 pb-2">Bookings</h2>
+              <h2 className="text-xl md:text-3xl font-bold mb-4 md:mb-6 text-violet-300 border-b border-gray-700 pb-2">Rezervări</h2>
               
               {/* Side-by-side layout: Calendar on left, Bookings on right */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                {/* Calendar view - Left side */}
                <div className="bg-gray-800/50 rounded-lg p-4">
-                 <div className="mb-3 text-gray-300">Select a date to view bookings.</div>
+                 <div className="mb-3 text-gray-300">Selectați o dată pentru a vizualiza rezervările.</div>
                  <div className="flex justify-center">
                    <UICalendar
                      mode="single"
@@ -695,57 +695,57 @@ function ProfilePageContent() {
         {recurringOpen && selectedBooking && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
             <div className="bg-gray-900 border border-gray-700 rounded-lg w-full max-w-lg p-6">
-              <h3 className="text-xl font-semibold text-violet-300 mb-4">Do you wish to make this booking recurring?</h3>
+              <h3 className="text-xl font-semibold text-violet-300 mb-4">Doriți să faceți această rezervare recurentă?</h3>
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-sm text-gray-300 mb-1">Recurrence</label>
+                    <label className="block text-sm text-gray-300 mb-1">Recurență</label>
                     <select
                       value={recurrenceType}
                       onChange={(e) => setRecurrenceType(e.target.value as RecurrenceType)}
                       className="w-full bg-gray-800 text-white border border-gray-600 rounded px-3 py-2"
                     >
-                      <option value="weekly">Weekly</option>
-                      <option value="biweekly">Biweekly</option>
+                      <option value="weekly">Săptămânal</option>
+                      <option value="biweekly">La două săptămâni</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm text-gray-300 mb-1">Duration</label>
+                    <label className="block text-sm text-gray-300 mb-1">Durată</label>
                     <select
                       value={horizon}
                       onChange={(e) => setHorizon(Number(e.target.value) as 30 | 60 | 90)}
                       className="w-full bg-gray-800 text-white border border-gray-600 rounded px-3 py-2"
                     >
-                      <option value={30}>30 days</option>
-                      <option value={60}>60 days</option>
-                      <option value={90}>90 days</option>
+                      <option value={30}>30 zile</option>
+                      <option value={60}>60 zile</option>
+                      <option value={90}>90 zile</option>
                     </select>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3">
                   <Button onClick={handlePreviewRecurring} disabled={previewLoading} className="bg-violet-600 hover:bg-violet-700 text-white">
-                    {previewLoading ? 'Previewing...' : 'Preview'}
+                    {previewLoading ? 'Se previzualizează...' : 'Previzualizare'}
                   </Button>
                   <Button variant="outline" onClick={() => setRecurringOpen(false)} className="border-gray-600 text-gray-600 hover:bg-gray-800">
-                    Close
+                    Închide
                   </Button>
                 </div>
 
                 {preview && (
                   <div className="max-h-64 overflow-auto border border-gray-700 rounded p-3 bg-gray-800">
-                    <div className="text-sm text-gray-300 mb-2">Preview ({preview.length} dates)</div>
+                    <div className="text-sm text-gray-300 mb-2">Previzualizare ({preview.length} date)</div>
                     <ul className="space-y-2 text-sm">
                       {preview.map((p, idx) => {
                         const selected = selectedPreviewDates.has(p.date);
                         return (
                           <li key={idx} className={`flex items-center justify-between rounded px-2 py-1 ${p.available ? (selected ? 'border border-green-500/60 bg-green-600/10' : 'border border-gray-600/50 bg-gray-700/40') : 'opacity-60'}`}>
                             <span className={p.available ? 'text-white' : 'text-gray-400'}>
-                              {p.date} at {p.time} {p.available ? '' : `(unavailable: ${p.reason})`}
+                              {p.date} la {p.time} {p.available ? '' : `(indisponibil: ${p.reason})`}
                             </span>
                             {p.available && (
                               <Button size="sm" variant="ghost" onClick={() => handleTogglePreviewDate(p.date)} className={selected ? 'text-yellow-300 hover:text-yellow-200' : 'text-green-300 hover:text-green-200'}>
-                                {selected ? 'Deselect' : 'Select'}
+                                {selected ? 'Deselectează' : 'Selectează'}
                               </Button>
                             )}
                           </li>
@@ -754,12 +754,12 @@ function ProfilePageContent() {
                     </ul>
                     <div className="mt-3 flex gap-2">
                       {preview.some(p => !p.available) && (
-                        <div className="text-xs text-yellow-300">Some dates are unavailable. Proceeding will create only available instances.</div>
+                        <div className="text-xs text-yellow-300">Unele date sunt indisponibile. Continuarea va crea doar instanțele disponibile.</div>
                       )}
                     </div>
                     <div className="mt-3">
                       <Button onClick={handleConfirmRecurring} className="bg-green-600 hover:bg-green-700 text-white">
-                        Confirm Recurring
+                        Confirmă Recurența
                       </Button>
                     </div>
                   </div>
