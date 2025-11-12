@@ -671,9 +671,11 @@ const emailTemplates = {
   booking_suggestion_sent: (data: BookingNotificationData): { subject: string; html: string; text: string } => {
     // Extract suggested date/time from notes field (format: "suggested_date|suggested_time|token")
     const [suggestedDate, suggestedTime, token] = (data.notes || '||').split('|');
-    const callbackUrl = import.meta.env.VITE_BOOKING_RESPONSE_CALLBACK_URL || 'https://your-project.supabase.co/functions/v1/booking-response';
-    const acceptUrl = `${callbackUrl}?token=${token}&action=accept&booking_id=${data.bookingId}`;
-    const declineUrl = `${callbackUrl}?token=${token}&action=decline&booking_id=${data.bookingId}`;
+    
+    const webAppBaseUrl = import.meta.env.DEV ? 'http://localhost:8080' : 'https://masajbymelinda.ro';
+
+    const acceptUrl = `${webAppBaseUrl}/booking-confirmation?token=${token}&action=accept&booking_id=${data.bookingId}`;
+    const declineUrl = `${webAppBaseUrl}/booking-confirmation?token=${token}&action=decline&booking_id=${data.bookingId}`;
     
     const subject = `Sugestie Modificare Rezervare - ${data.serviceName}`;
     const html = `

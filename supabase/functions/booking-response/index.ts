@@ -9,7 +9,12 @@ serve(async (req) => {
   console.log(`Request Method: ${req.method}`);
   console.log(`Request URL: ${req.url}`);
 
-  const webAppUrl = Deno.env.get('WEB_APP_URL') ?? 'https://masajbymelinda.ro';
+  const url = new URL(req.url);
+  const env = url.searchParams.get('env');
+
+  const webAppUrl = env === 'dev'
+    ? 'http://localhost:8080'
+    : Deno.env.get('WEB_APP_URL') ?? 'https://masajbymelinda.ro';
   const redirectUrl = new URL('/booking-confirmation', webAppUrl);
 
   if (req.method === 'OPTIONS') {
@@ -33,8 +38,6 @@ serve(async (req) => {
       serviceRoleKey
     );
 
-    const url = new URL(req.url);
-    
     // Get token from URL parameters
     const token = url.searchParams.get('token');
     const action = url.searchParams.get('action')?.toLowerCase();
