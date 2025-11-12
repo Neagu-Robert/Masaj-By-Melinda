@@ -137,6 +137,16 @@ function ProfilePageContent() {
   }, [user, refreshTrigger]);
 
   const handleEditClick = (booking) => {
+    // Check if booking is unconfirmed
+    if (booking.status === 'unconfirmed' || booking.status === 'suggested') {
+      toast({
+        title: "Editare Indisponibilă",
+        description: "Nu puteți edita o rezervare neconfirmată. Vă rugăm să așteptați confirmarea administratorului.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setSelectedBooking(booking);
     setIsModalOpen(true);
   };
@@ -410,6 +420,7 @@ function ProfilePageContent() {
   const recurringSet = new Set<string>();
   const pastBookedSet = new Set<string>();
   const futureBookedSet = new Set<string>();
+  const unconfirmedSet = new Set<string>();
 
   // Mark original recurring booking date as recurring (green)
   bookings.forEach((b: any) => {
@@ -436,6 +447,14 @@ function ProfilePageContent() {
     if (!b.recurring) {
       if (d < todayMidnight) pastBookedSet.add(key);
       else if (d > todayMidnight) futureBookedSet.add(key);
+    }
+  });
+
+  // Mark unconfirmed bookings
+  bookings.forEach((b: any) => {
+    if (b.status === 'unconfirmed' || b.status === 'suggested') {
+      const key = toKey(b.booking_date);
+      unconfirmedSet.add(key);
     }
   });
 
@@ -662,12 +681,14 @@ function ProfilePageContent() {
                         recurring: (date) => recurringSet.has(date.toISOString().slice(0,10)),
                         pastBooked: (date) => pastBookedSet.has(date.toISOString().slice(0,10)),
                         futureBooked: (date) => futureBookedSet.has(date.toISOString().slice(0,10)),
+                        unconfirmed: (date) => unconfirmedSet.has(date.toISOString().slice(0,10))
                       }}
                       modifiersClassNames={{
                         today: "bg-blue-600 text-white rounded-lg shadow-lg",
                         recurring: "bg-green-600/60 text-white rounded-lg shadow-lg",
                         pastBooked: "bg-violet-900 text-white rounded-lg shadow-lg",
                         futureBooked: "bg-purple-600 text-white rounded-lg shadow-lg",
+                        unconfirmed: "bg-gray-600/60 text-gray-300 rounded-lg shadow-lg"
                       }}
                     />
                   </div>

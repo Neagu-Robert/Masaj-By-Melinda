@@ -38,8 +38,22 @@ const smsTemplates = {
   // Admin updates booking - Admin receives SMS with updated info
   booking_updated_admin: (data: BookingNotificationData): string => {
     return `Masaj by Melinda: Rezervare actualizată de admin. Client: ${data.userName}, Serviciu: ${data.serviceName}, Dată: ${data.dateTime}, Durată: ${data.duration} min.`;
-  }
-  ,
+  },
+
+  // New booking needs approval - Admin receives SMS
+  booking_approval_needed: (data: BookingNotificationData): string => {
+    return `Masaj by Melinda: Rezervare nouă de la ${data.userName} necesită aprobare. Serviciu: ${data.serviceName}, Dată: ${data.dateTime}. Verificați panoul de confirmare.`;
+  },
+
+  // Customer accepted suggestion - Admin receives SMS
+  booking_suggestion_accepted: (data: BookingNotificationData): string => {
+    return `Masaj by Melinda: ${data.userName} a acceptat sugestia de modificare pentru ${data.serviceName} pe ${data.dateTime}.`;
+  },
+
+  // Customer declined suggestion - Admin receives SMS
+  booking_suggestion_declined: (data: BookingNotificationData): string => {
+    return `Masaj by Melinda: ${data.userName} a refuzat sugestia de modificare pentru ${data.serviceName}. Dată originală: ${data.dateTime}.`;
+  },
   // Recurring enabled by user
   recurring_created_profile: (data: BookingNotificationData): string => {
     const meta = data.notes ? ` (${data.notes})` : '';

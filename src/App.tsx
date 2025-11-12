@@ -12,6 +12,7 @@ import PachetePage from "./pages/PachetePage";
 import ProfilePage from "./pages/ProfilePage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
+import BookingConfirmationPage from "./pages/BookingConfirmationPage";
 import DashboardLayout from "./pages/admin/DashboardLayout";
 import AdminHome from "./pages/admin/AdminHome";
 import Bookings from "./pages/admin/Bookings";
@@ -19,6 +20,7 @@ import Availabilities from "./pages/admin/Availabilities";
 import Analytics from "./pages/admin/Analytics";
 import Users from "./pages/admin/Users";
 import AuditLogs from "./pages/admin/AuditLogs";
+import Confirmari from "./pages/admin/Confirmari";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { ServicesProvider } from "./contexts/ServicesContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
@@ -55,8 +57,13 @@ function App() {
             <Route path="/" element={<AuthPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/booking-confirmation" element={<BookingConfirmationPage />} />
             <Route path="/home" element={<Index />} />
-            <Route path="/book" element={<BookingPage />} />
+            <Route path="/book" element={
+              <ProtectedRoute allowedRoles={['admin', 'customer']}>
+                <BookingPage />
+              </ProtectedRoute>
+            } />
             <Route path="/pachete" element={<PachetePage />} />
             <Route path="/profile" element={
               <ProtectedRoute allowedRoles={['admin', 'customer']}>
@@ -74,6 +81,7 @@ function App() {
               <Route path="analytics" element={<Analytics />} />
               <Route path="users" element={<Users />} />
               <Route path="auditlogs" element={<AuditLogs />} />
+              <Route path="confirmari" element={<Confirmari />} />
         
             </Route>
             <Route path="/not-authorized" element={<NotAuthorized />} />

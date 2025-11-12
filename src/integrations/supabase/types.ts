@@ -23,6 +23,10 @@ export type Database = {
           recurring: boolean
           updated_at: string
           user_id?: string | null
+          status: 'unconfirmed' | 'confirmed' | 'rejected' | 'suggested'
+          suggested_date: string | null
+          suggested_time: string | null
+          suggested_by_admin: boolean | null
         }
         Insert: {
           booking_date: string
@@ -37,6 +41,10 @@ export type Database = {
           recurring?: boolean
           updated_at?: string
           user_id?: string | null
+          status?: 'unconfirmed' | 'confirmed' | 'rejected' | 'suggested'
+          suggested_date?: string | null
+          suggested_time?: string | null
+          suggested_by_admin?: boolean | null
         }
         Update: {
           booking_date?: string
@@ -51,6 +59,10 @@ export type Database = {
           recurring?: boolean
           updated_at?: string
           user_id?: string | null
+          status?: 'unconfirmed' | 'confirmed' | 'rejected' | 'suggested'
+          suggested_date?: string | null
+          suggested_time?: string | null
+          suggested_by_admin?: boolean | null
         }
         Relationships: []
       }

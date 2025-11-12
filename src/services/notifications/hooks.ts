@@ -361,6 +361,144 @@ export const useBookingNotifications = () => {
     return sendBookingNotification('reminder', bookingData);
   }, [sendBookingNotification]);
 
+  /**
+   * Send a booking approval needed notification
+   */
+  const sendBookingApprovalNeeded = useCallback((bookingData: {
+    bookingId: string;
+    userId: string;
+    userName: string;
+    userEmail: string;
+    userPhone?: string;
+    serviceName: string;
+    serviceId?: number | null;
+    serviceProvider?: string;
+    bookingDate: string | Date;
+    bookingTime: string;
+    duration: number;
+    price: number;
+    location?: string;
+    notes?: string;
+    status: string;
+  }) => {
+    return sendBookingNotification('booking_approval_needed', bookingData);
+  }, [sendBookingNotification]);
+
+  /**
+   * Send a booking confirmed by admin notification
+   */
+  const sendBookingConfirmedByAdmin = useCallback((bookingData: {
+    bookingId: string;
+    userId: string;
+    userName: string;
+    userEmail: string;
+    userPhone?: string;
+    serviceName: string;
+    serviceId?: number | null;
+    serviceProvider?: string;
+    bookingDate: string | Date;
+    bookingTime: string;
+    duration: number;
+    price: number;
+    location?: string;
+    notes?: string;
+    status: string;
+  }) => {
+    return sendBookingNotification('booking_confirmed_by_admin', bookingData);
+  }, [sendBookingNotification]);
+
+  /**
+   * Send a booking rejected by admin notification
+   */
+  const sendBookingRejectedByAdmin = useCallback((bookingData: {
+    bookingId: string;
+    userId: string;
+    userName: string;
+    userEmail: string;
+    userPhone?: string;
+    serviceName: string;
+    serviceId?: number | null;
+    serviceProvider?: string;
+    bookingDate: string | Date;
+    bookingTime: string;
+    duration: number;
+    price: number;
+    location?: string;
+    notes?: string;
+    status: string;
+  }) => {
+    return sendBookingNotification('booking_rejected_by_admin', bookingData);
+  }, [sendBookingNotification]);
+
+  /**
+   * Send a booking suggestion notification
+   */
+  const sendBookingSuggestion = useCallback((bookingData: {
+    bookingId: string;
+    userId: string;
+    userName: string;
+    userEmail: string;
+    userPhone?: string;
+    serviceName: string;
+    serviceId?: number | null;
+    serviceProvider?: string;
+    bookingDate: string | Date;
+    bookingTime: string;
+    duration: number;
+    price: number;
+    location?: string;
+    notes?: string;  // Format: "suggested_date|suggested_time|token"
+    status: string;
+  }) => {
+    return sendBookingNotification('booking_suggestion_sent', bookingData);
+  }, [sendBookingNotification]);
+
+  /**
+   * Send a booking suggestion accepted notification
+   */
+  const sendBookingSuggestionAccepted = useCallback((bookingData: {
+    bookingId: string;
+    userId: string;
+    userName: string;
+    userEmail: string;
+    userPhone?: string;
+    serviceName: string;
+    serviceId?: number | null;
+    serviceProvider?: string;
+    bookingDate: string | Date;
+    bookingTime: string;
+    duration: number;
+    price: number;
+    location?: string;
+    notes?: string;
+    status: string;
+  }) => {
+    return sendBookingNotification('booking_suggestion_accepted', bookingData);
+  }, [sendBookingNotification]);
+
+  /**
+   * Send a booking suggestion declined notification
+   */
+  const sendBookingSuggestionDeclined = useCallback((bookingData: {
+    bookingId: string;
+    userId: string;
+    userName: string;
+    userEmail: string;
+    userPhone?: string;
+    serviceName: string;
+    serviceId?: number | null;
+    serviceProvider?: string;
+    bookingDate: string | Date;
+    bookingTime: string;
+    duration: number;
+    price: number;
+    location?: string;
+    notes?: string;
+    status: string;
+  }) => {
+    return sendBookingNotification('booking_suggestion_declined', bookingData);
+  }, [sendBookingNotification]);
+
   return {
     sendBookingNotification,
     sendBookingConfirmation,
@@ -375,6 +513,12 @@ export const useBookingNotifications = () => {
     sendRecurringCreatedAdmin,
     sendRecurringCancelledAdmin,
     sendRecurringInstanceCancelledProfile,
-    sendRecurringInstanceCancelledAdmin
+    sendRecurringInstanceCancelledAdmin,
+    sendBookingApprovalNeeded,
+    sendBookingConfirmedByAdmin,
+    sendBookingRejectedByAdmin,
+    sendBookingSuggestion,
+    sendBookingSuggestionAccepted,
+    sendBookingSuggestionDeclined
   };
 }; 

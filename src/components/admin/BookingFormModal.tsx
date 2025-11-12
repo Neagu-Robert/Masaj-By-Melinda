@@ -162,6 +162,7 @@ export default function BookingFormModal({ open, onClose, booking }: BookingForm
           service_id: serviceId,
           booking_date: formatDateForDB(bookingDate),
           booking_time: bookingTime,
+          status: 'confirmed' as const  // Admin updates are instantly confirmed
         };
 
         await updateBooking(booking.id, updatedBooking);
@@ -220,6 +221,7 @@ export default function BookingFormModal({ open, onClose, booking }: BookingForm
           service_id: serviceId,
           booking_date: formatDateForDB(bookingDate),
           booking_time: bookingTime,
+          status: 'confirmed' as const  // Admin bookings are instantly confirmed
         };
 
         await addBooking(newBooking);

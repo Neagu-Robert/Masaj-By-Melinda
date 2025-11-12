@@ -15,7 +15,13 @@ export type NotificationType =
   | 'booking_updated_admin'
   | 'booking_cancelled_admin'
   | 'password_changed'
-  | 'password_reset_requested';
+  | 'password_reset_requested'
+  | 'booking_approval_needed'
+  | 'booking_confirmed_by_admin'
+  | 'booking_rejected_by_admin'
+  | 'booking_suggestion_sent'
+  | 'booking_suggestion_accepted'
+  | 'booking_suggestion_declined';
 
 export type NotificationChannel = 'email' | 'sms';
 

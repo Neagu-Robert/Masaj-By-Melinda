@@ -16,6 +16,26 @@ import { Edit, Trash2, Plus, Calendar as CalendarIcon } from "lucide-react";
 import { Calendar as UICalendar } from '@/components/ui/calendar';
 import { previewCreateRecurring, confirmCreateRecurring, cancelRecurring, cancelRecurringInstance, RecurrenceType } from '@/services/recurring/service';
 
+function getStatusBadge(status?: string) {
+  if (!status || status === 'confirmed') {
+    return <span className="text-xs font-medium px-2 py-1 rounded-full bg-green-500/20 text-green-300">Confirmat</span>;
+  }
+  
+  const statusConfig = {
+    unconfirmed: { bg: 'bg-yellow-500/20', text: 'text-yellow-300', label: 'În așteptare' },
+    suggested: { bg: 'bg-blue-500/20', text: 'text-blue-300', label: 'Sugestie' },
+    rejected: { bg: 'bg-red-500/20', text: 'text-red-300', label: 'Respins' },
+  };
+  
+  const config = statusConfig[status] || statusConfig.unconfirmed;
+  
+  return (
+    <span className={`text-xs font-medium px-2 py-1 rounded-full ${config.bg} ${config.text}`}>
+      {config.label}
+    </span>
+  );
+}
+
 export default function Bookings() {
   const { bookings, loading, addBooking, updateBooking, deleteBooking } = useBookings();
   const { getServiceByName } = useServices();
@@ -220,8 +240,15 @@ export default function Bookings() {
   const recurringSet = new Set<string>();
   const pastBookedSet = new Set<string>();
   const futureBookedSet = new Set<string>();
+  const unconfirmedSet = new Set<string>();
   // mark original recurring
   bookings.forEach((b: any) => { if (b.recurring) recurringSet.add(b.booking_date); });
+  // mark unconfirmed bookings
+  bookings.forEach((b: any) => {
+    if (b.status === 'unconfirmed' || b.status === 'suggested') {
+      unconfirmedSet.add(b.booking_date);
+    }
+  });
   // mark planned recurring instances: only add those with TRUE status
   recurringInstances.forEach((r) => { if (r.status) recurringSet.add(r.date); });
   // regular booked
@@ -428,12 +455,14 @@ export default function Bookings() {
                   recurring: (date) => recurringSet.has(dateKey(date)),
                   pastBooked: (date) => pastBookedSet.has(dateKey(date)),
                   futureBooked: (date) => futureBookedSet.has(dateKey(date)),
+                  unconfirmed: (date) => unconfirmedSet.has(dateKey(date))
                 }}
                 modifiersClassNames={{
                   today: "bg-blue-600/60 text-white rounded-lg shadow-lg",
                   recurring: "bg-green-600/60 text-white rounded-lg shadow-lg",
                   pastBooked: "bg-purple-900/70 text-white rounded-lg shadow-lg",
                   futureBooked: "bg-violet-600/80 text-white rounded-lg shadow-lg",
+                  unconfirmed: "bg-yellow-600/40 text-white rounded-lg shadow-lg"
                 }}
               />
             </div>
@@ -487,7 +516,10 @@ export default function Bookings() {
                             <div>
                               <div className="text-white font-medium">{b.first_name} {b.last_name}</div>
                               <div className="text-xs text-gray-400">{b.profiles?.email || '-'} • {b.phone_number}</div>
-                              <div className="text-sm text-gray-300">{b.service_type}</div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm text-gray-300">{b.service_type}</span>
+                                {getStatusBadge(b.status)}
+                              </div>
                             </div>
                             <div className="text-right text-white text-sm">{b.booking_date} la {b.booking_time}</div>
                           </div>

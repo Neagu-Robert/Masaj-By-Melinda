@@ -13,39 +13,42 @@ import { logNotification } from './loggingService';
 // Email templates
 const emailTemplates = {
   booking_created_customer: (data: BookingNotificationData): { subject: string; html: string; text: string } => {
-    const subject = `Confirmare Rezervare - ${data.serviceName}`;
+    const isUnconfirmed = data.status === 'unconfirmed';
+    const subject = isUnconfirmed 
+      ? `Rezervare Primită - Așteptare Aprobare - ${data.serviceName}`
+      : `Confirmare Rezervare - ${data.serviceName}`;
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #8b5cf6;">Confirmare Rezervare</h2>
+        <h2 style="color: ${isUnconfirmed ? '#f59e0b' : '#8b5cf6'};">${isUnconfirmed ? 'Rezervare Primită - În Așteptare' : 'Confirmare Rezervare'}</h2>
         <p>Dragă ${data.userName},</p>
-        <p>Rezervarea dumneavoastră a fost confirmată cu succes!</p>
-        <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
+        <p>${isUnconfirmed ? 'Rezervarea dumneavoastră a fost primită și este în așteptarea aprobării administratorului.' : 'Rezervarea dumneavoastră a fost confirmată cu succes!'}</p>
+        <div style="background-color: ${isUnconfirmed ? '#fffbeb' : '#f8fafc'}; padding: 20px; border-radius: 8px; margin: 20px 0;">
           <h3 style="margin-top: 0;">Detalii Rezervare:</h3>
           <p><strong>Serviciu:</strong> ${data.serviceName}</p>
           <p><strong>Dată și Oră:</strong> ${data.dateTime}</p>
           <p><strong>Durată:</strong> ${data.duration} minute</p>
           <p><strong>Preț:</strong> ${data.price} RON</p>
-          <p><strong>Status:</strong> ${data.status}</p>
+          <p><strong>Status:</strong> ${isUnconfirmed ? 'În așteptare de aprobare' : 'Confirmat'}</p>
         </div>
-        <p>Vă așteptăm cu drag!</p>
+        ${isUnconfirmed ? '<p style="color: #f59e0b;"><strong>Notă:</strong> Veți primi un email de confirmare după ce administratorul va aproba rezervarea. Data și ora pot fi ajustate dacă este necesar.</p>' : '<p>Vă așteptăm cu drag!</p>'}
         <p>Cu respect,<br>Masaj by Melinda</p>
       </div>
     `;
     const text = `
-      Confirmare Rezervare
+      ${isUnconfirmed ? 'Rezervare Primită - În Așteptare' : 'Confirmare Rezervare'}
       
       Dragă ${data.userName},
       
-      Rezervarea dumneavoastră a fost confirmată cu succes!
+      ${isUnconfirmed ? 'Rezervarea dumneavoastră a fost primită și este în așteptarea aprobării administratorului.' : 'Rezervarea dumneavoastră a fost confirmată cu succes!'}
       
       Detalii Rezervare:
       - Serviciu: ${data.serviceName}
       - Dată și Oră: ${data.dateTime}
       - Durată: ${data.duration} minute
       - Preț: ${data.price} RON
-      - Status: ${data.status}
+      - Status: ${isUnconfirmed ? 'În așteptare de aprobare' : 'Confirmat'}
       
-      Vă așteptăm cu drag!
+      ${isUnconfirmed ? 'Notă: Veți primi un email de confirmare după ce administratorul va aproba rezervarea. Data și ora pot fi ajustate dacă este necesar.' : 'Vă așteptăm cu drag!'}
       
       Cu respect,
       Masaj by Melinda
@@ -543,6 +546,181 @@ const emailTemplates = {
       Dacă ați solicitat această resetare, vă rugăm să verificați emailul pentru linkul de resetare și să urmați instrucțiunile.
       
       Din motive de securitate, linkurile de resetare a parolei expiră după o perioadă scurtă de timp.
+      
+      Cu respect,
+      Masaj by Melinda
+    `;
+    return { subject, html, text };
+  },
+
+  booking_approval_needed: (data: BookingNotificationData): { subject: string; html: string; text: string } => {
+    const subject = `Rezervare Primită - În Așteptare Aprobare - ${data.serviceName}`;
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #f59e0b;">Rezervare Primită - În Așteptare</h2>
+        <p>Dragă ${data.userName},</p>
+        <p>Rezervarea dumneavoastră a fost primită cu succes și este în așteptarea aprobării administratorului.</p>
+        <div style="background-color: #fffbeb; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="margin-top: 0;">Detalii Rezervare:</h3>
+          <p><strong>Serviciu:</strong> ${data.serviceName}</p>
+          <p><strong>Dată și Oră:</strong> ${data.dateTime}</p>
+          <p><strong>Durată:</strong> ${data.duration} minute</p>
+          <p><strong>Preț:</strong> ${data.price} RON</p>
+          <p><strong>Status:</strong> În așteptare de aprobare</p>
+        </div>
+        <p style="color: #f59e0b;"><strong>Notă:</strong> Veți primi un email de confirmare după ce administratorul va aproba rezervarea. Data și ora pot fi ajustate dacă este necesar.</p>
+        <p>Cu respect,<br>Masaj by Melinda</p>
+      </div>
+    `;
+    const text = `
+      Rezervare Primită - În Așteptare
+      
+      Dragă ${data.userName},
+      
+      Rezervarea dumneavoastră a fost primită cu succes și este în așteptarea aprobării administratorului.
+      
+      Detalii Rezervare:
+      - Serviciu: ${data.serviceName}
+      - Dată și Oră: ${data.dateTime}
+      - Durată: ${data.duration} minute
+      - Preț: ${data.price} RON
+      - Status: În așteptare de aprobare
+      
+      Notă: Veți primi un email de confirmare după ce administratorul va aproba rezervarea. Data și ora pot fi ajustate dacă este necesar.
+      
+      Cu respect,
+      Masaj by Melinda
+    `;
+    return { subject, html, text };
+  },
+
+  booking_confirmed_by_admin: (data: BookingNotificationData): { subject: string; html: string; text: string } => {
+    const subject = `Rezervare Confirmată - ${data.serviceName}`;
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #10b981;">Rezervare Confirmată</h2>
+        <p>Dragă ${data.userName},</p>
+        <p>Rezervarea dumneavoastră a fost confirmată de către administratorul nostru!</p>
+        <div style="background-color: #f0fdf4; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="margin-top: 0;">Detalii Rezervare Confirmată:</h3>
+          <p><strong>Serviciu:</strong> ${data.serviceName}</p>
+          <p><strong>Dată și Oră:</strong> ${data.dateTime}</p>
+          <p><strong>Durată:</strong> ${data.duration} minute</p>
+          <p><strong>Preț:</strong> ${data.price} RON</p>
+        </div>
+        <p>Vă așteptăm cu drag!</p>
+        <p>Cu respect,<br>Masaj by Melinda</p>
+      </div>
+    `;
+    const text = `
+      Rezervare Confirmată
+      
+      Dragă ${data.userName},
+      
+      Rezervarea dumneavoastră a fost confirmată de către administratorul nostru!
+      
+      Detalii Rezervare Confirmată:
+      - Serviciu: ${data.serviceName}
+      - Dată și Oră: ${data.dateTime}
+      - Durată: ${data.duration} minute
+      - Preț: ${data.price} RON
+      
+      Vă așteptăm cu drag!
+      
+      Cu respect,
+      Masaj by Melinda
+    `;
+    return { subject, html, text };
+  },
+
+  booking_rejected_by_admin: (data: BookingNotificationData): { subject: string; html: string; text: string } => {
+    const subject = `Rezervare Respinsă - ${data.serviceName}`;
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #ef4444;">Rezervare Respinsă</h2>
+        <p>Dragă ${data.userName},</p>
+        <p>Ne pare rău, dar rezervarea dumneavoastră nu a putut fi confirmată.</p>
+        <div style="background-color: #fef2f2; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="margin-top: 0;">Detalii Rezervare:</h3>
+          <p><strong>Serviciu:</strong> ${data.serviceName}</p>
+          <p><strong>Dată și Oră Solicitată:</strong> ${data.dateTime}</p>
+        </div>
+        <p>Vă rugăm să ne contactați pentru a găsi o dată alternativă care să vă convină.</p>
+        <p>Cu respect,<br>Masaj by Melinda</p>
+      </div>
+    `;
+    const text = `
+      Rezervare Respinsă
+      
+      Dragă ${data.userName},
+      
+      Ne pare rău, dar rezervarea dumneavoastră nu a putut fi confirmată.
+      
+      Detalii Rezervare:
+      - Serviciu: ${data.serviceName}
+      - Dată și Oră Solicitată: ${data.dateTime}
+      
+      Vă rugăm să ne contactați pentru a găsi o dată alternativă care să vă convină.
+      
+      Cu respect,
+      Masaj by Melinda
+    `;
+    return { subject, html, text };
+  },
+
+  booking_suggestion_sent: (data: BookingNotificationData): { subject: string; html: string; text: string } => {
+    // Extract suggested date/time from notes field (format: "suggested_date|suggested_time|token")
+    const [suggestedDate, suggestedTime, token] = (data.notes || '||').split('|');
+    const callbackUrl = import.meta.env.VITE_BOOKING_RESPONSE_CALLBACK_URL || 'https://your-project.supabase.co/functions/v1/booking-response';
+    const acceptUrl = `${callbackUrl}?token=${token}&action=accept&booking_id=${data.bookingId}`;
+    const declineUrl = `${callbackUrl}?token=${token}&action=decline&booking_id=${data.bookingId}`;
+    
+    const subject = `Sugestie Modificare Rezervare - ${data.serviceName}`;
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #8b5cf6;">Sugestie Modificare Rezervare</h2>
+        <p>Dragă ${data.userName},</p>
+        <p>Administratorul nostru vă sugerează o modificare a datei și orei pentru rezervarea dumneavoastră.</p>
+        <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="margin-top: 0;">Rezervare Originală:</h3>
+          <p><strong>Serviciu:</strong> ${data.serviceName}</p>
+          <p><strong>Dată și Oră:</strong> ${data.dateTime}</p>
+        </div>
+        <div style="background-color: #fffbeb; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="margin-top: 0;">Dată și Oră Sugerată:</h3>
+          <p><strong>Nouă Dată:</strong> ${suggestedDate}</p>
+          <p><strong>Nouă Oră:</strong> ${suggestedTime}</p>
+        </div>
+        <p>Sunteți de acord cu această modificare?</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${acceptUrl}" style="display: inline-block; background-color: #10b981; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; margin: 0 10px; font-weight: bold;">Da, Accept</a>
+          <a href="${declineUrl}" style="display: inline-block; background-color: #ef4444; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; margin: 0 10px; font-weight: bold;">Nu, Refuz</a>
+        </div>
+        <p style="color: #6b7280; font-size: 12px;">Dacă butoanele nu funcționează, copiați și lipiți următoarele linkuri în browser:<br>
+Accept: ${acceptUrl}<br>
+Refuz: ${declineUrl}</p>
+        <p>Cu respect,<br>Masaj by Melinda</p>
+      </div>
+    `;
+    const text = `
+      Sugestie Modificare Rezervare
+      
+      Dragă ${data.userName},
+      
+      Administratorul nostru vă sugerează o modificare a datei și orei pentru rezervarea dumneavoastră.
+      
+      Rezervare Originală:
+      - Serviciu: ${data.serviceName}
+      - Dată și Oră: ${data.dateTime}
+      
+      Dată și Oră Sugerată:
+      - Nouă Dată: ${suggestedDate}
+      - Nouă Oră: ${suggestedTime}
+      
+      Sunteți de acord cu această modificare?
+      
+      Pentru a accepta, accesați: ${acceptUrl}
+      Pentru a refuza, accesați: ${declineUrl}
       
       Cu respect,
       Masaj by Melinda

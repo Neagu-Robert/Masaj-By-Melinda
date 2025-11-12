@@ -29,8 +29,10 @@ import {
 } from "@/lib/booking-utils";
 import { Input } from "@/components/ui/input";
 import { Calendar as CalendarIcon, Clock } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
 
 export default function EditBookingModal({ open, onClose, booking, onBookingUpdated }) {
+  const { toast } = useToast();
   const [serviceType, setServiceType] = useState("");
   const [bookingDate, setBookingDate] = useState<Date | undefined>();
   const [bookingTime, setBookingTime] = useState("");
@@ -38,6 +40,8 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
   const [bookedTimeSlots, setBookedTimeSlots] = useState<string[]>([]);
   const [userDetails, setUserDetails] = useState<{ email: string; phone: string; fullName: string } | null>(null);
   const [error, setError] = useState("");
+  const [originalDate, setOriginalDate] = useState<string>('');
+  const [originalTime, setOriginalTime] = useState<string>('');
 
   // Function to reset form to original booking values
   const resetForm = () => {
@@ -100,6 +104,8 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
   useEffect(() => {
     if (open && booking) {
       resetForm();
+      setOriginalDate(booking.booking_date);
+      setOriginalTime(booking.booking_time);
     }
   }, [open, booking]);
 
@@ -172,6 +178,14 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
       // Get service details from the database
       const serviceDetails = getServiceByName(serviceType);
       const serviceId = serviceDetails?.id || null;
+      
+      // Check if date or time changed
+      const dateChanged = formatDateForDB(bookingDate!) !== originalDate;
+      const timeChanged = bookingTime !== originalTime;
+      const dateOrTimeChanged = dateChanged || timeChanged;
+      
+      // Determine new status
+      const newStatus = dateOrTimeChanged ? 'unconfirmed' : 'confirmed';
 
       // Update the booking
       const { error: updateError } = await supabase
@@ -181,6 +195,7 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
           booking_date: formatDateForDB(bookingDate!),
           booking_time: bookingTime,
           service_id: serviceId,
+          status: newStatus  // Set status based on changes
         })
         .eq('id', booking.id);
 
@@ -189,24 +204,55 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
         return;
       }
 
-      // Send notification if booking has a user
+      // Send appropriate notification
       if (booking.user_id && userDetails) {
         try {
-          await sendBookingUpdateProfile({
-            bookingId: booking.id,
-            userId: booking.user_id,
-            userName: userDetails.fullName,
-            userEmail: userDetails.email,
-            userPhone: userDetails.phone,
-            serviceName: serviceType,
-            serviceId: serviceId,
-            serviceProvider: 'Melinda',
-            bookingDate: bookingDate!,
-            bookingTime: bookingTime,
-            duration: serviceDetails?.duration || 60,
-            price: serviceDetails?.price || 140.00,
-            status: 'confirmed'
-          });
+          if (dateOrTimeChanged) {
+            // Date/time changed - send approval needed notification
+            await sendBookingUpdateProfile({
+              bookingId: booking.id,
+              userId: booking.user_id,
+              userName: userDetails.fullName,
+              userEmail: userDetails.email,
+              userPhone: userDetails.phone,
+              serviceName: serviceType,
+              serviceId: serviceId,
+              serviceProvider: 'Melinda',
+              bookingDate: bookingDate!,
+              bookingTime: bookingTime,
+              duration: serviceDetails?.duration || 60,
+              price: serviceDetails?.price || 140.00,
+              status: 'unconfirmed'  // Important: use unconfirmed status
+            });
+            
+            // Show message about approval
+            toast({
+              title: "Modificări Salvate",
+              description: "Modificările de dată/oră necesită aprobare. Veți fi notificat când rezervarea este confirmată.",
+            });
+          } else {
+            // Only service changed - normal update
+            await sendBookingUpdateProfile({
+              bookingId: booking.id,
+              userId: booking.user_id,
+              userName: userDetails.fullName,
+              userEmail: userDetails.email,
+              userPhone: userDetails.phone,
+              serviceName: serviceType,
+              serviceId: serviceId,
+              serviceProvider: 'Melinda',
+              bookingDate: bookingDate!,
+              bookingTime: bookingTime,
+              duration: serviceDetails?.duration || 60,
+              price: serviceDetails?.price || 140.00,
+              status: 'confirmed'
+            });
+            
+            toast({
+              title: "Rezervare Actualizată",
+              description: "Rezervarea a fost actualizată cu succes.",
+            });
+          }
         } catch (notificationError) {
           console.error('Error sending notification:', notificationError);
         }

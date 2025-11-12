@@ -7,6 +7,7 @@ import { User, Menu, X } from "lucide-react";
 
 const navItems = [
   { name: "Rezervări", path: "/admin/bookings" },
+  { name: "Confirmări", path: "/admin/confirmari" },
   { name: "Disponibilități", path: "/admin/availabilities" },
   { name: "Analize", path: "/admin/analytics" },
   { name: "Utilizatori", path: "/admin/users" },

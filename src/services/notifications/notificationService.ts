@@ -546,6 +546,97 @@ export const sendNotification = async (payload: NotificationPayload): Promise<No
       }
       break;
 
+    case 'booking_approval_needed':
+      // Send email to customer (always send, critical communication)
+      if (payload.recipient.email) {
+        try {
+          const emailResult = await sendEmailNotification(enrichedPayload);
+          results.push(emailResult);
+        } catch (error) {
+          console.error('Error sending approval needed email:', error);
+          results.push({
+            success: false,
+            channel: 'email',
+            error: error as Error,
+            timestamp: Date.now()
+          });
+        }
+      }
+      
+      // Always send SMS to admins
+      const approvalSmsResults = await sendAdminSmsNotifications(payload.type, enrichedPayload.data);
+      results.push(...approvalSmsResults);
+      break;
+
+    case 'booking_confirmed_by_admin':
+      // Send email to customer (always send, critical communication)
+      if (payload.recipient.email) {
+        try {
+          const emailResult = await sendEmailNotification(enrichedPayload);
+          results.push(emailResult);
+        } catch (error) {
+          console.error('Error sending confirmation email:', error);
+          results.push({
+            success: false,
+            channel: 'email',
+            error: error as Error,
+            timestamp: Date.now()
+          });
+        }
+      }
+      // NO SMS to admin - admin performed this action themselves
+      break;
+
+    case 'booking_rejected_by_admin':
+      // Send email to customer (always send, critical communication)
+      if (payload.recipient.email) {
+        try {
+          const emailResult = await sendEmailNotification(enrichedPayload);
+          results.push(emailResult);
+        } catch (error) {
+          console.error('Error sending rejection email:', error);
+          results.push({
+            success: false,
+            channel: 'email',
+            error: error as Error,
+            timestamp: Date.now()
+          });
+        }
+      }
+      // NO SMS to admin - admin performed this action themselves
+      break;
+
+    case 'booking_suggestion_sent':
+      // Send email to customer (always send, critical communication with Yes/No buttons)
+      if (payload.recipient.email) {
+        try {
+          const emailResult = await sendEmailNotification(enrichedPayload);
+          results.push(emailResult);
+        } catch (error) {
+          console.error('Error sending suggestion email:', error);
+          results.push({
+            success: false,
+            channel: 'email',
+            error: error as Error,
+            timestamp: Date.now()
+          });
+        }
+      }
+      // NO SMS to admin - admin performed this action themselves
+      break;
+
+    case 'booking_suggestion_accepted':
+      // SMS to admin only (no customer email needed)
+      const acceptedSmsResults = await sendAdminSmsNotifications(payload.type, enrichedPayload.data);
+      results.push(...acceptedSmsResults);
+      break;
+
+    case 'booking_suggestion_declined':
+      // SMS to admin only (no customer email needed)
+      const declinedSmsResults = await sendAdminSmsNotifications(payload.type, enrichedPayload.data);
+      results.push(...declinedSmsResults);
+      break;
+
     default:
       // Default behavior for other notification types
       // Send email notification (check email preferences)

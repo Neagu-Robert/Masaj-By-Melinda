@@ -40,7 +40,7 @@ const BookingPageContent = () => {
       serviceType: ''
     }
   });
-  const { user, isGuest } = useAuth();
+  const { user } = useAuth();
   const { services, getServiceByName } = useServices();
   const [profileInfo, setProfileInfo] = useState<{ fullName: string; phoneNumber: string | null } | null>(null);
   const [useProfileName, setUseProfileName] = useState(false);
@@ -49,6 +49,12 @@ const BookingPageContent = () => {
   
   // Initialize the notifications hook
   const { sendBookingConfirmation, sendBookingConfirmationAdmin } = useBookingNotifications();
+
+  useEffect(() => {
+    if (!user) {
+      navigate('/', { replace: true });
+    }
+  }, [user, navigate]);
 
   useEffect(() => {
     if (verificationError) {
@@ -245,7 +251,8 @@ const BookingPageContent = () => {
         service_id: serviceId,
         booking_date: formatDateForDB(selectedDate!),
         booking_time: selectedTime,
-        user_id: user?.id || null
+        user_id: user?.id || null,
+        status: 'unconfirmed'
       };
 
       const { data: newBooking, error: insertError } = await supabase
@@ -275,19 +282,31 @@ const BookingPageContent = () => {
       }
 
       // Show success message
-      toast("Rezervare confirmată!", {
-        description: `Rezervarea pentru ${selectedService} pe ${formatDateForDB(selectedDate!)} la ${selectedTime} a fost confirmată.`,
+      toast("Rezervare primită!", {
+        description: `Rezervarea pentru ${selectedService} pe ${formatDateForDB(selectedDate!)} la ${selectedTime} este în așteptare de aprobare.`,
       });
 
-      // Notifications
-      if (isGuest) {
-        // Guest: do not send customer email, send admin SMS only
+      // Send booking approval notification
+      const { data: userData } = await supabase.auth.getUser();
+      const userId = userData?.user?.id;
+      let userEmail = '';
+      if (userData?.user?.email) {
+        userEmail = userData.user.email;
+      } else if (userId) {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('email')
+          .eq('id', userId)
+          .single();
+        userEmail = profileData?.email || '';
+      }
+      if (userId && userEmail) {
         try {
-          await sendBookingConfirmationAdmin({
+          await sendBookingConfirmation({
             bookingId: newBooking.id,
-            userId: '',
+            userId: userId,
             userName: data.fullName,
-            userEmail: '',
+            userEmail: userEmail,
             userPhone: data.phoneNumber,
             serviceName: selectedService!,
             serviceId: serviceId,
@@ -296,46 +315,10 @@ const BookingPageContent = () => {
             bookingTime: selectedTime!,
             duration: serviceDetails?.duration || 60,
             price: serviceDetails?.price || 140.00,
-            status: 'confirmed'
+            status: 'unconfirmed'
           });
         } catch (notificationError) {
-          console.error('Error sending admin SMS notification for guest booking:', notificationError);
-        }
-      } else {
-        // Authenticated user: send standard confirmation (email + admin SMS)
-        const { data: userData } = await supabase.auth.getUser();
-        const userId = userData?.user?.id;
-        let userEmail = '';
-        if (userData?.user?.email) {
-          userEmail = userData.user.email;
-        } else if (userId) {
-          const { data: profileData } = await supabase
-            .from('profiles')
-            .select('email')
-            .eq('id', userId)
-            .single();
-          userEmail = profileData?.email || '';
-        }
-        if (userId && userEmail) {
-          try {
-            await sendBookingConfirmation({
-              bookingId: newBooking.id,
-              userId: userId,
-              userName: data.fullName,
-              userEmail: userEmail,
-              userPhone: data.phoneNumber,
-              serviceName: selectedService!,
-              serviceId: serviceId,
-              serviceProvider: 'Melinda',
-              bookingDate: selectedDate!,
-              bookingTime: selectedTime!,
-              duration: serviceDetails?.duration || 60,
-              price: serviceDetails?.price || 140.00,
-              status: 'confirmed'
-            });
-          } catch (notificationError) {
-            console.error('Error sending notification:', notificationError);
-          }
+          console.error('Error sending notification:', notificationError);
         }
       }
 
@@ -347,12 +330,8 @@ const BookingPageContent = () => {
       setUseProfileName(false);
       setUseProfilePhone(false);
       
-      // Redirect: guests don't have a profile page
-      if (isGuest) {
-        navigate('/home');
-      } else {
-        navigate('/profile');
-      }
+      // Redirect to profile page
+      navigate('/profile');
       
     } catch (error) {
       console.error('Error creating booking:', error);
@@ -369,27 +348,6 @@ const BookingPageContent = () => {
       <BookingHeader />
       <div className="container mx-auto px-4 py-8 pt-24">
         <div className="max-w-4xl mx-auto">
-          {/* Guest promotional message */}
-          {isGuest && (
-            <div className="bg-violet-900/20 border border-violet-400/30 rounded-lg p-6 mb-8">
-              <div className="flex items-start space-x-3">
-                <div className="flex-shrink-0">
-                  <svg className="w-6 h-6 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <div className="text-left">
-                  <h3 className="text-lg font-semibold text-violet-300 mb-2">
-                    Beneficii pentru utilizatorii înregistrați
-                  </h3>
-                  <p className="text-gray-200 leading-relaxed">
-                    Pentru a primi notificări de confirmare a rezervărilor sau pentru posibile schimbări va trebui să vă înregistrați. Dacă nu vă înregistrați va trebui să vă verificați numărul de telefon de fiecare dată când intrați pe site. Dacă vă înregistrați vă puteți salva numărul de telefon și va rămâne verificat pentru fiecare rezervare. Cei înregistrați pot de asemenea să rezerve ședințe săptămânale până la 3 luni printr-un singur click.
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
           <div className="text-center mb-8">
             <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">
               Faceți o rezervare

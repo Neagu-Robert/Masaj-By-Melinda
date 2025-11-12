@@ -16,6 +16,9 @@ export const ADMIN_PHONE_NUMBERS = import.meta.env.VITE_ADMIN_PHONE_NUMBERS?.spl
    // Replace with actual admin phone numbers
 ];
 
+// Booking response callback URL for email Yes/No buttons
+export const BOOKING_RESPONSE_CALLBACK_URL = import.meta.env.VITE_BOOKING_RESPONSE_CALLBACK_URL || 'https://your-project.supabase.co/functions/v1/booking-response';
+
 // General notification settings
 export const NOTIFICATION_QUEUE_ENABLED = import.meta.env.VITE_NOTIFICATION_QUEUE_ENABLED === 'true';
 export const MAX_RETRY_ATTEMPTS = parseInt(import.meta.env.VITE_MAX_RETRY_ATTEMPTS || '3', 10);

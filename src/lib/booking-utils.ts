@@ -221,4 +221,64 @@ export const checkForDoubleBooking = async (
     console.error('Error in checkForDoubleBooking:', error);
     return { isDoubleBooked: false, error: 'Eroare la verificarea disponibilității' };
   }
+};
+
+/**
+ * Generate a secure token for booking response emails
+ * Returns: { token: string, expiresAt: Date }
+ */
+export const generateBookingResponseToken = async (bookingId: string): Promise<{ token: string; expiresAt: Date }> => {
+  // Generate a random token (32 characters)
+  const array = new Uint8Array(24);
+  crypto.getRandomValues(array);
+  const token = Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+  
+  // Set expiration to 7 days from now
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + 7);
+  
+  // Store token in database
+  const { error } = await supabase
+    .from('booking_response_tokens')
+    .insert({
+      booking_id: bookingId,
+      token: token,
+      expires_at: expiresAt.toISOString()
+    });
+  
+  if (error) {
+    console.error('Error storing booking response token:', error);
+    throw new Error('Failed to generate booking response token');
+  }
+  
+  return { token, expiresAt };
+};
+
+/**
+ * Validate a booking response token
+ * Returns: { valid: boolean, bookingId?: string, error?: string }
+ */
+export const validateBookingResponseToken = async (token: string): Promise<{ valid: boolean; bookingId?: string; error?: string }> => {
+  try {
+    const { data, error } = await supabase
+      .from('booking_response_tokens')
+      .select('booking_id, expires_at')
+      .eq('token', token)
+      .single();
+    
+    if (error || !data) {
+      return { valid: false, error: 'Token not found' };
+    }
+    
+    // Check if token is expired
+    const expiresAt = new Date(data.expires_at);
+    if (expiresAt < new Date()) {
+      return { valid: false, error: 'Token expired' };
+    }
+    
+    return { valid: true, bookingId: data.booking_id };
+  } catch (error) {
+    console.error('Error validating booking response token:', error);
+    return { valid: false, error: 'Validation error' };
+  }
 }; 
