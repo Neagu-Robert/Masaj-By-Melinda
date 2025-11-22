@@ -602,7 +602,7 @@ function ProfilePageContent() {
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-400">Rol Cont</label>
-                  <p className="text-base md:text-lg mt-1 capitalize">{role}</p>
+                  <p className="text-base md:text-lg mt-1 capitalize">{role === 'customer' ? 'Client' : role}</p>
                 </div>
               </div>
               
@@ -644,8 +644,29 @@ function ProfilePageContent() {
                 currentName={profile.full_name || ''}
                 currentPhone={profile.phone || ''}
                 isPhoneVerified={profile.phone_verified}
-                onSuccess={(newName, newPhone) => {
-                  setProfile((prev) => ({ ...prev, full_name: newName, phone: newPhone, phone_verified: true }));
+                onSuccess={async (newName, newPhone) => {
+                  const { data: refreshedProfile, error: refreshError } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', user.id)
+                    .single();
+
+                  if (refreshError) {
+                    console.error("Error refetching profile after update:", refreshError);
+                    toast({
+                      title: "Eroare la reîncărcare",
+                      description: "Profilul a fost actualizat, dar nu am putut reîncărca datele.",
+                      variant: "destructive",
+                    });
+                    // Fallback to optimistic update, but only for non-verification fields
+                    setProfile((prev) => ({ 
+                      ...prev, 
+                      full_name: newName, 
+                      phone: newPhone 
+                    }));
+                  } else if (refreshedProfile) {
+                    setProfile(refreshedProfile);
+                  }
                 }}
               />
               

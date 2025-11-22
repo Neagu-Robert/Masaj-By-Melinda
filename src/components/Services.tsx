@@ -1,5 +1,3 @@
-
-import React from 'react';
 import MassageServices from './MassageServices';
 import DeviceTreatments from './DeviceTreatments';
 

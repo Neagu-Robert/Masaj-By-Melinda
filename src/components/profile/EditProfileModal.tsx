@@ -47,6 +47,16 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
   
   const { startVerification, verificationStatus, isVerified } = usePhoneVerification();
 
+  const normalizePhone = (phone: string): string | null => {
+    let digits = phone.replace(/\D/g, '');
+    if (digits.startsWith('40')) {
+      digits = digits.slice(2);
+    } else if (digits.startsWith('0')) {
+      digits = digits.slice(1);
+    }
+    return digits.length === 9 ? `+40${digits}` : null;
+  };
+
   useEffect(() => {
     const nameParts = currentName.split(' ');
     setPrenume(nameParts[0] || '');
@@ -63,23 +73,37 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
     }
   };
   
-  const handleModalClose = () => {
+  const handleModalClose = async () => {
     setIsModalOpen(false);
-    // Normalize like the context: strip non-digits, then leading 40 or 0, expect 9 digits
-    let digits = phone.replace(/\D/g, '');
-    if (digits.startsWith('40')) {
-      digits = digits.slice(2);
-    } else if (digits.startsWith('0')) {
-      digits = digits.slice(1);
-    }
-    const normalized = digits.length === 9 ? `+40${digits}` : null;
+    const normalized = normalizePhone(phone);
     if (normalized && isVerified(normalized)) {
-      setPhoneVerified(true);
-      toast.success("Succes", { description: "Număr de telefon verificat cu succes." });
-      // Update parent profile state and close the edit modal so the profile page is shown
-      const fullName = `${prenume.trim()} ${nume.trim()}`.trim();
-      onSuccess(fullName, normalized);
-      onClose();
+      try {
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({
+            phone: normalized,
+            phone_verified: true,
+            phone_verified_at: new Date().toISOString(),
+          })
+          .eq('id', userId);
+
+        if (updateError) {
+          throw updateError;
+        }
+
+        setPhoneVerified(true);
+        toast.success("Succes", { description: "Număr de telefon verificat cu succes." });
+        const fullName = `${prenume.trim()} ${nume.trim()}`.trim();
+        onSuccess(fullName, normalized);
+        onClose();
+      } catch (error) {
+        console.error('Error updating phone verification status:', error);
+        toast.error("Eroare", { description: "Nu s-a putut salva starea de verificare a telefonului." });
+        // Do not call onSuccess or onClose to keep the user in the modal to see the error.
+        // The phoneVerified state remains false, which is correct.
+      }
+    } else {
+      toast.error("Eroare", { description: "Codul de verificare nu este valid." });
     }
   };
 
@@ -93,8 +117,10 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
       return;
     }
     
+    const normalizedPhone = normalizePhone(phone);
+
     // If phone number has changed and is not verified, block submission
-    if (phone.trim() !== (currentPhone || '') && !phoneVerified) {
+    if (normalizedPhone !== currentPhone && !phoneVerified) {
       setError('Vă rugăm să verificați noul număr de telefon înainte de salvare.');
       return;
     }
@@ -102,14 +128,14 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
     setLoading(true);
     const { error: updateError } = await supabase
       .from('profiles')
-      .update({ full_name: fullName.trim(), phone: phone.trim() || null })
+      .update({ full_name: fullName.trim(), phone: normalizedPhone || null })
       .eq('id', userId);
     setLoading(false);
 
     if (updateError) {
       setError(updateError.message);
     } else {
-      onSuccess(fullName.trim(), phone.trim() || null);
+      onSuccess(fullName.trim(), normalizedPhone || null);
       onClose();
     }
   };

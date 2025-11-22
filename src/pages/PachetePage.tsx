@@ -11,8 +11,32 @@ const PachetePage = () => {
       
       <div className="pt-24 pb-20">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-semibold text-center text-white mb-12">Pachete Speciale</h2>
+          <h2 className="text-3xl font-semibold text-center text-white">Pachete Speciale</h2>
           
+          {/* Contact message */}
+          <div className="my-12 max-w-3xl mx-auto text-center p-6 bg-gray-800 rounded-lg border border-[#9b87f5]/30 shadow-sm">
+            <p className="text-lg text-white mb-4">
+              Pentru achiziționarea unui pachet special vă rugăm să ne contactați printr-un apel sau mesaj și vă vom face o rezervare
+            </p>
+            
+            {/* Contact details */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mt-6">
+              <a href="tel:0771761649" className="cursor-pointer hover:shadow-lg hover:scale-105 transition-all">
+                <div className="flex items-center gap-3 bg-gray-700 px-6 py-3 rounded-full shadow-sm border border-[#9b87f5]/20 hover:shadow-md transition-shadow">
+                  <Phone className="text-[#9b87f5] w-5 h-5" />
+                  <span className="text-white font-medium">0771 761 649</span>
+                </div>
+              </a>
+              
+              <a href="mailto:melindaneagu22@gmail.com" className="cursor-pointer hover:shadow-lg hover:scale-105 transition-all">
+                <div className="flex items-center gap-3 bg-gray-700 px-6 py-3 rounded-full shadow-sm border border-[#9b87f5]/20 hover:shadow-md transition-shadow">
+                  <Mail className="text-[#9b87f5] w-5 h-5" />
+                  <span className="text-white font-medium">melindaneagu22@gmail.com</span>
+                </div>
+              </a>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto">
             {/* Pachet 1 */}
             <Card className="overflow-hidden border-[#9b87f5]/30 shadow-lg hover:shadow-xl transition-shadow bg-gray-800">
@@ -103,29 +127,6 @@ const PachetePage = () => {
             </Card>
           </div>
           
-          {/* Contact message */}
-          <div className="mt-14 max-w-3xl mx-auto text-center p-6 bg-gray-800 rounded-lg border border-[#9b87f5]/30 shadow-sm">
-            <p className="text-lg text-white mb-4">
-              Pentru achiziționarea unui pachet special vă rugăm să ne contactați printr-un apel sau mesaj și vă vom face o rezervare
-            </p>
-            
-            {/* Contact details */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mt-6">
-              <a href="tel:0771761649" className="cursor-pointer hover:shadow-lg hover:scale-105 transition-all">
-                <div className="flex items-center gap-3 bg-gray-700 px-6 py-3 rounded-full shadow-sm border border-[#9b87f5]/20 hover:shadow-md transition-shadow">
-                  <Phone className="text-[#9b87f5] w-5 h-5" />
-                  <span className="text-white font-medium">0771 761 649</span>
-                </div>
-              </a>
-              
-              <a href="mailto:melindaneagu22@gmail.com" className="cursor-pointer hover:shadow-lg hover:scale-105 transition-all">
-                <div className="flex items-center gap-3 bg-gray-700 px-6 py-3 rounded-full shadow-sm border border-[#9b87f5]/20 hover:shadow-md transition-shadow">
-                  <Mail className="text-[#9b87f5] w-5 h-5" />
-                  <span className="text-white font-medium">melindaneagu22@gmail.com</span>
-                </div>
-              </a>
-            </div>
-          </div>
         </div>
       </div>
     </div>

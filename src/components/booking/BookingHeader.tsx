@@ -99,7 +99,7 @@ const BookingHeader = () => {
                 : "bg-[#9b87f5] text-white hover:bg-[#7E69AB]"}
               onClick={() => handleNavigation('/book')}
             >
-              <Calendar className="mr-1" /> Rezerva acum
+              <Calendar className="mr-1" /> Rezervă acum
             </Button>
             {user && role !== 'admin' && (
               <Button
@@ -159,7 +159,7 @@ const BookingHeader = () => {
                   : "bg-[#9b87f5] text-white hover:bg-[#7E69AB]"}`}
                 onClick={() => handleNavigation('/book')}
               >
-                <Calendar className="mr-2 h-5 w-5" /> Rezerva acum
+                <Calendar className="mr-2 h-5 w-5" /> Rezervă acum
               </Button>
               {user && role !== 'admin' && (
                 <Button

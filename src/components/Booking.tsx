@@ -16,7 +16,7 @@ const Booking = () => {
             onClick={() => navigate('/book')} 
             className="bg-[#63099c] hover:bg-[#63099c]/90 text-white text-lg md:text-xl py-4 md:py-6 px-6 md:px-8 w-full max-w-sm md:w-auto h-12 md:h-auto"
           >
-            Rezerva un masaj
+            Rezervă un masaj
           </Button>
         </div>
       </div>
