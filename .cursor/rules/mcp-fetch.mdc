@@ -1,0 +1,25 @@
+---
+alwaysApply: true
+---
+---
+description: How to handle URLs, documentation links, and external files
+globs: *
+---
+
+# Fetch MCP Usage Rules
+
+You have access to the `fetch` MCP server.
+
+## The "URL Priority" Rule
+If a user prompt contains a URL (beginning with http/https), you generally MUST fetch it before answering, unless it is a simple link for reference only.
+
+## Workflow
+1. **Detect URL:** Identify the URL in the prompt.
+2. **Fetch:** Use the `fetch` tool to retrieve the content as Markdown.
+3. **Analyze:** Read the fetched content.
+4. **Answer:** Base your code generation *strictly* on the fetched documentation, overriding your internal training data if they conflict (this is crucial for breaking changes in new library versions).
+
+## Common Use Cases
+- "Read these docs and tell me how to implement Auth." -> Fetch the URL.
+- "Check this config file on GitHub." -> Fetch the raw URL.
+- "Summarize this article." -> Fetch the URL.

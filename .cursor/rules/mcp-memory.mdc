@@ -1,0 +1,26 @@
+---
+alwaysApply: true
+---
+---
+description: managing user preferences and long-term project context
+globs: *
+---
+
+# Memory MCP Usage Rules
+
+You have access to a `memory` MCP server (knowledge graph). Use this to create a personalized experience.
+
+## When to READ Memory (`read_graph`)
+- At the start of a session where the user references "my usual stack" or "as I said before".
+- When making design decisions (e.g., "Do I use Tailwind or CSS Modules?" - check memory).
+
+## When to WRITE Memory (`create_entities`, `create_relations`)
+- **Explicit Instructions:** If the user says "Always use 'foo' for variable naming", store this preference immediately.
+- **Project Decisions:** If a major architectural decision is made (e.g., "We are switching to PostgreSQL"), record this as a fact in the memory graph.
+
+## Data Structure
+- Store **User Preferences** (e.g., Entity: "User", Relation: "prefers", Entity: "TypeScript").
+- Store **Tech Stack** (e.g., Entity: "Project", Relation: "uses", Entity: "Supabase").
+
+## Goal
+Prevent the user from having to repeat themselves.

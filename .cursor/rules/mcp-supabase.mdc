@@ -1,0 +1,26 @@
+---
+alwaysApply: false
+---
+---
+description: Guidelines for querying Supabase, generating migrations, and checking schema
+globs: **/*.sql, **/*.ts, **/*.js, schema.ts
+---
+
+# Supabase MCP Usage Rules
+
+You have access to the `supabase` MCP server. This is your Source of Truth for the database structure.
+
+## Golden Rule: Inspect Before You Write
+Never write a SQL query or generate a TypeScript interface for a database table without first inspecting the actual schema.
+
+## Workflow
+1. **List Tables:** If you are unsure of the project structure, start by calling the tool to list tables.
+2. **Get Schema:** Before writing a query for table `users`, call the tool to get the schema for `users`.
+3. **Execute:** Only after verifying column names and types should you generate the SQL or code.
+
+## Scenarios
+- **Migrations:** When asked to create a migration, check the current state of the database first to avoid conflicts.
+- **Debugging:** If a user reports a specific database error, query the database structure to verify if the column exists or if the type matches.
+
+## Restrictions
+- Do not delete data (DROP/DELETE) unless explicitly and repeatedly confirmed by the user.

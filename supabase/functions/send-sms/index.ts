@@ -1,53 +1,24 @@
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { compose, corsMiddleware, rateLimitMiddleware, validationMiddleware, loggingMiddleware, errorHandlerMiddleware, createJsonResponse, createErrorResponse } from '../_shared/middleware.ts';
+import { SendSMSSchema } from '../_shared/validation.ts';
 
 const TWILIO_ACCOUNT_SID = Deno.env.get('TWILIO_SID');
 const TWILIO_AUTH_TOKEN = Deno.env.get('TWILIO_AUTH_TOKEN');
 const TWILIO_PHONE_NUMBER = Deno.env.get('TWILIO_PHONE_NUMBER');
 
-console.log('SMS function loaded. Twilio Account SID present:', !!TWILIO_ACCOUNT_SID);
-console.log('Twilio sender number:', TWILIO_PHONE_NUMBER);
+// Handler function with security layers
+const handler = async (req: Request, context: any) => {
+  const { to, message } = context.validatedData;
 
-serve(async (req) => {
-  // CORS headers
-  const headers = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    'Content-Type': 'application/json',
-  };
-
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers });
+  // Check Twilio configuration
+  if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN) {
+    return createErrorResponse('SMS service credentials are not configured.', 500, 'SERVICE_UNAVAILABLE', context.rateLimitInfo);
   }
 
-  if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ success: false, error: 'Method not allowed' }), { status: 405, headers });
+  if (!TWILIO_PHONE_NUMBER) {
+    return createErrorResponse('SMS sender number is not configured.', 500, 'SERVICE_UNAVAILABLE', context.rateLimitInfo);
   }
 
   try {
-    const { to, message } = await req.json();
-
-    if (!to || !message) {
-      return new Response(JSON.stringify({
-        success: false,
-        error: 'Missing required parameters: to and message are required'
-      }), { status: 400, headers });
-    }
-
-    if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN) {
-      return new Response(JSON.stringify({
-        success: false,
-        error: 'Twilio credentials are not configured'
-      }), { status: 500, headers });
-    }
-
-    if (!TWILIO_PHONE_NUMBER) {
-      return new Response(JSON.stringify({
-        success: false,
-        error: 'Twilio sender number is not configured'
-      }), { status: 500, headers });
-    }
-
     console.log('Attempting to send SMS to:', to);
     console.log('Message:', message);
     console.log('From:', TWILIO_PHONE_NUMBER);
@@ -77,33 +48,46 @@ serve(async (req) => {
 
     if (!response.ok) {
       console.error('Twilio API error:', result);
-      return new Response(JSON.stringify({
-        success: false,
-        error: result.message || 'Failed to send SMS',
-        details: {
-          status: response.status,
-          statusText: response.statusText,
-          twilioError: result
-        }
-      }), { status: 500, headers });
+      return createErrorResponse(result.message || 'Failed to send SMS.', 500, 'SMS_SEND_FAILED', context.rateLimitInfo);
     }
 
     console.log('SMS sent successfully. Message SID:', result.sid);
     console.log('SMS status:', result.status);
 
-    return new Response(JSON.stringify({
+    return createJsonResponse({
       success: true,
       messageId: result.sid,
       status: result.status.toUpperCase(),
-      details: result
-    }), { status: 200, headers });
+      to: to, // Include recipient for confirmation
+    }, 200, context.rateLimitInfo);
 
   } catch (error) {
     console.error('Error sending SMS:', error);
-    return new Response(JSON.stringify({
-      success: false,
-      error: error.message || 'Failed to send SMS',
-      details: error.message
-    }), { status: 500, headers });
+    return createErrorResponse('Failed to send SMS.', 500, 'SMS_SEND_FAILED', context.rateLimitInfo);
   }
-});
+};
+
+// Apply security middleware
+const securedHandler = compose(
+  corsMiddleware,
+  loggingMiddleware,
+  errorHandlerMiddleware,
+  validationMiddleware(SendSMSSchema),
+  // Rate limit by phone number (SMS cost protection)
+  rateLimitMiddleware({
+    identifier: (req, context) => context.validatedData?.to || 'unknown',
+    endpoint: 'send-sms',
+    limit: 5,
+    window: 3600, // 5 SMS per hour per phone (expensive)
+  }),
+  // Additional IP-based rate limiting
+  rateLimitMiddleware({
+    identifier: (req, context) => context.ip || req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown',
+    endpoint: 'send-sms-ip',
+    limit: 20,
+    window: 3600, // 20 SMS per hour per IP
+  })
+)(handler);
+
+// Export the secured handler
+Deno.serve(securedHandler);

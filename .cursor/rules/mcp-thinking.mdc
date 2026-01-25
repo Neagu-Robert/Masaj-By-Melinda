@@ -1,0 +1,31 @@
+---
+alwaysApply: false
+---
+---
+description: When to use Sequential Thinking for complex logic, architecture, and debugging
+globs: *
+---
+
+# Sequential Thinking MCP Usage Rules
+
+You have access to the `sequential-thinking` tool. This tool allows you to structure your thought process before outputting code.
+
+## Mandatory Triggers
+You MUST use the `sequential-thinking` tool if the user prompt includes:
+- "Plan this out"
+- "Analyze the architecture"
+- "Solve this race condition"
+- "Debug this complex issue"
+- "Use sequential thinking"
+
+## How to Use
+1. **Start:** Begin with a thought identifying the core problem.
+2. **Iterate:** Create multiple thought steps (e.g., `thought_number` 1, 2, 3...).
+   - Step 1: Analyze requirements.
+   - Step 2: Identification of edge cases.
+   - Step 3: Proposed solution architecture.
+3. **Revise:** If a thought leads to a dead end, use the tool's revision capability to branch off.
+4. **Finalize:** Only output the final code solution *after* the thinking process is complete and a conclusion is reached.
+
+## Goal
+Do not rush to code. Demonstrate deep reasoning for complex tasks.

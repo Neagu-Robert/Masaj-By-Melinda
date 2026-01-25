@@ -1,0 +1,25 @@
+---
+alwaysApply: true
+---
+---
+description: When to use Brave Search for current events, library versions, or unknown errors
+globs: *
+---
+
+# Brave Search MCP Usage Rules
+
+You have access to the `brave-search` MCP server. You must use this tool in the following scenarios instead of relying on your training data:
+
+## When to Trigger
+1. **Latest Docs:** When the user asks about a library version released after your knowledge cutoff (e.g., "Next.js 15 features", "React 19 hooks").
+2. **Obscure Errors:** When a specific error message appears that you cannot solve via static analysis. Search the error string to find GitHub issues or StackOverflow discussions.
+3. **Fact Checking:** When the user asks for a comparison of current technologies (e.g., "Supabase vs Firebase pricing 2025").
+
+## How to Use
+- Use `brave_web_search` for general queries.
+- ALWAYS cite the source URL when providing an answer derived from search.
+- If the search results are vague, perform a second, refined search automatically before answering.
+
+## Anti-Patterns (What NOT to do)
+- Do NOT guess API methods for new library versions. Search first.
+- Do not say "I don't have access to the internet." You do. Use the tool.

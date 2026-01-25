@@ -1,11 +1,8 @@
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createAdminClient } from '../_shared/supabase-client.ts';
+import { compose, corsMiddleware, adminMiddleware, rateLimitMiddleware, validationMiddleware, loggingMiddleware, errorHandlerMiddleware, createJsonResponse, createErrorResponse } from '../_shared/middleware.ts';
+import { CreateRecurringAvailabilitiesSchema } from '../_shared/validation.ts';
+import { logAdminAction } from '../_shared/auth.ts';
 import { addDays, format, isBefore, isAfter } from 'https://esm.sh/date-fns@3.6.0';
-
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 type RecurrenceType = 'daily' | 'weekly' | 'biweekly';
 
@@ -50,30 +47,12 @@ function* iterateWeekly(start: Date, until: Date, stepDays: number, weekdays: nu
   }
 }
 
-serve(async (req) => {
-  const headers = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    // Allow headers used by supabase-js functions.invoke
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Content-Type': 'application/json',
-  };
-
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers });
-  }
-
-  if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405, headers });
-  }
+// Handler function with security layers
+const handler = async (req: Request, context: any) => {
+  const { hour, recurrenceType, horizonDays, startDate, weekdays = [], confirm } = context.validatedData;
+  const supabase = createAdminClient();
 
   try {
-    const payload = (await req.json()) as CreateRecurringAvailabilityPayload;
-    const { hour, recurrenceType, horizonDays, startDate, weekdays = [], confirm } = payload;
-
-    if (!hour || !recurrenceType || !horizonDays) {
-      return new Response(JSON.stringify({ error: 'Missing required fields' }), { status: 400, headers });
-    }
 
     const hhmm = normalizeTimeToHHMM(hour);
     const hhmmss = normalizeTimeToHHMMSS(hour);
@@ -149,7 +128,11 @@ serve(async (req) => {
     }
 
     if (!confirm) {
-      return new Response(JSON.stringify({ success: true, preview, meta: { hour: hhmm, start: format(start, 'yyyy-MM-dd'), until: format(until, 'yyyy-MM-dd'), recurrenceType, weekdays } }), { status: 200, headers });
+      return createJsonResponse({
+        success: true,
+        preview,
+        meta: { hour: hhmm, start: format(start, 'yyyy-MM-dd'), until: format(until, 'yyyy-MM-dd'), recurrenceType, weekdays }
+      }, 200, context.rateLimitInfo);
     }
 
     // Confirm: create parent row, then insert only available instances as blocked availabilities linked by FK
@@ -166,7 +149,7 @@ serve(async (req) => {
       .single();
 
     if (parentErr || !parentRow) {
-      throw new Error(`Failed to create recurring availability: ${parentErr?.message || ''}`);
+      return createErrorResponse(`Failed to create recurring availability: ${parentErr?.message || ''}`, 500, 'CREATION_FAILED', context.rateLimitInfo);
     }
 
     let createdCount = 0;
@@ -186,10 +169,43 @@ serve(async (req) => {
       if (insErr) { skippedCount++; } else { createdCount++; }
     }
 
-    return new Response(JSON.stringify({ success: true, createdCount, skippedCount, id: parentRow.id }), { status: 200, headers });
+    // Log admin action
+    logAdminAction('create_recurring_availabilities', context.user.id, parentRow.id, {
+      recurrenceType,
+      horizonDays,
+      createdCount,
+      skippedCount,
+    }, req);
+
+    return createJsonResponse({
+      success: true,
+      createdCount,
+      skippedCount,
+      id: parentRow.id
+    }, 200, context.rateLimitInfo);
+
   } catch (error) {
-    return new Response(JSON.stringify({ success: false, error: (error as Error).message }), { status: 500, headers });
+    console.error('Create recurring availabilities error:', error);
+    return createErrorResponse('Failed to process recurring availabilities.', 500, 'INTERNAL_ERROR', context.rateLimitInfo);
   }
-});
+};
+
+// Apply security middleware
+const securedHandler = compose(
+  corsMiddleware,
+  loggingMiddleware,
+  errorHandlerMiddleware,
+  adminMiddleware, // CRITICAL: Require admin role
+  rateLimitMiddleware({
+    identifier: (req, context) => context.user?.id || 'unknown',
+    endpoint: 'create-recurring-availabilities',
+    limit: 20,
+    window: 3600, // 20 requests per hour per admin
+  }),
+  validationMiddleware(CreateRecurringAvailabilitiesSchema)
+)(handler);
+
+// Export the secured handler
+Deno.serve(securedHandler);
 
 
