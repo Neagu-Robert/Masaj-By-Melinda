@@ -62,16 +62,13 @@ function App() {
           <Toaster />
           <Sonner />
           <Routes>
-            <Route path="/" element={<AuthPage />} />
+            <Route path="/" element={<Index />} />
+            <Route path="/auth" element={<AuthPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/booking-confirmation" element={<BookingConfirmationPage />} />
             <Route path="/home" element={<Index />} />
-            <Route path="/book" element={
-              <ProtectedRoute allowedRoles={['admin', 'customer']}>
-                <BookingPage />
-              </ProtectedRoute>
-            } />
+            <Route path="/book" element={<BookingPage />} />
             <Route path="/pachete" element={<PachetePage />} />
             <Route path="/profile" element={
               <ProtectedRoute allowedRoles={['admin', 'customer']}>

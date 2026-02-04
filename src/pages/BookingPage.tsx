@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
+import { Card, CardContent } from '@/components/ui/card';
 import { useForm } from 'react-hook-form';
 import { toast } from '@/components/ui/sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -23,6 +24,35 @@ import {
 } from '@/lib/booking-utils';
 import { usePhoneVerification } from '@/contexts/PhoneVerificationContext';
 import { PhoneVerificationModal } from '@/components/auth/PhoneVerificationModal';
+
+const AuthPromptMessage = () => {
+  const navigate = useNavigate();
+  
+  return (
+    <Card className="bg-violet-600 border-violet-500 mb-6">
+      <CardContent className="p-6 text-center">
+        <h2 className="text-xl font-bold text-white mb-4">
+          Pentru a face o rezervare, vă rugăm să vă autentificați
+        </h2>
+        <div className="flex gap-4 justify-center">
+          <Button 
+            onClick={() => navigate('/auth?mode=signup')}
+            className="bg-violet-700 hover:bg-violet-800 text-white"
+          >
+            Înregistrare
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={() => navigate('/auth?mode=login')}
+            className="bg-white text-violet-700 border-white hover:bg-gray-100"
+          >
+            Autentificare
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
 
 const BookingPageContent = () => {
   const navigate = useNavigate();
@@ -49,12 +79,6 @@ const BookingPageContent = () => {
   
   // Initialize the notifications hook
   const { sendBookingConfirmation, sendBookingConfirmationAdmin } = useBookingNotifications();
-
-  useEffect(() => {
-    if (!user) {
-      navigate('/', { replace: true });
-    }
-  }, [user, navigate]);
 
   useEffect(() => {
     if (verificationError) {
@@ -357,6 +381,8 @@ const BookingPageContent = () => {
             </p>
           </div>
 
+          {!user && <AuthPromptMessage />}
+
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
               {/* 1. Personal Details */}
@@ -369,12 +395,14 @@ const BookingPageContent = () => {
                 setUseProfilePhone={setUseProfilePhone}
                 onVerifyPhone={handleVerifyPhone}
                 isPhoneVerified={isPhoneVerified}
+                disabled={!user}
               />
               
               {/* 2. Service Selection */}
               <ServiceSelection 
                 form={form} 
-                setSelectedService={setSelectedService} 
+                setSelectedService={setSelectedService}
+                disabled={!user}
               />
               
               {/* 3. Date and Time Selection */}
@@ -383,6 +411,7 @@ const BookingPageContent = () => {
                 setSelectedDate={setSelectedDate}
                 selectedTime={selectedTime}
                 setSelectedTime={setSelectedTime}
+                disabled={!user}
               />
               
               {/* 4. Booking Summary */}
@@ -391,12 +420,13 @@ const BookingPageContent = () => {
                 selectedDate={selectedDate}
                 selectedTime={selectedTime}
                 selectedService={selectedService}
+                disabled={!user}
               />
               
               <div className="flex justify-center">
                 <Button
                   type="submit"
-                  disabled={isSubmitting || !selectedDate || !selectedTime || !selectedService}
+                  disabled={isSubmitting || !selectedDate || !selectedTime || !selectedService || !user}
                   className="bg-violet-600 hover:bg-violet-700 text-white px-8 py-3 text-lg font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSubmitting ? 'Se procesează...' : 'Confirmă rezervarea'}

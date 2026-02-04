@@ -12,16 +12,18 @@ type BookingSummaryProps = {
   selectedDate: Date | undefined;
   selectedTime: string | undefined;
   selectedService: string | undefined;
+  disabled?: boolean;
 };
 
 const BookingSummary = ({ 
   form, 
   selectedDate, 
   selectedTime,
-  selectedService
+  selectedService,
+  disabled
 }: BookingSummaryProps) => {
   return (
-    <Card className="bg-gray-800 border-gray-700">
+    <Card className={`bg-gray-800 border-gray-700 ${disabled ? 'opacity-60' : ''}`}>
       <CardHeader>
         <CardTitle className="text-white">Rezumatul rezervării</CardTitle>
       </CardHeader>

@@ -11,13 +11,15 @@ export type Database = {
     Tables: {
       bookings: {
         Row: {
-          booking_date: string
-          booking_time: string
+          booking_date: string | null
+          booking_time: string | null
           created_at: string
           first_name: string
           id: string
           last_name: string
           phone_number: string
+          requested_date_text: string | null
+          requested_time_text: string | null
           service_type: string
           service_id: number | null
           recurring: boolean
@@ -29,13 +31,15 @@ export type Database = {
           suggested_by_admin: boolean | null
         }
         Insert: {
-          booking_date: string
-          booking_time: string
+          booking_date?: string | null
+          booking_time?: string | null
           created_at?: string
           first_name: string
           id?: string
           last_name: string
           phone_number: string
+          requested_date_text?: string | null
+          requested_time_text?: string | null
           service_type: string
           service_id?: number | null
           recurring?: boolean
@@ -47,13 +51,15 @@ export type Database = {
           suggested_by_admin?: boolean | null
         }
         Update: {
-          booking_date?: string
-          booking_time?: string
+          booking_date?: string | null
+          booking_time?: string | null
           created_at?: string
           first_name?: string
           id?: string
           last_name?: string
           phone_number?: string
+          requested_date_text?: string | null
+          requested_time_text?: string | null
           service_type?: string
           service_id?: number | null
           recurring?: boolean

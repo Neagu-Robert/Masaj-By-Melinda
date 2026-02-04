@@ -5,7 +5,7 @@ import { Button } from './ui/button';
 import { Home, Package, Calendar, Menu, X, User } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
-const HOME_PATH = '/home';
+const HOME_PATH = '/';
 
 const Navbar = () => {
   const navigate = useNavigate();

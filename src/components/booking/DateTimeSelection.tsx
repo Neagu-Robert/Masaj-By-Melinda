@@ -18,6 +18,7 @@ type DateTimeSelectionProps = {
   setSelectedDate: (date: Date | undefined) => void;
   selectedTime: string | undefined;
   setSelectedTime: (time: string) => void;
+  disabled?: boolean;
 };
 
 const DateTimeSelection = ({
@@ -25,6 +26,7 @@ const DateTimeSelection = ({
   setSelectedDate,
   selectedTime,
   setSelectedTime,
+  disabled,
 }: DateTimeSelectionProps) => {
   const { availabilities, fetchAvailabilities } = useAvailabilities();
   const [bookedTimeSlots, setBookedTimeSlots] = useState<string[]>([]);
@@ -108,7 +110,7 @@ const DateTimeSelection = ({
   };
 
   return (
-    <Card className="bg-gray-800 border-gray-700">
+    <Card className={`bg-gray-800 border-gray-700 ${disabled ? 'opacity-60' : ''}`}>
       <CardHeader className="pb-4">
         <CardTitle className="text-lg md:text-xl text-violet-300">Selectați data și ora</CardTitle>
       </CardHeader>
@@ -125,7 +127,7 @@ const DateTimeSelection = ({
                 mode="single"
                 selected={selectedDate}
                 onSelect={handleDateSelect}
-                disabled={isDateDisabled}
+                disabled={(date) => disabled || isDateDisabled(date)}
                 className="rounded-md border border-gray-600 bg-gray-700 text-violet-200 pointer-events-auto w-full max-w-sm [&_.rdp-day]:text-violet-200 [&_.rdp-day_selected]:bg-violet-600 [&_.rdp-day_selected]:text-white [&_.rdp-day:hover]:bg-violet-600/20 [&_.rdp-day]:h-10 [&_.rdp-day]:w-10 [&_.rdp-day]:text-sm md:[&_.rdp-day]:h-9 md:[&_.rdp-day]:w-9 md:[&_.rdp-day]:text-base"
               />
             </div>
@@ -149,6 +151,7 @@ const DateTimeSelection = ({
                       ${!isSelected ? 'bg-gray-700 text-violet-200 border-gray-600 hover:bg-violet-600/20 hover:border-violet-500' : ''}
                     `}
                     onClick={() => setSelectedTime(time)}
+                    disabled={disabled}
                   >
                     {time}
                   </Button>

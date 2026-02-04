@@ -7,6 +7,7 @@ import { User, Phone } from 'lucide-react';
 import { UseFormReturn } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2 } from 'lucide-react';
+import { toast } from '@/components/ui/sonner';
 
 type ContactFormProps = {
   form: UseFormReturn<{
@@ -21,6 +22,7 @@ type ContactFormProps = {
   setUseProfilePhone?: (v: boolean) => void;
   onVerifyPhone: () => void;
   isPhoneVerified: boolean;
+  disabled?: boolean;
 };
 
 const ContactForm = ({
@@ -32,11 +34,22 @@ const ContactForm = ({
   setUseProfilePhone,
   onVerifyPhone,
   isPhoneVerified,
+  disabled,
 }: ContactFormProps) => {
   const phoneNumber = form.watch('phoneNumber');
 
+  const handleVerifyPhone = () => {
+    if (disabled) {
+      toast("Eroare", {
+        description: "Vă rugăm să vă autentificați pentru a verifica numărul de telefon"
+      });
+      return;
+    }
+    onVerifyPhone();
+  };
+
   return (
-    <Card className="bg-gray-800 border-gray-700">
+    <Card className={`bg-gray-800 border-gray-700 ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}>
       <CardHeader className="pb-4">
         <CardTitle className="text-white text-lg md:text-xl">Date de contact</CardTitle>
       </CardHeader>
@@ -54,7 +67,7 @@ const ContactForm = ({
                       type="checkbox"
                       checked={!!useProfileName}
                       onChange={e => setUseProfileName(e.target.checked)}
-                      disabled={!profileInfo.fullName}
+                      disabled={disabled || !profileInfo.fullName}
                       className="w-4 h-4"
                     />
                     Folosește numele din profil
@@ -70,7 +83,7 @@ const ContactForm = ({
                     className="pl-10 md:pl-12 h-12 md:h-14 bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 focus:border-[#7E69AB] text-base md:text-lg" 
                     {...field}
                     required
-                    disabled={!!useProfileName}
+                    disabled={disabled || !!useProfileName}
                   />
                 </div>
               </FormControl>
@@ -91,7 +104,7 @@ const ContactForm = ({
                       type="checkbox"
                       checked={!!useProfilePhone}
                       onChange={e => setUseProfilePhone(e.target.checked)}
-                      disabled={!profileInfo.phoneNumber}
+                      disabled={disabled || !profileInfo.phoneNumber}
                       className="w-4 h-4"
                     />
                     Folosește numărul din profil
@@ -107,7 +120,7 @@ const ContactForm = ({
                     className="pl-10 md:pl-12 h-12 md:h-14 bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 focus:border-[#7E69AB] text-base md:text-lg" 
                     {...field}
                     required
-                    disabled={!!useProfilePhone}
+                    disabled={disabled || !!useProfilePhone}
                     maxLength={15}
                     title="Introduceti un numar de telefon valid"
                   />
@@ -124,9 +137,9 @@ const ContactForm = ({
                   ) : (
                     <Button
                       type="button"
-                      onClick={onVerifyPhone}
+                      onClick={handleVerifyPhone}
                       className="bg-gray-600 hover:bg-gray-500 text-white text-sm h-auto px-4 py-2"
-                      disabled={!phoneNumber || phoneNumber.replace(/\D/g, '').length !== 10}
+                      disabled={disabled || !phoneNumber || phoneNumber.replace(/\D/g, '').length !== 10}
                     >
                       Verifică numărul de telefon
                     </Button>

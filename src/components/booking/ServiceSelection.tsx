@@ -12,9 +12,10 @@ type ServiceSelectionProps = {
     serviceType: string;
   }>;
   setSelectedService: (service: string) => void;
+  disabled?: boolean;
 };
 
-const ServiceSelection = ({ form, setSelectedService }: ServiceSelectionProps) => {
+const ServiceSelection = ({ form, setSelectedService, disabled }: ServiceSelectionProps) => {
   const { services, loading, error } = useServices();
 
   // Filter for massage services (services that contain "Masaj" in the name)
@@ -60,7 +61,7 @@ const ServiceSelection = ({ form, setSelectedService }: ServiceSelectionProps) =
   }
 
   return (
-    <Card className="bg-gray-800 border-gray-700">
+    <Card className={`bg-gray-800 border-gray-700 ${disabled ? 'opacity-60' : ''}`}>
       <CardHeader>
         <CardTitle className="text-white">Selectați serviciul</CardTitle>
       </CardHeader>
@@ -82,10 +83,11 @@ const ServiceSelection = ({ form, setSelectedService }: ServiceSelectionProps) =
                       }}
                       value={field.value}
                       className="grid grid-cols-1 md:grid-cols-2 gap-2"
+                      disabled={disabled}
                     >
                       {massageServices.map((service) => (
-                        <label htmlFor={service.name} key={service.id} className="flex items-center space-x-2 rounded-md border border-gray-600 bg-gray-700 p-3 hover:bg-gray-600 cursor-pointer">
-                          <RadioGroupItem value={service.name} id={service.name} className="border-gray-500 text-[#7E69AB]" />
+                        <label htmlFor={service.name} key={service.id} className={`flex items-center space-x-2 rounded-md border border-gray-600 bg-gray-700 p-3 hover:bg-gray-600 ${disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}>
+                          <RadioGroupItem value={service.name} id={service.name} className="border-gray-500 text-[#7E69AB]" disabled={disabled} />
                           <span className="flex-1 text-sm font-medium text-white">
                             {service.name}
                           </span>
@@ -104,10 +106,11 @@ const ServiceSelection = ({ form, setSelectedService }: ServiceSelectionProps) =
                       }}
                       value={field.value}
                       className="grid grid-cols-1 md:grid-cols-2 gap-2"
+                      disabled={disabled}
                     >
                       {deviceServices.map((service) => (
-                        <label htmlFor={service.name} key={service.id} className="flex items-center space-x-2 rounded-md border border-gray-600 bg-gray-700 p-3 hover:bg-gray-600 cursor-pointer">
-                          <RadioGroupItem value={service.name} id={service.name} className="border-gray-500 text-[#7E69AB]" />
+                        <label htmlFor={service.name} key={service.id} className={`flex items-center space-x-2 rounded-md border border-gray-600 bg-gray-700 p-3 hover:bg-gray-600 ${disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}>
+                          <RadioGroupItem value={service.name} id={service.name} className="border-gray-500 text-[#7E69AB]" disabled={disabled} />
                           <span className="flex-1 text-sm font-medium text-white">
                             {service.name}
                           </span>
