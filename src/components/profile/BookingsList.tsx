@@ -21,6 +21,7 @@ interface BookingsListProps {
   onOpenRecurring: (booking: Booking) => void;
   onCancelRecurring: (booking: Booking) => void;
   user: any;
+  role: string;
   onCancelRecurringInstance?: (instance: any) => void;
 }
 
@@ -33,6 +34,7 @@ const BookingsList: React.FC<BookingsListProps> = ({
   onOpenRecurring,
   onCancelRecurring,
   user,
+  role,
   onCancelRecurringInstance
 }) => {
   // Helper to format date and time as 'HH:mm | DD/MM/YYYY'
@@ -188,7 +190,7 @@ const BookingsList: React.FC<BookingsListProps> = ({
                       <Trash2 className="h-3 w-3 mr-1" />
                       Anulează
                     </Button>
-                    {user && (
+                    {role !== 'customer' && (
                       booking.recurring ? (
                         <Button variant="ghost" size="sm" onClick={() => onCancelRecurring(booking)} className="text-violet-300 hover:text-violet-200 hover:bg-violet-500/20 transition-colors duration-200 text-xs px-2 py-1">
                           Anulează Recurența

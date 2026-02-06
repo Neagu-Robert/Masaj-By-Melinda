@@ -237,22 +237,23 @@ export default function Bookings() {
     dt.setHours(0,0,0,0);
     return dt;
   };
+  const confirmedBookings = bookings.filter((b: any) => b.status === 'confirmed');
   const recurringSet = new Set<string>();
   const pastBookedSet = new Set<string>();
   const futureBookedSet = new Set<string>();
   const unconfirmedSet = new Set<string>();
   // mark original recurring
-  bookings.forEach((b: any) => { if (b.recurring) recurringSet.add(b.booking_date); });
+  confirmedBookings.forEach((b: any) => { if (b.recurring) recurringSet.add(b.booking_date); });
   // mark unconfirmed bookings
   bookings.forEach((b: any) => {
-    if (b.status === 'unconfirmed' || b.status === 'suggested') {
-      unconfirmedSet.add(b.booking_date);
+    if ((b.status === 'unconfirmed' || b.status === 'suggested') && b.requested_date_text) {
+      unconfirmedSet.add(b.requested_date_text);
     }
   });
   // mark planned recurring instances: only add those with TRUE status
   recurringInstances.forEach((r) => { if (r.status) recurringSet.add(r.date); });
   // regular booked
-  bookings.forEach((b: any) => {
+  confirmedBookings.forEach((b: any) => {
     const d = parseLocalDate(b.booking_date);
     const key = b.booking_date;
     if (!b.recurring) {
@@ -358,7 +359,7 @@ export default function Bookings() {
     const ok = window.confirm(`Anulați această instanță recurentă specifică din ${instance.date}?`);
     if (!ok) return;
     try {
-      await cancelRecurringInstance(instance.id);
+      await cancelRecurringInstance(Number(instance.id));
       // Refresh list by removing the cancelled one from state
       setRecurringInstances(prev => prev.filter(r => r.id !== instance.id));
       toast({ title: 'Instanță recurentă anulată', description: `Instanța din ${instance.date} anulată.` });
@@ -475,7 +476,7 @@ export default function Bookings() {
               {(() => {
                 const dayKey = selectedDay.getTime();
                 const dayBookings = filteredBookings
-                  .filter((b: any) => { const d = parseLocalDate(b.booking_date); return d.getTime()===dayKey; })
+                  .filter((b: any) => b.status === 'confirmed' && parseLocalDate(b.booking_date).getTime() === dayKey)
                   .sort((a:any,b:any)=> parseLocalDate(a.booking_date).getTime()-parseLocalDate(b.booking_date).getTime());
                 const dayRecurring = recurringInstances
                   .filter(r => r.status && (() => { const d = parseLocalDate(r.date); return d.getTime()===dayKey; })())
@@ -551,7 +552,7 @@ export default function Bookings() {
         ) : (() => {
           const dayKey = selectedDay.getTime();
           const dayBookings = filteredBookings
-            .filter((b: any) => { const d = parseLocalDate(b.booking_date); return d.getTime()===dayKey; })
+            .filter((b: any) => b.status === 'confirmed' && parseLocalDate(b.booking_date).getTime() === dayKey)
             .sort((a:any,b:any)=> parseLocalDate(a.booking_date).getTime()-parseLocalDate(b.booking_date).getTime());
           const dayRecurring = recurringInstances
             .filter(r => r.status && (() => { const d = parseLocalDate(r.date); return d.getTime()===dayKey; })())

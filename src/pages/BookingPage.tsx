@@ -10,18 +10,12 @@ import BookingHeader from '@/components/booking/BookingHeader';
 import ContactForm from '@/components/booking/ContactForm';
 import ServiceSelection from '@/components/booking/ServiceSelection';
 import DateTimeSelection from '@/components/booking/DateTimeSelection';
-import BookingSummary from '@/components/booking/BookingSummary';
 import { AvailabilitiesProvider } from '@/contexts/AvailabilitiesContext';
 import { BookingsProvider } from '@/contexts/BookingsContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useServices } from '@/contexts/ServicesContext';
 import { logAdminAction } from '@/lib/audit-logger';
 import { useBookingNotifications } from '@/services/notifications/hooks';
-import { 
-  formatDateForDB, 
-  checkForDoubleBooking, 
-  validateBookingData 
-} from '@/lib/booking-utils';
 import { usePhoneVerification } from '@/contexts/PhoneVerificationContext';
 import { PhoneVerificationModal } from '@/components/auth/PhoneVerificationModal';
 
@@ -57,8 +51,8 @@ const AuthPromptMessage = () => {
 const BookingPageContent = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>();
-  const [selectedTime, setSelectedTime] = useState<string | undefined>();
+  const [requestedDate, setRequestedDate] = useState('');
+  const [requestedTime, setRequestedTime] = useState('');
   const [selectedService, setSelectedService] = useState<string | undefined>();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
@@ -239,11 +233,10 @@ const BookingPageContent = () => {
       return;
     }
     
-    // Validate booking data using shared utility
-    const validation = validateBookingData(selectedDate, selectedTime || '', selectedService || '');
-    if (!validation.isValid) {
+    // Validate required fields
+    if (!requestedDate.trim() || !selectedService) {
       toast("Eroare de validare", {
-        description: validation.error || "Vă rugăm să completați toate câmpurile obligatorii"
+        description: "Vă rugăm să completați toate câmpurile obligatorii"
       });
       return;
     }
@@ -251,30 +244,21 @@ const BookingPageContent = () => {
     try {
       setIsSubmitting(true);
 
-      // Check for double booking using shared utility
-      const doubleBookingCheck = await checkForDoubleBooking(selectedDate!, selectedTime!);
-      
-      if (doubleBookingCheck.isDoubleBooked) {
-        toast("Slot indisponibil", {
-          description: doubleBookingCheck.error || "Acest interval orar a fost deja rezervat. Vă rugăm să alegeți alt interval."
-        });
-        setIsSubmitting(false);
-        return;
-      }
-
       // Get service details
       const serviceDetails = getServiceByName(selectedService!);
       const serviceId = serviceDetails?.id || null;
 
-      // Create the booking
+      // Create the booking with requested date/time as text
       const bookingData = {
         first_name: data.fullName.split(' ')[0] || data.fullName,
         last_name: data.fullName.split(' ').slice(1).join(' ') || '',
         phone_number: data.phoneNumber,
         service_type: selectedService,
         service_id: serviceId,
-        booking_date: formatDateForDB(selectedDate!),
-        booking_time: selectedTime,
+        requested_date_text: requestedDate.trim(),
+        requested_time_text: requestedTime.trim() || null,
+        booking_date: null,
+        booking_time: null,
         user_id: user?.id || null,
         status: 'unconfirmed'
       };
@@ -301,13 +285,13 @@ const BookingPageContent = () => {
           'booking.create.customer',
           'booking',
           newBooking.id,
-          `Customer created booking for ${selectedService} on ${formatDateForDB(selectedDate!)} at ${selectedTime}`
+          `Customer created booking request for ${selectedService} - requested date: ${requestedDate}${requestedTime ? ', time: ' + requestedTime : ''}`
         );
       }
 
       // Show success message
       toast("Rezervare primită!", {
-        description: `Rezervarea pentru ${selectedService} pe ${formatDateForDB(selectedDate!)} la ${selectedTime} este în așteptare de aprobare.`,
+        description: `Cererea dumneavoastră pentru ${selectedService} (${requestedDate}${requestedTime ? ', ' + requestedTime : ''}) a fost trimisă cu succes. Veți fi contactat pentru confirmare.`,
       });
 
       // Send booking approval notification
@@ -335,8 +319,8 @@ const BookingPageContent = () => {
             serviceName: selectedService!,
             serviceId: serviceId,
             serviceProvider: 'Melinda',
-            bookingDate: selectedDate!,
-            bookingTime: selectedTime!,
+            requestedDate: requestedDate,
+            requestedTime: requestedTime || undefined,
             duration: serviceDetails?.duration || 60,
             price: serviceDetails?.price || 140.00,
             status: 'unconfirmed'
@@ -348,8 +332,8 @@ const BookingPageContent = () => {
 
       // Reset form and redirect
       form.reset();
-      setSelectedDate(undefined);
-      setSelectedTime(undefined);
+      setRequestedDate('');
+      setRequestedTime('');
       setSelectedService(undefined);
       setUseProfileName(false);
       setUseProfilePhone(false);
@@ -407,29 +391,20 @@ const BookingPageContent = () => {
               
               {/* 3. Date and Time Selection */}
               <DateTimeSelection
-                selectedDate={selectedDate}
-                setSelectedDate={setSelectedDate}
-                selectedTime={selectedTime}
-                setSelectedTime={setSelectedTime}
-                disabled={!user}
-              />
-              
-              {/* 4. Booking Summary */}
-              <BookingSummary
-                form={form}
-                selectedDate={selectedDate}
-                selectedTime={selectedTime}
-                selectedService={selectedService}
+                requestedDate={requestedDate}
+                setRequestedDate={setRequestedDate}
+                requestedTime={requestedTime}
+                setRequestedTime={setRequestedTime}
                 disabled={!user}
               />
               
               <div className="flex justify-center">
                 <Button
                   type="submit"
-                  disabled={isSubmitting || !selectedDate || !selectedTime || !selectedService || !user}
+                  disabled={isSubmitting || !requestedDate.trim() || !selectedService || !user}
                   className="bg-violet-600 hover:bg-violet-700 text-white px-8 py-3 text-lg font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isSubmitting ? 'Se procesează...' : 'Confirmă rezervarea'}
+                  {isSubmitting ? 'Se procesează...' : 'Trimite cererea'}
                 </Button>
               </div>
             </form>

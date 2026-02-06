@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, User, Calendar, LogOut, Edit, Trash2, Menu, X } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import EditBookingModal from '@/components/booking/EditBookingModal';
 import { AvailabilitiesProvider } from "@/contexts/AvailabilitiesContext";
 import { BookingsProvider } from "@/contexts/BookingsContext";
@@ -25,6 +26,7 @@ function ProfilePageContent() {
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [bookings, setBookings] = useState([]);
+  const [pendingBookings, setPendingBookings] = useState([]);
   const [recurringInstances, setRecurringInstances] = useState<{
     id?: string;
     booking_id: string;
@@ -88,7 +90,10 @@ function ProfilePageContent() {
           setError('Eroare la preluarea rezervărilor.');
           console.error('Bookings fetch error:', bookingsError);
         } else if (isMounted) {
-          setBookings(bookingsData);
+          const pending = bookingsData.filter(b => b.status === 'unconfirmed');
+          const confirmed = bookingsData.filter(b => b.status !== 'unconfirmed');
+          setPendingBookings(pending);
+          setBookings(confirmed);
         }
 
         // Fetch recurring plan instances for this user's recurring bookings
@@ -420,7 +425,6 @@ function ProfilePageContent() {
   const recurringSet = new Set<string>();
   const pastBookedSet = new Set<string>();
   const futureBookedSet = new Set<string>();
-  const unconfirmedSet = new Set<string>();
 
   // Mark original recurring booking date as recurring (green)
   bookings.forEach((b: any) => {
@@ -450,13 +454,6 @@ function ProfilePageContent() {
     }
   });
 
-  // Mark unconfirmed bookings
-  bookings.forEach((b: any) => {
-    if (b.status === 'unconfirmed' || b.status === 'suggested') {
-      const key = toKey(b.booking_date);
-      unconfirmedSet.add(key);
-    }
-  });
 
   return (
     <div className="flex h-screen bg-gray-900 text-white">
@@ -681,6 +678,37 @@ function ProfilePageContent() {
             <section id="booking-history">
               <h2 className="text-xl md:text-3xl font-bold mb-4 md:mb-6 text-violet-300 border-b border-gray-700 pb-2">Rezervări</h2>
               
+              {/* Pending Requests Section */}
+              {pendingBookings.length > 0 && (
+                <Card className="bg-gray-800/50 border-yellow-500/50 mb-6">
+                  <CardHeader>
+                    <CardTitle className="text-violet-300 flex items-center gap-2">
+                      Cereri în Așteptare
+                      <Badge variant="destructive">{pendingBookings.length}</Badge>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {pendingBookings.map((booking: any) => (
+                        <div key={booking.id} className="bg-gray-700/50 p-4 rounded-lg">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <div className="text-sm text-gray-400">Serviciu</div>
+                              <div className="text-white font-medium">{booking.service_type}</div>
+                            </div>
+                            <Badge variant="destructive">În așteptare</Badge>
+                          </div>
+                          <div className="mt-2 text-sm text-gray-300">
+                            <div>Data solicitată: {booking.requested_date_text || '—'}</div>
+                            <div>Ora solicitată: {booking.requested_time_text || '—'}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
               {/* Side-by-side layout: Calendar on left, Bookings on right */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                {/* Calendar view - Left side */}
@@ -701,15 +729,13 @@ function ProfilePageContent() {
                         today: (date) => date.toDateString() === todayMidnight.toDateString(),
                         recurring: (date) => recurringSet.has(date.toISOString().slice(0,10)),
                         pastBooked: (date) => pastBookedSet.has(date.toISOString().slice(0,10)),
-                        futureBooked: (date) => futureBookedSet.has(date.toISOString().slice(0,10)),
-                        unconfirmed: (date) => unconfirmedSet.has(date.toISOString().slice(0,10))
+                        futureBooked: (date) => futureBookedSet.has(date.toISOString().slice(0,10))
                       }}
                       modifiersClassNames={{
                         today: "bg-blue-600 text-white rounded-lg shadow-lg",
                         recurring: "bg-green-600/60 text-white rounded-lg shadow-lg",
                         pastBooked: "bg-violet-900 text-white rounded-lg shadow-lg",
-                        futureBooked: "bg-purple-600 text-white rounded-lg shadow-lg",
-                        unconfirmed: "bg-gray-600/60 text-gray-300 rounded-lg shadow-lg"
+                        futureBooked: "bg-purple-600 text-white rounded-lg shadow-lg"
                       }}
                     />
                   </div>
@@ -726,6 +752,7 @@ function ProfilePageContent() {
                     onOpenRecurring={handleOpenRecurring}
                     onCancelRecurring={handleCancelRecurring}
                     user={user}
+                    role={role}
                     onCancelRecurringInstance={handleCancelRecurringInstance}
                   />
                 </div>

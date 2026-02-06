@@ -6,7 +6,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useBookingNotifications } from '../../services/notifications/hooks';
 import { useServices } from '../../contexts/ServicesContext';
 import { useAvailabilities } from '../../contexts/AvailabilitiesContext';
-import { generateBookingResponseToken, formatDateForDB, checkForDoubleBooking, validateBookingData, getAvailableTimeSlotsForDate, getTomorrow, fetchBookedTimeSlots } from '../../lib/booking-utils';
+import { formatDateForDB, checkForDoubleBooking, validateBookingData, getAvailableTimeSlotsForDate, getTomorrow, fetchBookedTimeSlots } from '../../lib/booking-utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -19,6 +19,8 @@ type Booking = {
   booking_time: string;
   service_type: string;
   service_id: number | null;
+  requested_date_text: string | null;
+  requested_time_text: string | null;
   status: 'unconfirmed' | 'suggested';
   user_id: string;
   profiles: {
@@ -35,15 +37,12 @@ const Confirmari = () => {
   const { services, getServiceByName } = useServices();
   const { availabilities, fetchAvailabilities } = useAvailabilities();
   const {
-    sendBookingConfirmedByAdmin,
     sendBookingRejectedByAdmin,
-    sendBookingSuggestion,
     sendBookingUpdateAdmin,
   } = useBookingNotifications();
 
   // Modal states
-  const [modifyModalOpen, setModifyModalOpen] = useState(false);
-  const [suggestModalOpen, setSuggestModalOpen] = useState(false);
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
   const [selectedBookingForAction, setSelectedBookingForAction] = useState<Booking | null>(null);
   
   // Date/Time selection states
@@ -87,6 +86,8 @@ const Confirmari = () => {
         booking_time,
         service_type,
         service_id,
+        requested_date_text,
+        requested_time_text,
         status,
         user_id,
         profiles (
@@ -116,47 +117,6 @@ const Confirmari = () => {
       setBookings([]);
     }
     setLoading(false);
-  };
-
-  const handleConfirm = async (booking: Booking) => {
-    const { error } = await supabase
-      .from('bookings')
-      .update({ status: 'confirmed' })
-      .eq('id', booking.id);
-
-    if (error) {
-      toast.error('Eroare la confirmarea rezervării', {
-        description: error.message
-      });
-    } else {
-      toast.success('Rezervare confirmată!');
-      logAdminAction(
-        user?.id || '',
-        'booking.update.admin',
-        'booking',
-        booking.id,
-        'Booking confirmed by admin',
-      );
-      if (booking.profiles) {
-        const serviceDetails = services.find((s) => s.id === booking.service_id);
-        sendBookingConfirmedByAdmin({
-          bookingId: booking.id,
-          userId: booking.user_id,
-          userName: booking.profiles.full_name,
-          userEmail: booking.profiles.email,
-          userPhone: booking.profiles.phone,
-          serviceName: booking.service_type,
-          serviceId: booking.service_id,
-          serviceProvider: 'Melinda',
-          bookingDate: booking.booking_date,
-          bookingTime: booking.booking_time,
-          duration: serviceDetails?.duration || 60,
-          price: serviceDetails?.price || 0,
-          status: 'confirmed',
-        });
-      }
-      fetchBookings();
-    }
   };
 
   const handleReject = async (booking: Booking) => {
@@ -200,16 +160,16 @@ const Confirmari = () => {
     }
   };
 
-  // Fetch availabilities when modals open
+  // Fetch availabilities when modal opens
   useEffect(() => {
-    if ((modifyModalOpen || suggestModalOpen) && selectedBookingForAction) {
+    if (confirmModalOpen && selectedBookingForAction) {
       const from = new Date();
       from.setMonth(from.getMonth() - 1);
       const to = new Date();
       to.setMonth(to.getMonth() + 3);
       fetchAvailabilities(formatDateForDB(from), formatDateForDB(to));
     }
-  }, [modifyModalOpen, suggestModalOpen, selectedBookingForAction, fetchAvailabilities]);
+  }, [confirmModalOpen, selectedBookingForAction, fetchAvailabilities]);
 
   // Fetch booked time slots when date changes
   useEffect(() => {
@@ -270,29 +230,21 @@ const Confirmari = () => {
     return false;
   };
 
-  const handleModify = (booking: Booking) => {
+  const handleOpenConfirmModal = (booking: Booking) => {
     setSelectedBookingForAction(booking);
     setSelectedDate(booking.booking_date ? new Date(booking.booking_date) : undefined);
     setSelectedTime(booking.booking_time || '');
-    setModifyModalOpen(true);
+    setConfirmModalOpen(true);
   };
 
-  const handleSuggest = (booking: Booking) => {
-    setSelectedBookingForAction(booking);
-    setSelectedDate(booking.booking_date ? new Date(booking.booking_date) : undefined);
-    setSelectedTime(booking.booking_time || '');
-    setSuggestModalOpen(true);
-  };
-
-  const handleCloseModals = () => {
-    setModifyModalOpen(false);
-    setSuggestModalOpen(false);
+  const handleCloseModal = () => {
+    setConfirmModalOpen(false);
     setSelectedBookingForAction(null);
     setSelectedDate(undefined);
     setSelectedTime('');
   };
 
-  const handleSaveModify = async () => {
+  const handleSaveConfirm = async () => {
     if (!selectedBookingForAction || !selectedDate || !selectedTime) {
       toast.error('Vă rugăm să selectați data și ora');
       return;
@@ -322,19 +274,21 @@ const Confirmari = () => {
       const serviceDetails = getServiceByName(selectedBookingForAction.service_type);
       const serviceId = serviceDetails?.id || null;
 
-      // Update booking with new date/time and confirm it immediately
+      // Update booking with date/time and confirm it
       const { error: updateError } = await supabase
         .from('bookings')
         .update({
           booking_date: formatDateForDB(selectedDate),
           booking_time: selectedTime,
           service_id: serviceId,
-          status: 'confirmed' // Admin modifications are instantly confirmed
+          status: 'confirmed',
+          requested_date_text: null,
+          requested_time_text: null
         })
         .eq('id', selectedBookingForAction.id);
 
       if (updateError) {
-        toast.error('Eroare la actualizarea rezervării', {
+        toast.error('Eroare la confirmarea rezervării', {
           description: updateError.message
         });
         return;
@@ -365,107 +319,15 @@ const Confirmari = () => {
         'booking.update.admin',
         'booking',
         selectedBookingForAction.id,
-        `Admin modified and confirmed booking: new date ${formatDateForDB(selectedDate)} at ${selectedTime}`
+        `Admin confirmed booking: date ${formatDateForDB(selectedDate)} at ${selectedTime}`
       );
 
-      toast.success('Rezervare modificată și confirmată!');
-      handleCloseModals();
+      toast.success('Rezervare confirmată!');
+      handleCloseModal();
       fetchBookings();
     } catch (error) {
-      console.error('Error modifying booking:', error);
-      toast.error('A apărut o eroare la modificarea rezervării');
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleSaveSuggest = async () => {
-    if (!selectedBookingForAction || !selectedDate || !selectedTime) {
-      toast.error('Vă rugăm să selectați data și ora');
-      return;
-    }
-
-    // Validate booking data
-    const validation = validateBookingData(selectedDate, selectedTime, selectedBookingForAction.service_type);
-    if (!validation.isValid) {
-      toast.error(validation.error || 'Date de rezervare invalide');
-      return;
-    }
-
-    // Check for double booking (excluding current booking)
-    const doubleBookingCheck = await checkForDoubleBooking(
-      selectedDate,
-      selectedTime,
-      selectedBookingForAction.id
-    );
-
-    if (doubleBookingCheck.isDoubleBooked) {
-      toast.error(doubleBookingCheck.error || 'Acest interval orar este deja rezervat');
-      return;
-    }
-
-    setIsSaving(true);
-    try {
-      // Generate token for booking response
-      const { token } = await generateBookingResponseToken(selectedBookingForAction.id);
-      
-      const serviceDetails = getServiceByName(selectedBookingForAction.service_type);
-      const serviceId = serviceDetails?.id || null;
-      const newDate = formatDateForDB(selectedDate);
-
-      // Update booking with suggested date/time
-      const { error: updateError } = await supabase
-        .from('bookings')
-        .update({
-          suggested_date: newDate,
-          suggested_time: selectedTime,
-          suggested_by_admin: true,
-          status: 'suggested'
-        })
-        .eq('id', selectedBookingForAction.id);
-
-      if (updateError) {
-        toast.error('Eroare la actualizarea rezervării', {
-          description: updateError.message
-        });
-        return;
-      }
-
-      // Send suggestion email to customer with Yes/No buttons
-      if (selectedBookingForAction.profiles) {
-        await sendBookingSuggestion({
-          bookingId: selectedBookingForAction.id,
-          userId: selectedBookingForAction.user_id,
-          userName: selectedBookingForAction.profiles.full_name,
-          userEmail: selectedBookingForAction.profiles.email,
-          userPhone: selectedBookingForAction.profiles.phone,
-          serviceName: selectedBookingForAction.service_type,
-          serviceId: serviceId,
-          serviceProvider: 'Melinda',
-          bookingDate: selectedBookingForAction.booking_date,
-          bookingTime: selectedBookingForAction.booking_time,
-          duration: serviceDetails?.duration || 60,
-          price: serviceDetails?.price || 0,
-          notes: `${newDate}|${selectedTime}|${token}`, // Format: "suggested_date|suggested_time|token"
-          status: 'suggested'
-        });
-      }
-
-      // Log admin action
-      await logAdminAction(
-        user?.id || '',
-        'booking.update.admin',
-        'booking',
-        selectedBookingForAction.id,
-        `Admin suggested date/time change: ${newDate} at ${selectedTime}`
-      );
-
-      toast.success('Sugestie trimisă către client!');
-      handleCloseModals();
-      fetchBookings();
-    } catch (error) {
-      console.error('Error suggesting booking change:', error);
-      toast.error('A apărut o eroare la trimiterea sugestiei');
+      console.error('Error confirming booking:', error);
+      toast.error('A apărut o eroare la confirmarea rezervării');
     } finally {
       setIsSaving(false);
     }
@@ -498,6 +360,12 @@ const Confirmari = () => {
                     <p>{booking.profiles?.email}</p>
                     <p>{booking.profiles?.phone}</p>
                   </div>
+                  <div className="bg-gray-800 p-4 rounded-lg border-l-4 border-yellow-500 mb-4">
+                    <h3 className="font-semibold text-yellow-400 mb-2">Cererea Clientului</h3>
+                    <p className="text-gray-300">Serviciu: {booking.service_type}</p>
+                    <p className="text-gray-300">Data dorită: {booking.requested_date_text || 'Nu a specificat'}</p>
+                    <p className="text-gray-300">Ora preferată: {booking.requested_time_text || 'Nu a specificat'}</p>
+                  </div>
                   <div>
                     <h3 className="font-semibold">Detalii Rezervare</h3>
                     <p>Serviciu: {booking.service_type}</p>
@@ -521,8 +389,8 @@ const Confirmari = () => {
                   <div className="flex flex-col space-y-2 md:items-end">
                     <div className="flex flex-wrap gap-2">
                       <button
-                        onClick={() => handleConfirm(booking)}
-                        className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+                        onClick={() => handleOpenConfirmModal(booking)}
+                        className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded"
                       >
                         Confirmă
                       </button>
@@ -532,21 +400,9 @@ const Confirmari = () => {
                       >
                         Respinge
                       </button>
-                      <button
-                        onClick={() => handleModify(booking)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-                      >
-                        Modifică
-                      </button>
-                      <button
-                        onClick={() => handleSuggest(booking)}
-                        className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded"
-                      >
-                        Sugerează
-                      </button>
                       <a
                         href={`tel:${booking.profiles?.phone}`}
-                        className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded inline-block"
+                        className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded inline-block"
                       >
                         Sună
                       </a>
@@ -559,33 +415,31 @@ const Confirmari = () => {
         )}
       </div>
 
-      {/* Modify Modal */}
-      <Dialog open={modifyModalOpen} onOpenChange={handleCloseModals}>
+      {/* Confirm Modal */}
+      <Dialog open={confirmModalOpen} onOpenChange={handleCloseModal}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-gray-900 border-gray-700">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-violet-300">
-              Modifică Rezervarea
+              Confirmă Rezervarea
             </DialogTitle>
             <DialogDescription className="text-gray-400">
-              Modificați data și ora rezervării. Modificările vor fi confirmate automat.
+              Selectați data și ora pentru a confirma rezervarea. Este obligatoriu să alegeți o dată și oră validă.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-6 py-4">
             {selectedBookingForAction && (
               <>
-                <div className="bg-gray-800 p-4 rounded-lg">
-                  <h3 className="font-semibold text-violet-300 mb-2">Detalii Rezervare</h3>
+                <div className="bg-gray-800 p-4 rounded-lg border-l-4 border-yellow-500">
+                  <h3 className="font-semibold text-yellow-400 mb-2">Cererea Clientului</h3>
                   <p className="text-gray-300">Client: {selectedBookingForAction.profiles?.full_name}</p>
                   <p className="text-gray-300">Serviciu: {selectedBookingForAction.service_type}</p>
-                  <p className="text-gray-300">
-                    Data actuală: {new Date(selectedBookingForAction.booking_date).toLocaleDateString()}
-                  </p>
-                  <p className="text-gray-300">Ora actuală: {selectedBookingForAction.booking_time}</p>
+                  <p className="text-gray-300">Data dorită: {selectedBookingForAction.requested_date_text || 'Nu a specificat'}</p>
+                  <p className="text-gray-300">Ora preferată: {selectedBookingForAction.requested_time_text || 'Nu a specificat'}</p>
                 </div>
 
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-violet-300">Selectare Dată & Oră Noi</h3>
+                  <h3 className="text-lg font-semibold text-violet-300">Selectare Dată & Oră</h3>
                   <div className="flex flex-col space-y-6 md:space-y-0 md:flex-row md:space-x-6">
                     <div className="w-full md:w-1/2">
                       <div className="flex items-center mb-3">
@@ -636,112 +490,18 @@ const Confirmari = () => {
             <Button
               type="button"
               variant="outline"
-              onClick={handleCloseModals}
+              onClick={handleCloseModal}
               disabled={isSaving}
               className="border-gray-600 text-gray-300 hover:bg-gray-700"
             >
               Anulează
             </Button>
             <Button
-              onClick={handleSaveModify}
+              onClick={handleSaveConfirm}
               disabled={isSaving || !selectedDate || !selectedTime}
               className="bg-violet-600 hover:bg-violet-700 text-white"
             >
-              {isSaving ? 'Se salvează...' : 'Modifică și Confirmă'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Suggest Modal */}
-      <Dialog open={suggestModalOpen} onOpenChange={handleCloseModals}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-gray-900 border-gray-700">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-violet-300">
-              Sugerează Modificare Rezervare
-            </DialogTitle>
-            <DialogDescription className="text-gray-400">
-              Selectați o nouă dată și oră. Clientul va primi un email cu sugestia și va putea accepta sau respinge.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-6 py-4">
-            {selectedBookingForAction && (
-              <>
-                <div className="bg-gray-800 p-4 rounded-lg">
-                  <h3 className="font-semibold text-violet-300 mb-2">Rezervare Actuală</h3>
-                  <p className="text-gray-300">Client: {selectedBookingForAction.profiles?.full_name}</p>
-                  <p className="text-gray-300">Serviciu: {selectedBookingForAction.service_type}</p>
-                  <p className="text-gray-300">
-                    Data: {new Date(selectedBookingForAction.booking_date).toLocaleDateString()}
-                  </p>
-                  <p className="text-gray-300">Ora: {selectedBookingForAction.booking_time}</p>
-                </div>
-
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-violet-300">Selectare Dată & Oră Sugerate</h3>
-                  <div className="flex flex-col space-y-6 md:space-y-0 md:flex-row md:space-x-6">
-                    <div className="w-full md:w-1/2">
-                      <div className="flex items-center mb-3">
-                        <CalendarIcon className="mr-2 h-5 w-5 text-violet-400" />
-                        <span className="font-medium text-violet-200">Selectați Data</span>
-                      </div>
-                      <div className="flex justify-center">
-                        <Calendar
-                          mode="single"
-                          selected={selectedDate}
-                          onSelect={setSelectedDate}
-                          disabled={isDateDisabled}
-                          className="rounded-md border border-gray-600 bg-gray-800 text-violet-200 [&_.rdp-day]:text-violet-200 [&_.rdp-day_selected]:bg-violet-600 [&_.rdp-day_selected]:text-white [&_.rdp-day:hover]:bg-violet-600/20"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="w-full md:w-1/2">
-                      <div className="flex items-center mb-3">
-                        <Clock className="mr-2 h-5 w-5 text-violet-400" />
-                        <span className="font-medium text-violet-200">Selectați Ora</span>
-                      </div>
-                      <Select value={selectedTime} onValueChange={setSelectedTime}>
-                        <SelectTrigger className="bg-gray-800 text-white border-gray-600">
-                          <SelectValue placeholder="Selectați o oră" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-gray-800 text-white border-gray-600">
-                          {getAvailableHoursForSelectedDate().map((hour) => (
-                            <SelectItem key={hour} value={hour}>
-                              {hour}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {selectedDate && getAvailableHoursForSelectedDate().length === 0 && (
-                        <p className="text-violet-300 text-sm mt-2">
-                          Nu există intervale orare disponibile pentru această dată.
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleCloseModals}
-              disabled={isSaving}
-              className="border-gray-600 text-gray-300 hover:bg-gray-700"
-            >
-              Anulează
-            </Button>
-            <Button
-              onClick={handleSaveSuggest}
-              disabled={isSaving || !selectedDate || !selectedTime}
-              className="bg-purple-600 hover:bg-purple-700 text-white"
-            >
-              {isSaving ? 'Se trimite...' : 'Trimite Sugestia'}
+              {isSaving ? 'Se confirmă...' : 'Confirmă'}
             </Button>
           </DialogFooter>
         </DialogContent>
