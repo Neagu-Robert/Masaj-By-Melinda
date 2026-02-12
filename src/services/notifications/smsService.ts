@@ -17,6 +17,9 @@ import { logNotification } from './loggingService';
 const smsTemplates = {
   // Customer creates booking - Admin receives SMS with customer info
   booking_created_customer: (data: BookingNotificationData): string => {
+    if (data.requestedDateText) {
+      return `Masaj by Melinda: Rezervare nouă de la ${data.userName}. Serviciu: ${data.serviceName}, Data dorită: ${data.requestedDateText}, Ora preferată: ${data.requestedTimeText || 'Nu a specificat'}, Tel: ${data.userPhone}. Verificați panoul de confirmare.`;
+    }
     return `Masaj by Melinda: Rezervare nouă creată de clientul ${data.userName}. Serviciu: ${data.serviceName}, Dată: ${data.dateTime}, Durată: ${data.duration} min.`;
   },
 
@@ -42,6 +45,9 @@ const smsTemplates = {
 
   // New booking needs approval - Admin receives SMS
   booking_approval_needed: (data: BookingNotificationData): string => {
+    if (data.requestedDateText) {
+      return `Masaj by Melinda: Rezervare nouă de la ${data.userName} necesită aprobare. Serviciu: ${data.serviceName}, Data: ${data.requestedDateText}, Ora: ${data.requestedTimeText || 'Nu a specificat'}. Verificați panoul de confirmare.`;
+    }
     return `Masaj by Melinda: Rezervare nouă de la ${data.userName} necesită aprobare. Serviciu: ${data.serviceName}, Dată: ${data.dateTime}. Verificați panoul de confirmare.`;
   },
 

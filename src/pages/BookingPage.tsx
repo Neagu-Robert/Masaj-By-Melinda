@@ -319,8 +319,10 @@ const BookingPageContent = () => {
             serviceName: selectedService!,
             serviceId: serviceId,
             serviceProvider: 'Melinda',
-            requestedDate: requestedDate,
-            requestedTime: requestedTime || undefined,
+            bookingDate: '',
+            bookingTime: '',
+            requestedDateText: requestedDate,
+            requestedTimeText: requestedTime || null,
             duration: serviceDetails?.duration || 60,
             price: serviceDetails?.price || 140.00,
             status: 'unconfirmed'

@@ -246,7 +246,7 @@ export default function Bookings() {
   confirmedBookings.forEach((b: any) => { if (b.recurring) recurringSet.add(b.booking_date); });
   // mark unconfirmed bookings
   bookings.forEach((b: any) => {
-    if ((b.status === 'unconfirmed' || b.status === 'suggested') && b.requested_date_text) {
+    if (b.status === 'unconfirmed' && b.requested_date_text) {
       unconfirmedSet.add(b.requested_date_text);
     }
   });

@@ -27,6 +27,8 @@ export const useBookingNotifications = () => {
       serviceProvider?: string;
       bookingDate: string | Date;
       bookingTime: string;
+      requestedDateText?: string | null; // Customer's free-text date preference
+      requestedTimeText?: string | null; // Customer's free-text time preference
       duration: number;
       price: number;
       location?: string;
@@ -57,6 +59,8 @@ export const useBookingNotifications = () => {
         serviceId: bookingData.serviceId, // Include service ID
         serviceProvider: bookingData.serviceProvider,
         dateTime,
+        requestedDateText: bookingData.requestedDateText,
+        requestedTimeText: bookingData.requestedTimeText,
         duration: bookingData.duration,
         price: bookingData.price,
         location: bookingData.location,
@@ -88,6 +92,8 @@ export const useBookingNotifications = () => {
     serviceProvider?: string;
     bookingDate: string | Date;
     bookingTime: string;
+    requestedDateText?: string | null;
+    requestedTimeText?: string | null;
     duration: number;
     price: number;
     location?: string;
@@ -375,6 +381,8 @@ export const useBookingNotifications = () => {
     serviceProvider?: string;
     bookingDate: string | Date;
     bookingTime: string;
+    requestedDateText?: string | null;
+    requestedTimeText?: string | null;
     duration: number;
     price: number;
     location?: string;
@@ -398,6 +406,8 @@ export const useBookingNotifications = () => {
     serviceProvider?: string;
     bookingDate: string | Date;
     bookingTime: string;
+    requestedDateText?: string | null;
+    requestedTimeText?: string | null;
     duration: number;
     price: number;
     location?: string;

@@ -38,7 +38,7 @@ const Confirmari = () => {
   const { availabilities, fetchAvailabilities } = useAvailabilities();
   const {
     sendBookingRejectedByAdmin,
-    sendBookingUpdateAdmin,
+    sendBookingConfirmedByAdmin,
   } = useBookingNotifications();
 
   // Modal states
@@ -296,7 +296,7 @@ const Confirmari = () => {
 
       // Send confirmation notification to customer
       if (selectedBookingForAction.profiles) {
-        await sendBookingUpdateAdmin({
+        await sendBookingConfirmedByAdmin({
           bookingId: selectedBookingForAction.id,
           userId: selectedBookingForAction.user_id,
           userName: selectedBookingForAction.profiles.full_name,

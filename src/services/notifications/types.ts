@@ -62,6 +62,8 @@ export interface BookingNotificationData {
   serviceName: string;
   serviceId?: number | null; // New field for services table reference
   dateTime: string;
+  requestedDateText?: string | null; // Customer's free-text date preference
+  requestedTimeText?: string | null; // Customer's free-text time preference
   duration: number;
   price: number;
   status: string;

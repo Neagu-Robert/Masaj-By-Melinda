@@ -14,10 +14,32 @@ import { logNotification } from './loggingService';
 const emailTemplates = {
   booking_created_customer: (data: BookingNotificationData): { subject: string; html: string; text: string } => {
     const isUnconfirmed = data.status === 'unconfirmed';
-    const subject = isUnconfirmed 
-      ? `Rezervare Primită - Așteptare Aprobare - ${data.serviceName}`
-      : `Confirmare Rezervare - ${data.serviceName}`;
-    const html = `
+    const hasTextRequest = !!data.requestedDateText;
+    
+    const subject = hasTextRequest
+      ? `Cerere de Rezervare Primită - În Așteptare Aprobare - ${data.serviceName}`
+      : isUnconfirmed 
+        ? `Rezervare Primită - Așteptare Aprobare - ${data.serviceName}`
+        : `Confirmare Rezervare - ${data.serviceName}`;
+    
+    const html = hasTextRequest ? `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #f59e0b;">Cerere de Rezervare Primită - În Așteptare</h2>
+        <p>Dragă ${data.userName},</p>
+        <p>Cererea dumneavoastră de rezervare a fost primită și este în așteptarea aprobării administratorului.</p>
+        <div style="background-color: #fffbeb; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f59e0b;">
+          <h3 style="margin-top: 0; color: #92400e;">Cererea Dumneavoastră:</h3>
+          <p><strong>Serviciu:</strong> ${data.serviceName}</p>
+          <p><strong>Data dorită:</strong> ${data.requestedDateText}</p>
+          <p><strong>Ora preferată:</strong> ${data.requestedTimeText || 'Nu ați specificat'}</p>
+          <p><strong>Durată:</strong> ${data.duration} minute</p>
+          <p><strong>Preț:</strong> ${data.price} RON</p>
+          <p><strong>Status:</strong> <span style="color: #f59e0b; font-weight: bold;">În așteptare de aprobare</span></p>
+        </div>
+        <p style="color: #f59e0b;"><strong>Notă importantă:</strong> Cererea dumneavoastră este în așteptare de aprobare. Veți primi un email de confirmare cu data și ora exacte după ce administratorul va verifica disponibilitatea.</p>
+        <p>Cu respect,<br>Masaj by Melinda</p>
+      </div>
+    ` : `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2 style="color: ${isUnconfirmed ? '#f59e0b' : '#8b5cf6'};">${isUnconfirmed ? 'Rezervare Primită - În Așteptare' : 'Confirmare Rezervare'}</h2>
         <p>Dragă ${data.userName},</p>
@@ -34,7 +56,27 @@ const emailTemplates = {
         <p>Cu respect,<br>Masaj by Melinda</p>
       </div>
     `;
-    const text = `
+    
+    const text = hasTextRequest ? `
+      Cerere de Rezervare Primită - În Așteptare
+      
+      Dragă ${data.userName},
+      
+      Cererea dumneavoastră de rezervare a fost primită și este în așteptarea aprobării administratorului.
+      
+      Cererea Dumneavoastră:
+      - Serviciu: ${data.serviceName}
+      - Data dorită: ${data.requestedDateText}
+      - Ora preferată: ${data.requestedTimeText || 'Nu ați specificat'}
+      - Durată: ${data.duration} minute
+      - Preț: ${data.price} RON
+      - Status: În așteptare de aprobare
+      
+      Notă importantă: Cererea dumneavoastră este în așteptare de aprobare. Veți primi un email de confirmare cu data și ora exacte după ce administratorul va verifica disponibilitatea.
+      
+      Cu respect,
+      Masaj by Melinda
+    ` : `
       ${isUnconfirmed ? 'Rezervare Primită - În Așteptare' : 'Confirmare Rezervare'}
       
       Dragă ${data.userName},
@@ -554,21 +596,25 @@ const emailTemplates = {
   },
 
   booking_approval_needed: (data: BookingNotificationData): { subject: string; html: string; text: string } => {
+    const hasTextRequest = !!data.requestedDateText;
     const subject = `Rezervare Primită - În Așteptare Aprobare - ${data.serviceName}`;
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2 style="color: #f59e0b;">Rezervare Primită - În Așteptare</h2>
         <p>Dragă ${data.userName},</p>
         <p>Rezervarea dumneavoastră a fost primită cu succes și este în așteptarea aprobării administratorului.</p>
-        <div style="background-color: #fffbeb; padding: 20px; border-radius: 8px; margin: 20px 0;">
-          <h3 style="margin-top: 0;">Detalii Rezervare:</h3>
+        <div style="background-color: #fffbeb; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f59e0b;">
+          <h3 style="margin-top: 0; color: #92400e;">${hasTextRequest ? 'Cererea Dumneavoastră:' : 'Detalii Rezervare:'}</h3>
           <p><strong>Serviciu:</strong> ${data.serviceName}</p>
-          <p><strong>Dată și Oră:</strong> ${data.dateTime}</p>
+          ${hasTextRequest 
+            ? `<p><strong>Data dorită:</strong> ${data.requestedDateText}</p>
+          <p><strong>Ora preferată:</strong> ${data.requestedTimeText || 'Nu ați specificat'}</p>`
+            : `<p><strong>Dată și Oră:</strong> ${data.dateTime}</p>`}
           <p><strong>Durată:</strong> ${data.duration} minute</p>
           <p><strong>Preț:</strong> ${data.price} RON</p>
-          <p><strong>Status:</strong> În așteptare de aprobare</p>
+          <p><strong>Status:</strong> <span style="color: #f59e0b; font-weight: bold;">În așteptare de aprobare</span></p>
         </div>
-        <p style="color: #f59e0b;"><strong>Notă:</strong> Veți primi un email de confirmare după ce administratorul va aproba rezervarea. Data și ora pot fi ajustate dacă este necesar.</p>
+        <p style="color: #f59e0b;"><strong>Notă:</strong> Veți primi un email de confirmare cu data și ora exacte după ce administratorul va verifica disponibilitatea.</p>
         <p>Cu respect,<br>Masaj by Melinda</p>
       </div>
     `;
@@ -579,14 +625,17 @@ const emailTemplates = {
       
       Rezervarea dumneavoastră a fost primită cu succes și este în așteptarea aprobării administratorului.
       
-      Detalii Rezervare:
+      ${hasTextRequest ? 'Cererea Dumneavoastră:' : 'Detalii Rezervare:'}
       - Serviciu: ${data.serviceName}
-      - Dată și Oră: ${data.dateTime}
+      ${hasTextRequest 
+        ? `- Data dorită: ${data.requestedDateText}
+      - Ora preferată: ${data.requestedTimeText || 'Nu ați specificat'}`
+        : `- Dată și Oră: ${data.dateTime}`}
       - Durată: ${data.duration} minute
       - Preț: ${data.price} RON
       - Status: În așteptare de aprobare
       
-      Notă: Veți primi un email de confirmare după ce administratorul va aproba rezervarea. Data și ora pot fi ajustate dacă este necesar.
+      Notă: Veți primi un email de confirmare cu data și ora exacte după ce administratorul va verifica disponibilitatea.
       
       Cu respect,
       Masaj by Melinda
@@ -601,14 +650,15 @@ const emailTemplates = {
         <h2 style="color: #10b981;">Rezervare Confirmată</h2>
         <p>Dragă ${data.userName},</p>
         <p>Rezervarea dumneavoastră a fost confirmată de către administratorul nostru!</p>
-        <div style="background-color: #f0fdf4; padding: 20px; border-radius: 8px; margin: 20px 0;">
-          <h3 style="margin-top: 0;">Detalii Rezervare Confirmată:</h3>
+        <div style="background-color: #f0fdf4; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #10b981;">
+          <h3 style="margin-top: 0; color: #065f46;">Detalii Rezervare Confirmată:</h3>
           <p><strong>Serviciu:</strong> ${data.serviceName}</p>
           <p><strong>Dată și Oră:</strong> ${data.dateTime}</p>
           <p><strong>Durată:</strong> ${data.duration} minute</p>
           <p><strong>Preț:</strong> ${data.price} RON</p>
+          <p><strong>Status:</strong> <span style="color: #10b981; font-weight: bold;">Confirmat</span></p>
         </div>
-        <p>Vă așteptăm cu drag!</p>
+        <p style="color: #10b981;"><strong>Rezervarea dumneavoastră este confirmată!</strong> Vă așteptăm cu drag!</p>
         <p>Cu respect,<br>Masaj by Melinda</p>
       </div>
     `;
@@ -624,8 +674,9 @@ const emailTemplates = {
       - Dată și Oră: ${data.dateTime}
       - Durată: ${data.duration} minute
       - Preț: ${data.price} RON
+      - Status: Confirmat
       
-      Vă așteptăm cu drag!
+      Rezervarea dumneavoastră este confirmată! Vă așteptăm cu drag!
       
       Cu respect,
       Masaj by Melinda
