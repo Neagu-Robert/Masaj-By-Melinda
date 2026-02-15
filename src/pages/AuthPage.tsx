@@ -81,16 +81,53 @@ export default function AuthPage() {
           return; // Stop execution here
         }
 
-        // Step 2: If user is not banned, proceed with the actual login.
-        const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+        // Step 2: If user is not banned, call auth-proxy edge function for rate-limited authentication
+        const { data, error: proxyError } = await supabase.functions.invoke('auth-proxy', {
+          body: { email, password }
+        });
 
-        if (signInError) {
-          setError(signInError.message);
+        // Handle rate limit errors (429)
+        if (proxyError && (
+          proxyError.message?.includes('FunctionsHttpError: 429') || 
+          data?.retryAfter
+        )) {
+          setError('Prea multe încercări. Vă rugăm să încercați din nou mai târziu.');
+          setLoading(false);
+          return;
         }
-        // On successful sign-in, the global AuthContext listener will handle the redirect.
+
+        // Handle other errors from auth-proxy
+        if (proxyError || !data?.session) {
+          setError('Something went wrong, try again');
+          setLoading(false);
+          return;
+        }
+
+        // Step 3: Set session with tokens from auth-proxy response
+        const { access_token, refresh_token } = data.session;
+        
+        if (!access_token || !refresh_token) {
+          setError('Something went wrong, try again');
+          setLoading(false);
+          return;
+        }
+
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token,
+          refresh_token
+        });
+
+        if (sessionError) {
+          console.error('Session setting error:', sessionError);
+          setError('Something went wrong, try again');
+          setLoading(false);
+          return;
+        }
+
+        // On successful session set, the global AuthContext listener will handle the redirect.
       } catch (err) {
         console.error('Login error:', err);
-        setError('A apărut o eroare neașteptată în timpul autentificării.');
+        setError('Something went wrong, try again');
       }
     } else {
       // REGISTER

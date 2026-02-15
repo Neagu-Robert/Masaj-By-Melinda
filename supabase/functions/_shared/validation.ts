@@ -54,6 +54,12 @@ export const VerifyPhoneOTPSchema = z.object({
   userId: uuidSchema.optional(),
 });
 
+// Auth Proxy Schema
+export const AuthProxySchema = z.object({
+  email: emailSchema,
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+});
+
 // Create Recurring Bookings Schema
 export const CreateRecurringBookingsSchema = z.object({
   bookingId: uuidSchema,
