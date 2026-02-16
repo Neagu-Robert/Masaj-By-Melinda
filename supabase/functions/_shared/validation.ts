@@ -130,6 +130,16 @@ export const BookingResponseSchema = z.object({
   reason: z.string().max(500).trim().optional(),
 });
 
+// Create Booking Schema
+export const CreateBookingSchema = z.object({
+  full_name: z.string().min(2, 'Full name must be at least 2 characters').max(100).trim(),
+  phone_number: phoneSchema,
+  service_type: z.string().min(1, 'Service type is required').max(100).trim(),
+  service_id: z.number().int().positive().nullable(),
+  requested_date_text: z.string().min(1, 'Requested date is required').max(200).trim(),
+  requested_time_text: z.string().max(200).trim().nullable(),
+});
+
 // Validation helper function
 export async function validateRequest<T>(
   req: Request,

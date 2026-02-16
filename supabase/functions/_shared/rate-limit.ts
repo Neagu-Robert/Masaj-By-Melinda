@@ -178,6 +178,8 @@ export const RATE_LIMITS = {
   OTP_VERIFY: { limit: 5, window: 900 }, // 5 attempts per 15 minutes per phone
 
   // Booking endpoints
+  CREATE_BOOKING: { limit: 10, window: 3600 }, // 10 bookings per hour per user
+  CREATE_BOOKING_IP: { limit: 10, window: 3600 }, // 10 bookings per hour per IP
   RECURRING_BOOKING: { limit: 10, window: 3600 }, // 10 requests per hour per user
   CANCEL_RECURRING_BOOKING: { limit: 20, window: 3600 }, // 20 cancellations per hour per user
 
