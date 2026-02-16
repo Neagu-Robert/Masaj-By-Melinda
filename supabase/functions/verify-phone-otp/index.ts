@@ -312,13 +312,15 @@ const securedHandler = compose(
     limit: RATE_LIMITS.OTP_VERIFY.limit,
     window: RATE_LIMITS.OTP_VERIFY.window,
     strategy: 'token',
+    failClosed: true,
   }),
   // Additional IP-based rate limiting
   rateLimitMiddleware({
     identifier: (req, context) => context.ip || req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown',
     endpoint: 'verify-phone-otp-ip',
-    limit: 20,
+    limit: 15,
     window: 900, // 20 attempts per 15 minutes per IP
+    failClosed: true,
   })
 )(handler);
 

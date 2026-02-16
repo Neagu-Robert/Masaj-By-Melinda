@@ -30,4 +30,70 @@ export const supabaseAuthHeader = async (): Promise<Record<string, string>> => {
   };
 };
 
+import { RateLimitManager } from './rate-limit-manager';
 
+/**
+ * Invoke a rate-limited Supabase Edge Function with automatic rate limit handling
+ * 
+ * @param functionName - Name of the edge function to invoke
+ * @param body - Request body
+ * @param rateLimitKey - Key for storing rate limit state (e.g., 'auth', 'otp_+40712345678')
+ * @param identifier - Identifier for rate limit (e.g., email, phone)
+ * @returns Response with ok, data, error, and optional retryAfterSeconds
+ */
+export async function invokeRateLimited(
+  functionName: string,
+  body: any,
+  rateLimitKey: string,
+  identifier: string
+): Promise<{ ok: boolean; data?: any; error?: string; retryAfterSeconds?: number; status?: number; }> {
+  try {
+    const { data, error } = await supabase.functions.invoke(functionName, { body });
+
+    // Handle successful response
+    if (!error && data) {
+      // Clear rate limit state on success
+      RateLimitManager.clear(rateLimitKey);
+      return { ok: true, data };
+    }
+
+    // Handle error response
+    if (error) {
+      // Check if it's a rate limit error (429)
+      // Note: supabase.functions.invoke doesn't expose status code directly,
+      // so we check the error message or data structure
+      if (data?.error === 'Too many requests' || data?.code === 'RATE_LIMIT_EXCEEDED') {
+        // Update rate limit state from response body
+        RateLimitManager.updateFrom429Response(rateLimitKey, data, identifier);
+        
+        return {
+          ok: false,
+          error: data.message || 'Rate limit exceeded',
+          retryAfterSeconds: data.retryAfter || data.retryAfterSeconds,
+          status: 429,
+        };
+      }
+
+      // Other errors
+      return {
+        ok: false,
+        error: error.message || 'Request failed',
+        status: 500,
+      };
+    }
+
+    // Unexpected response
+    return {
+      ok: false,
+      error: 'Unexpected response from server',
+      status: 500,
+    };
+  } catch (error) {
+    console.error(`Error invoking ${functionName}:`, error);
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      status: 500,
+    };
+  }
+}

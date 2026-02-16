@@ -103,6 +103,7 @@ export function rateLimitMiddleware(config: {
   limit: number;
   window: number;
   strategy?: 'sliding' | 'fixed' | 'token';
+  failClosed?: boolean;
 }): Middleware {
   return async (req, context) => {
     try {
@@ -114,16 +115,16 @@ export function rateLimitMiddleware(config: {
       let result;
       switch (config.strategy) {
         case 'fixed':
-          result = await fixedWindowRateLimit(identifier, config.endpoint, config.limit, config.window);
+          result = await fixedWindowRateLimit(identifier, config.endpoint, config.limit, config.window, config.failClosed);
           break;
         case 'token':
           // Convert limit/window to token bucket parameters
           // capacity = limit, refillRate = limit / window (tokens per second)
-          result = await tokenBucketRateLimit(identifier, config.endpoint, config.limit, config.limit / config.window);
+          result = await tokenBucketRateLimit(identifier, config.endpoint, config.limit, config.limit / config.window, config.failClosed);
           break;
         default:
           // Default to sliding window
-          result = await slidingWindowRateLimit(identifier, config.endpoint, config.limit, config.window);
+          result = await slidingWindowRateLimit(identifier, config.endpoint, config.limit, config.window, config.failClosed);
       }
 
       if (!result.allowed) {
@@ -140,6 +141,26 @@ export function rateLimitMiddleware(config: {
 
     } catch (error) {
       logError(error instanceof Error ? error : new Error(String(error)), context.endpoint, { middleware: 'rateLimit' }, req);
+      
+      // Check if fail-closed mode is enabled
+      if (config.failClosed === true) {
+        const headers = {
+          'Content-Type': 'application/json',
+          ...corsHeaders,
+        };
+
+        const response = new Response(JSON.stringify({
+          error: 'Service temporarily unavailable',
+          message: 'OTP service temporarily unavailable. Please try again later.',
+          code: 'SERVICE_UNAVAILABLE',
+        }), {
+          status: 503,
+          headers,
+        });
+
+        return addRateLimitHeaders(response, context.rateLimitInfo);
+      }
+      
       // Fail open - allow request if rate limiting fails
     }
   };

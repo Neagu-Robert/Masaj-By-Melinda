@@ -4,6 +4,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { logAdminAction } from "@/lib/audit-logger";
 import { Eye, EyeOff } from 'lucide-react';
+import { RateLimitManager } from '@/lib/rate-limit-manager';
+import { invokeRateLimited } from '@/lib/supabase-functions';
 
 export default function AuthPage() {
   const { user, role, loading: authLoading } = useAuth();
@@ -19,6 +21,8 @@ export default function AuthPage() {
   const [success, setSuccess] = useState('');
   const [isBanned, setIsBanned] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [isRateLimited, setIsRateLimited] = useState(false);
+  const [rateLimitCountdown, setRateLimitCountdown] = useState(0);
 
   useEffect(() => {
     // This effect handles redirection after a successful login
@@ -31,6 +35,32 @@ export default function AuthPage() {
       }
     }
   }, [user, role, authLoading, navigate]);
+
+  // Countdown timer for rate limiting
+  useEffect(() => {
+    if (!isRateLimited) return;
+
+    const interval = setInterval(() => {
+      const remaining = RateLimitManager.getTimeRemaining('auth');
+      setRateLimitCountdown(remaining);
+      
+      if (remaining <= 0) {
+        setIsRateLimited(false);
+        RateLimitManager.clear('auth');
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isRateLimited]);
+
+  // Check for existing rate limit on mount
+  useEffect(() => {
+    const isLimited = RateLimitManager.isLimited('auth');
+    if (isLimited) {
+      setIsRateLimited(true);
+      setRateLimitCountdown(RateLimitManager.getTimeRemaining('auth'));
+    }
+  }, []);
 
   // Check if user already exists in profiles table
   const checkExistingUser = async (email: string) => {
@@ -63,14 +93,12 @@ export default function AuthPage() {
 
     if (isLogin) {
       try {
-        // Step 1: Securely check the user's status before attempting to sign in.
+        // Step 1: Check if user is banned (client-side pre-check)
         const { data: status, error: rpcError } = await supabase.rpc('get_user_status_by_email', {
           p_email: email,
         });
 
         if (rpcError) {
-          // This will catch if the function doesn't exist or another DB error occurs.
-          // We'll treat it as a normal login flow and let the password check fail.
           console.warn('RPC function get_user_status_by_email failed:', rpcError.message);
         }
 
@@ -78,60 +106,51 @@ export default function AuthPage() {
           setError('Contul dumneavoastră a fost blocat. Vă rugăm să contactați suportul.');
           setIsBanned(true);
           setLoading(false);
-          return; // Stop execution here
-        }
-
-        // Step 2: If user is not banned, call auth-proxy edge function for rate-limited authentication
-        const { data, error: proxyError } = await supabase.functions.invoke('auth-proxy', {
-          body: { email, password }
-        });
-
-        // Handle rate limit errors (429)
-        if (proxyError && (
-          proxyError.message?.includes('FunctionsHttpError: 429') || 
-          data?.retryAfter
-        )) {
-          setError('Prea multe încercări. Vă rugăm să încercați din nou mai târziu.');
-          setLoading(false);
           return;
         }
 
-        // Handle other errors from auth-proxy
-        if (proxyError || !data?.session) {
+        // Step 2: Call auth-proxy Edge Function (with rate limiting)
+        const result = await invokeRateLimited(
+          'auth-proxy',
+          { email, password },
+          'auth',
+          email
+        );
+
+        if (!result.ok) {
+          // Handle rate limit error
+          if (result.status === 429) {
+            setError('Prea multe încercări. Vă rugăm să încercați din nou mai târziu.');
+            setIsRateLimited(true);
+            setRateLimitCountdown(result.retryAfterSeconds || 240);
+            setLoading(false);
+            return;
+          }
+
+          // Handle other errors
           setError('Something went wrong, try again');
           setLoading(false);
           return;
         }
 
-        // Step 3: Set session with tokens from auth-proxy response
-        const { access_token, refresh_token } = data.session;
-        
-        if (!access_token || !refresh_token) {
-          setError('Something went wrong, try again');
-          setLoading(false);
-          return;
+        // Step 3: Set session from auth-proxy response
+        if (result.data?.session) {
+          await supabase.auth.setSession({
+            access_token: result.data.session.access_token,
+            refresh_token: result.data.session.refresh_token,
+          });
+          
+          // Clear rate limit state on success
+          RateLimitManager.clear('auth');
         }
 
-        const { error: sessionError } = await supabase.auth.setSession({
-          access_token,
-          refresh_token
-        });
-
-        if (sessionError) {
-          console.error('Session setting error:', sessionError);
-          setError('Something went wrong, try again');
-          setLoading(false);
-          return;
-        }
-
-        // On successful session set, the global AuthContext listener will handle the redirect.
+        // On successful sign-in, the global AuthContext listener will handle the redirect
       } catch (err) {
         console.error('Login error:', err);
-        setError('Something went wrong, try again');
+        setError('A apărut o eroare neașteptată în timpul autentificării.');
       }
     } else {
-      // REGISTER
-      // First, check if user already exists
+      // REGISTER (keep existing logic - no changes)
       const existingUser = await checkExistingUser(email);
       
       if (existingUser) {
@@ -144,7 +163,6 @@ export default function AuthPage() {
       if (error) {
         setError(error.message);
       } else if (data.user) {
-        // Wait for the trigger to create the profile row
         const fullName = `${prenume.trim()} ${nume.trim()}`;
         const { error: updateError } = await supabase
           .from('profiles')
@@ -155,7 +173,7 @@ export default function AuthPage() {
           setError('Eroare la actualizarea numelui complet: ' + updateError.message);
         } else {
           setSuccess('Înregistrare reușită! Vă rugăm să verificați emailul pentru a vă activa contul.');
-          setIsLogin(true); // Switch back to login view
+          setIsLogin(true);
         }
       }
     }
@@ -244,9 +262,16 @@ return (
         <button
           className="w-full bg-violet-600 hover:bg-violet-700 text-white py-2 rounded font-semibold disabled:bg-violet-800"
           type="submit"
-          disabled={loading || isBanned}
+          disabled={loading || isBanned || isRateLimited}
         >
-          {loading ? 'Vă rugăm așteptați...' : isLogin ? 'Autentificare' : 'Înregistrare'}
+          {loading 
+            ? 'Vă rugăm așteptați...' 
+            : isRateLimited 
+              ? `Încercați din nou (${RateLimitManager.formatTimeRemaining('auth')})`
+              : isLogin 
+                ? 'Autentificare' 
+                : 'Înregistrare'
+          }
         </button>
         <button
           type="button"

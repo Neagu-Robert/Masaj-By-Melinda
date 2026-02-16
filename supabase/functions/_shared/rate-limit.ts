@@ -9,6 +9,7 @@ interface RateLimitConfig {
   limit: number;
   window: number; // seconds
   cost?: number; // for token bucket
+  failClosed?: boolean; // if true, throw error on Redis failure instead of failing open
 }
 
 interface RateLimitResult {
@@ -71,6 +72,12 @@ export async function checkRateLimit(config: RateLimitConfig): Promise<RateLimit
     return { allowed, remaining, resetAt };
   } catch (error) {
     console.error("Rate limiting error:", error);
+    
+    // Check if fail-closed mode is enabled
+    if (config.failClosed === true) {
+      throw error; // Re-throw error to fail-closed
+    }
+    
     // Fail open - allow request if Redis is unavailable
     return { allowed: true, remaining: config.limit - 1, resetAt: now + (config.window * 1000) };
   }
@@ -83,9 +90,10 @@ export async function slidingWindowRateLimit(
   identifier: string,
   endpoint: string,
   limit: number,
-  windowSeconds: number
+  windowSeconds: number,
+  failClosed?: boolean
 ): Promise<RateLimitResult> {
-  return checkRateLimit({ identifier, endpoint, limit, window: windowSeconds });
+  return checkRateLimit({ identifier, endpoint, limit, window: windowSeconds, failClosed });
 }
 
 // Token Bucket - for OTP verification (allow bursts but limit sustained abuse)
@@ -93,7 +101,8 @@ export async function tokenBucketRateLimit(
   identifier: string,
   endpoint: string,
   capacity: number,
-  refillRate: number // tokens per second
+  refillRate: number, // tokens per second
+  failClosed?: boolean
 ): Promise<RateLimitResult> {
   const client = getRedisClient();
   const key = `tokenbucket:${endpoint}:${identifier}`;
@@ -136,6 +145,12 @@ export async function tokenBucketRateLimit(
     return { allowed, remaining, resetAt };
   } catch (error) {
     console.error("Token bucket rate limiting error:", error);
+    
+    // Check if fail-closed mode is enabled
+    if (failClosed === true) {
+      throw error; // Re-throw error to fail-closed
+    }
+    
     // Fail open
     return { allowed: true, remaining: capacity - 1, resetAt: Date.now() + (capacity / refillRate * 1000) };
   }
@@ -146,7 +161,8 @@ export async function fixedWindowRateLimit(
   identifier: string,
   endpoint: string,
   limit: number,
-  windowSeconds: number
+  windowSeconds: number,
+  failClosed?: boolean
 ): Promise<RateLimitResult> {
   const client = getRedisClient();
   const now = Math.floor(Date.now() / 1000);
@@ -166,6 +182,12 @@ export async function fixedWindowRateLimit(
     return { allowed, remaining, resetAt };
   } catch (error) {
     console.error("Fixed window rate limiting error:", error);
+    
+    // Check if fail-closed mode is enabled
+    if (failClosed === true) {
+      throw error; // Re-throw error to fail-closed
+    }
+    
     // Fail open
     return { allowed: true, remaining: limit - 1, resetAt: (now + windowSeconds) * 1000 };
   }
@@ -186,7 +208,7 @@ export const RATE_LIMITS = {
   // Admin endpoints
   RECURRING_AVAILABILITY: { limit: 20, window: 3600 }, // 20 requests per hour per admin
   CANCEL_RECURRING_AVAILABILITY: { limit: 30, window: 3600 }, // 30 requests per hour per admin
-  DELETE_USER: { limit: 5, window: 3600 }, // 5 deletions per hour per admin
+  DELETE_USER: { limit: 20, window: 3600 }, // 20 deletions per hour per admin
 
   // Notification endpoints
   SEND_EMAIL: { limit: 10, window: 3600 }, // 10 emails per hour per recipient

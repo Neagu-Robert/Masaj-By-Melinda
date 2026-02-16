@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { RateLimitManager } from '@/lib/rate-limit-manager';
+import { invokeRateLimited } from '@/lib/supabase-functions';
 
 type PhoneVerificationContextType = {
   verificationStatus: 'idle' | 'pending' | 'verified' | 'error';
@@ -8,6 +10,10 @@ type PhoneVerificationContextType = {
   submitOtp: (phone: string, otp: string) => Promise<boolean>;
   error: string | null;
   resetVerification: () => void;
+  // NEW: Rate limiting state
+  isRateLimited: boolean;
+  rateLimitCountdown: number;
+  canRequestOtp: (phone: string) => boolean;
 };
 
 const PhoneVerificationContext = createContext<PhoneVerificationContextType | null>(null);
@@ -17,6 +23,9 @@ export const PhoneVerificationProvider = ({ children }: { children: React.ReactN
   const [verifiedNumber, setVerifiedNumber] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [verifyingUserId, setVerifyingUserId] = useState<string | undefined>(undefined);
+  const [isRateLimited, setIsRateLimited] = useState(false);
+  const [rateLimitCountdown, setRateLimitCountdown] = useState(0);
+  const [lastOtpRequest, setLastOtpRequest] = useState<{ phone: string; timestamp: number } | null>(null);
 
   useEffect(() => {
     // For guests, check session storage on initial load
@@ -28,6 +37,32 @@ export const PhoneVerificationProvider = ({ children }: { children: React.ReactN
       }
     } catch (e) {
       console.error('Could not access session storage:', e);
+    }
+  }, []);
+
+  // Countdown timer for rate limiting
+  useEffect(() => {
+    if (!isRateLimited) return;
+
+    const interval = setInterval(() => {
+      const remaining = RateLimitManager.getTimeRemaining('otp');
+      setRateLimitCountdown(remaining);
+      
+      if (remaining <= 0) {
+        setIsRateLimited(false);
+        RateLimitManager.clear('otp');
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isRateLimited]);
+
+  // Check for existing rate limit on mount
+  useEffect(() => {
+    const isLimited = RateLimitManager.isLimited('otp');
+    if (isLimited) {
+      setIsRateLimited(true);
+      setRateLimitCountdown(RateLimitManager.getTimeRemaining('otp'));
     }
   }, []);
 
@@ -51,6 +86,23 @@ export const PhoneVerificationProvider = ({ children }: { children: React.ReactN
     return `+40${digits}`;
   };
 
+  const canRequestOtp = useCallback((phone: string): boolean => {
+    // Check 30-second throttle
+    if (lastOtpRequest && lastOtpRequest.phone === phone) {
+      const timeSinceLastRequest = Date.now() - lastOtpRequest.timestamp;
+      if (timeSinceLastRequest < 30000) { // 30 seconds
+        return false;
+      }
+    }
+
+    // Check rate limit state
+    if (RateLimitManager.isLimited('otp')) {
+      return false;
+    }
+
+    return true;
+  }, [lastOtpRequest]);
+
   const startVerification = async (phone: string, userId?: string): Promise<boolean> => {
     setVerificationStatus('pending');
     setError(null);
@@ -60,12 +112,43 @@ export const PhoneVerificationProvider = ({ children }: { children: React.ReactN
       if (!formattedPhone) {
         throw new Error('Invalid phone number format. Please use a valid Romanian number.');
       }
-      
-      const { error: invokeError } = await supabase.functions.invoke('request-phone-verification', {
-        body: { phone: formattedPhone, userId },
-      });
 
-      if (invokeError) throw new Error(invokeError.message);
+      // Check 30-second throttle
+      if (!canRequestOtp(formattedPhone)) {
+        const timeSinceLastRequest = lastOtpRequest 
+          ? Math.ceil((30000 - (Date.now() - lastOtpRequest.timestamp)) / 1000)
+          : 30;
+        throw new Error(`Vă rugăm să așteptați ${timeSinceLastRequest} secunde înainte de a solicita un nou cod`);
+      }
+
+      // Call OTP request function with rate limiting
+      const result = await invokeRateLimited(
+        'request-phone-verification',
+        { phone: formattedPhone, userId },
+        'otp',
+        formattedPhone
+      );
+
+      if (!result.ok) {
+        // Handle rate limit error
+        if (result.status === 429) {
+          setIsRateLimited(true);
+          setRateLimitCountdown(result.retryAfterSeconds || 300);
+          throw new Error('Prea multe solicitări. Vă rugăm să încercați din nou mai târziu.');
+        }
+
+        // Handle service unavailable (fail-closed)
+        if (result.status === 503) {
+          throw new Error('Serviciul OTP este temporar indisponibil. Vă rugăm să încercați mai târziu.');
+        }
+
+        // Other errors
+        throw new Error(result.error || 'Failed to send OTP.');
+      }
+
+      // Update last request timestamp
+      setLastOtpRequest({ phone: formattedPhone, timestamp: Date.now() });
+      
       return true;
       // Status remains 'pending' until OTP is submitted
     } catch (err: any) {
@@ -82,22 +165,40 @@ export const PhoneVerificationProvider = ({ children }: { children: React.ReactN
       if (!formattedPhone) {
         throw new Error('Invalid phone number format during OTP submission.');
       }
-      
-      const { data, error: invokeError } = await supabase.functions.invoke('verify-phone-otp', {
-        body: { phone: formattedPhone, otp, userId: verifyingUserId },
-      });
 
-      if (invokeError) throw new Error(invokeError.message);
-      if (data?.error) throw new Error(data.error);
+      // Call OTP verify function with rate limiting
+      const result = await invokeRateLimited(
+        'verify-phone-otp',
+        { phone: formattedPhone, otp, userId: verifyingUserId },
+        'otp_verify',
+        formattedPhone
+      );
+
+      if (!result.ok) {
+        // Handle rate limit error
+        if (result.status === 429) {
+          throw new Error('Prea multe încercări greșite. Vă rugăm să solicitați un nou cod.');
+        }
+
+        // Handle service unavailable (fail-closed)
+        if (result.status === 503) {
+          throw new Error('Serviciul OTP este temporar indisponibil. Vă rugăm să încercați mai târziu.');
+        }
+
+        // Other errors
+        throw new Error(result.error || 'OTP verification failed.');
+      }
 
       setVerificationStatus('verified');
       setVerifiedNumber(formattedPhone);
+      
       // For guests, persist in session storage
       try {
         sessionStorage.setItem('verifiedPhoneNumber', formattedPhone);
       } catch (e) {
         console.error('Could not access session storage:', e);
       }
+      
       return true;
     } catch (err: any) {
       setError(err.message || 'OTP verification failed.');
@@ -120,7 +221,18 @@ export const PhoneVerificationProvider = ({ children }: { children: React.ReactN
 
   return (
     <PhoneVerificationContext.Provider
-      value={{ verificationStatus, isVerified, startVerification, submitOtp, error, resetVerification }}
+      value={{
+        verificationStatus,
+        isVerified,
+        startVerification,
+        submitOtp,
+        error,
+        resetVerification,
+        // NEW: Rate limiting state
+        isRateLimited,
+        rateLimitCountdown,
+        canRequestOtp,
+      }}
     >
       {children}
     </PhoneVerificationContext.Provider>
