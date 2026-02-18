@@ -176,7 +176,12 @@ export function rateLimitMiddleware(config: {
 
       if (!result.allowed) {
         logRateLimitViolation(config.endpoint, identifier, config.limit, req);
-        return createRateLimitResponse(result.resetAt);
+        const blockedResponse = createRateLimitResponse(result.resetAt);
+        return addRateLimitHeaders(blockedResponse, {
+          remaining: result.remaining,
+          resetAt: result.resetAt,
+          limit: config.limit,
+        });
       }
 
       // Add rate limit headers to response (will be handled by final response)
@@ -227,7 +232,12 @@ export const globalIPRateLimitMiddleware: Middleware = async (req, context) => {
 
     if (!result.allowed) {
       logRateLimitViolation('global-ip', ip, RATE_LIMITS.GLOBAL_IP.limit, req);
-      return createRateLimitResponse(result.resetAt);
+      const blockedResponse = createRateLimitResponse(result.resetAt);
+      return addRateLimitHeaders(blockedResponse, {
+        remaining: result.remaining,
+        resetAt: result.resetAt,
+        limit: RATE_LIMITS.GLOBAL_IP.limit,
+      });
     }
 
     // For global limits, we don't update context.rateLimitInfo to avoid overriding more specific limits
@@ -261,7 +271,12 @@ export function multiLayerRateLimitMiddleware(layers: Array<{
 
       if (!result.allowed) {
         logRateLimitViolation('multi-layer', resolvedLayers.map(l => l.identifier).join(','), Math.min(...resolvedLayers.map(l => l.limit)), req);
-        return createRateLimitResponse(result.resetAt);
+        const blockedResponse = createRateLimitResponse(result.resetAt);
+        return addRateLimitHeaders(blockedResponse, {
+          remaining: result.remaining,
+          resetAt: result.resetAt,
+          limit: Math.min(...resolvedLayers.map(l => l.limit)),
+        });
       }
 
       context.rateLimitInfo = {

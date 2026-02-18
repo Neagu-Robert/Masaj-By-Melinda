@@ -1,6 +1,7 @@
 // Distributed rate limiting using Upstash Redis with sliding window algorithm
 
 import { Redis } from "https://esm.sh/@upstash/redis@1.28.0";
+import { Ratelimit } from "@upstash/ratelimit";
 import { corsHeaders } from "./cors.ts";
 
 interface RateLimitConfig {
@@ -38,49 +39,22 @@ function getRedisClient(): Redis {
   return redis;
 }
 
-// Key generation functions
-export function getRateLimitKey(identifier: string, endpoint: string): string {
-  return `ratelimit:${endpoint}:${identifier}`;
-}
+// Module-level Ratelimit instance cache for reuse across warm invocations
+const _ratelimitCache = new Map<string, Ratelimit>();
 
-// Core rate limiting function with sliding window counter
-export async function checkRateLimit(config: RateLimitConfig): Promise<RateLimitResult> {
-  const client = getRedisClient();
-  const key = getRateLimitKey(config.identifier, config.endpoint);
-
-  // Use sliding window counter algorithm
-  const now = Date.now();
-  const windowStart = now - (config.window * 1000);
-
-  try {
-    // Add current request to the sorted set
-    await client.zadd(key, now, now.toString());
-
-    // Remove old entries outside the window
-    await client.zremrangebyscore(key, 0, windowStart);
-
-    // Count requests in current window
-    const requestCount = await client.zcard(key);
-
-    // Set expiry on the key (window + buffer)
-    await client.expire(key, config.window + 60); // 60 second buffer
-
-    const allowed = requestCount <= config.limit;
-    const remaining = Math.max(0, config.limit - requestCount);
-    const resetAt = now + (config.window * 1000);
-
-    return { allowed, remaining, resetAt };
-  } catch (error) {
-    console.error("Rate limiting error:", error);
-    
-    // Check if fail-closed mode is enabled
-    if (config.failClosed === true) {
-      throw error; // Re-throw error to fail-closed
-    }
-    
-    // Fail open - allow request if Redis is unavailable
-    return { allowed: true, remaining: config.limit - 1, resetAt: now + (config.window * 1000) };
+function getRatelimitInstance(limit: number, windowSeconds: number): Ratelimit {
+  const cacheKey = `${limit}:${windowSeconds}`;
+  
+  if (!_ratelimitCache.has(cacheKey)) {
+    const instance = new Ratelimit({
+      redis: getRedisClient(),
+      limiter: Ratelimit.slidingWindow(limit, `${windowSeconds} s`),
+      analytics: true,
+    });
+    _ratelimitCache.set(cacheKey, instance);
   }
+  
+  return _ratelimitCache.get(cacheKey)!;
 }
 
 // Rate limiting strategies
@@ -93,7 +67,45 @@ export async function slidingWindowRateLimit(
   windowSeconds: number,
   failClosed?: boolean
 ): Promise<RateLimitResult> {
-  return checkRateLimit({ identifier, endpoint, limit, window: windowSeconds, failClosed });
+  try {
+    const instance = getRatelimitInstance(limit, windowSeconds);
+    const result = await instance.limit(`${endpoint}:${identifier}`);
+    
+    // Await analytics to ensure data is recorded
+    await result.pending;
+    
+    // Log rate limit check
+    console.log("[rate-limit]", {
+      endpoint,
+      identifier,
+      success: result.success,
+      limit: result.limit,
+      remaining: result.remaining,
+      reset: result.reset,
+    });
+    
+    // result.reset is already a Unix timestamp in milliseconds
+    return { 
+      allowed: result.success, 
+      remaining: result.remaining, 
+      resetAt: result.reset 
+    };
+  } catch (error) {
+    console.error("Rate limiting error:", error);
+    
+    // Check if fail-closed mode is enabled
+    if (failClosed === true) {
+      throw error; // Re-throw error to fail-closed
+    }
+    
+    // Fail open - allow request if Redis is unavailable
+    const now = Date.now();
+    return { 
+      allowed: true, 
+      remaining: limit - 1, 
+      resetAt: now + (windowSeconds * 1000) 
+    };
+  }
 }
 
 // Token Bucket - for OTP verification (allow bursts but limit sustained abuse)
