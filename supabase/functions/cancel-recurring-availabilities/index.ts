@@ -1,7 +1,7 @@
 import { createAdminClient } from '../_shared/supabase-client.ts';
 import { compose, corsMiddleware, adminMiddleware, rateLimitMiddleware, validationMiddleware, loggingMiddleware, errorHandlerMiddleware, createJsonResponse, createErrorResponse } from '../_shared/middleware.ts';
 import { CancelRecurringAvailabilitiesSchema } from '../_shared/validation.ts';
-import { logAdminAction } from '../_shared/auth.ts';
+import { logAdminAction } from '../_shared/logger.ts';
 
 // Handler function with security layers
 const handler = async (req: Request, context: any) => {

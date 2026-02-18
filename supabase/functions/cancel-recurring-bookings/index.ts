@@ -1,8 +1,8 @@
 import { createAdminClient } from '../_shared/supabase-client.ts';
 import { compose, corsMiddleware, authMiddleware, rateLimitMiddleware, validationMiddleware, loggingMiddleware, errorHandlerMiddleware, createJsonResponse, createErrorResponse } from '../_shared/middleware.ts';
 import { CancelRecurringBookingsSchema } from '../_shared/validation.ts';
-import { requireOwnership, logAdminAction } from '../_shared/auth.ts';
-import { logBookingEvent } from '../_shared/logger.ts';
+import { requireOwnership } from '../_shared/auth.ts';
+import { logBookingEvent, logAdminAction } from '../_shared/logger.ts';
 import { addDays, format } from 'https://esm.sh/date-fns@3.6.0';
 
 // Handler function with security layers

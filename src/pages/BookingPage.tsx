@@ -15,7 +15,7 @@ import { BookingsProvider } from '@/contexts/BookingsContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useServices } from '@/contexts/ServicesContext';
 import { logAdminAction } from '@/lib/audit-logger';
-import { useBookingNotifications } from '@/services/notifications/hooks';
+import { invokeRateLimited } from '@/lib/supabase-functions';
 import { usePhoneVerification } from '@/contexts/PhoneVerificationContext';
 import { PhoneVerificationModal } from '@/components/auth/PhoneVerificationModal';
 
@@ -70,9 +70,6 @@ const BookingPageContent = () => {
   const [useProfileName, setUseProfileName] = useState(false);
   const [useProfilePhone, setUseProfilePhone] = useState(false);
   const { isVerified, startVerification, verificationStatus, error: verificationError, resetVerification } = usePhoneVerification();
-  
-  // Initialize the notifications hook
-  const { sendBookingConfirmation, sendBookingConfirmationAdmin } = useBookingNotifications();
 
   useEffect(() => {
     if (verificationError) {
@@ -219,9 +216,7 @@ const BookingPageContent = () => {
   };
 
   const onSubmit = async (data: any) => {
-    const phoneNumber = form.getValues('phoneNumber');
-    const formattedPhone = `+40${phoneNumber.replace(/\s+/g, '')}`;
-
+    // Step 1: Phone verification guard
     if (!isPhoneVerified) {
       toast("Eroare de validare", {
         description: "Vă rugăm să vă verificați numărul de telefon înainte de a continua.",
@@ -232,8 +227,8 @@ const BookingPageContent = () => {
       });
       return;
     }
-    
-    // Validate required fields
+
+    // Step 2: Required fields guard
     if (!requestedDate.trim() || !selectedService) {
       toast("Eroare de validare", {
         description: "Vă rugăm să completați toate câmpurile obligatorii"
@@ -244,105 +239,70 @@ const BookingPageContent = () => {
     try {
       setIsSubmitting(true);
 
-      // Get service details
+      // Step 3: Get service details
       const serviceDetails = getServiceByName(selectedService!);
       const serviceId = serviceDetails?.id || null;
 
-      // Create the booking with requested date/time as text
-      const bookingData = {
-        first_name: data.fullName.split(' ')[0] || data.fullName,
-        last_name: data.fullName.split(' ').slice(1).join(' ') || '',
+      // Step 4: Build payload for create-booking edge function
+      // NOTE: full_name is sent as-is; the edge function splits it into first/last name
+      const bookingPayload = {
+        full_name: data.fullName,
         phone_number: data.phoneNumber,
         service_type: selectedService,
         service_id: serviceId,
         requested_date_text: requestedDate.trim(),
         requested_time_text: requestedTime.trim() || null,
-        booking_date: null,
-        booking_time: null,
-        user_id: user?.id || null,
-        status: 'unconfirmed'
       };
 
-      const { data: newBooking, error: insertError } = await supabase
-        .from('bookings')
-        .insert([bookingData])
-        .select()
-        .single();
+      // Step 5: Call create-booking edge function via rate-limited wrapper
+      // Booking uses server-only enforcement: no countdown timer, just a toast on 429
+      const result = await invokeRateLimited(
+        'create-booking',
+        bookingPayload,
+        'booking',
+        user?.id || ''
+      );
 
-      if (insertError) {
-        console.error('Error inserting booking:', insertError);
-        toast("Eroare", {
-          description: "A apărut o eroare la salvarea rezervării. Vă rugăm să încercați din nou."
+      // Step 6: Handle rate limit (429) — server-only enforcement, no countdown timer
+      if (!result.ok && result.status === 429) {
+        toast("Prea multe rezervări", {
+          description: "Ați atins limita de rezervări. Vă rugăm să încercați din nou mai târziu.",
         });
-        setIsSubmitting(false);
         return;
       }
 
-      // Log the booking creation
+      // Step 7: Handle other errors
+      if (!result.ok) {
+        toast("Eroare", {
+          description: "A apărut o eroare la salvarea rezervării. Vă rugăm să încercați din nou."
+        });
+        return;
+      }
+
+      // Step 8: Success — log audit action (edge function handles email notification)
       if (user) {
         await logAdminAction(
           user.id,
           'booking.create.customer',
           'booking',
-          newBooking.id,
+          result.data.booking_id,
           `Customer created booking request for ${selectedService} - requested date: ${requestedDate}${requestedTime ? ', time: ' + requestedTime : ''}`
         );
       }
 
-      // Show success message
+      // Step 9: Show success toast using message from edge function
       toast("Rezervare primită!", {
-        description: `Cererea dumneavoastră pentru ${selectedService} (${requestedDate}${requestedTime ? ', ' + requestedTime : ''}) a fost trimisă cu succes. Veți fi contactat pentru confirmare.`,
+        description: result.data?.message || `Cererea dumneavoastră pentru ${selectedService} (${requestedDate}${requestedTime ? ', ' + requestedTime : ''}) a fost trimisă cu succes. Veți fi contactat pentru confirmare.`,
       });
 
-      // Send booking approval notification
-      const { data: userData } = await supabase.auth.getUser();
-      const userId = userData?.user?.id;
-      let userEmail = '';
-      if (userData?.user?.email) {
-        userEmail = userData.user.email;
-      } else if (userId) {
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('email')
-          .eq('id', userId)
-          .single();
-        userEmail = profileData?.email || '';
-      }
-      if (userId && userEmail) {
-        try {
-          await sendBookingConfirmation({
-            bookingId: newBooking.id,
-            userId: userId,
-            userName: data.fullName,
-            userEmail: userEmail,
-            userPhone: data.phoneNumber,
-            serviceName: selectedService!,
-            serviceId: serviceId,
-            serviceProvider: 'Melinda',
-            bookingDate: '',
-            bookingTime: '',
-            requestedDateText: requestedDate,
-            requestedTimeText: requestedTime || null,
-            duration: serviceDetails?.duration || 60,
-            price: serviceDetails?.price || 140.00,
-            status: 'unconfirmed'
-          });
-        } catch (notificationError) {
-          console.error('Error sending notification:', notificationError);
-        }
-      }
-
-      // Reset form and redirect
+      // Step 10: Reset form and redirect to profile
       form.reset();
       setRequestedDate('');
       setRequestedTime('');
       setSelectedService(undefined);
       setUseProfileName(false);
       setUseProfilePhone(false);
-      
-      // Redirect to profile page
       navigate('/profile');
-      
     } catch (error) {
       console.error('Error creating booking:', error);
       toast("Eroare", {

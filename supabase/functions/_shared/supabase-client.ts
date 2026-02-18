@@ -55,18 +55,24 @@ const userClientCache = new Map<string, SupabaseClient>();
 export function createUserClient(authToken: string): SupabaseClient {
   if (!userClientCache.has(authToken)) {
     const url = Deno.env.get("SUPABASE_URL");
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
 
     if (!url) {
       throw new Error("Missing SUPABASE_URL environment variable");
     }
 
-    const client = createClient(url, authToken, {
+    if (!anonKey) {
+      throw new Error("Missing SUPABASE_ANON_KEY environment variable");
+    }
+
+    const client = createClient(url, anonKey, {
       auth: {
         autoRefreshToken: false,
         persistSession: false,
       },
       global: {
         headers: {
+          'Authorization': `Bearer ${authToken}`,
           'X-Client-Info': 'supabase-edge-function',
         },
       },

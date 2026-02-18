@@ -1,7 +1,7 @@
 import { createAdminClient } from '../_shared/supabase-client.ts';
 import { compose, corsMiddleware, adminMiddleware, rateLimitMiddleware, validationMiddleware, loggingMiddleware, errorHandlerMiddleware, createJsonResponse, createErrorResponse } from '../_shared/middleware.ts';
 import { CreateRecurringAvailabilitiesSchema } from '../_shared/validation.ts';
-import { logAdminAction } from '../_shared/auth.ts';
+import { logAdminAction } from '../_shared/logger.ts';
 import { addDays, format, isBefore, isAfter } from 'https://esm.sh/date-fns@3.6.0';
 
 type RecurrenceType = 'daily' | 'weekly' | 'biweekly';

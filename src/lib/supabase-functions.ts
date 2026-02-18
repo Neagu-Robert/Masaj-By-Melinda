@@ -50,43 +50,53 @@ export async function invokeRateLimited(
   try {
     const { data, error } = await supabase.functions.invoke(functionName, { body });
 
-    // Handle successful response
-    if (!error && data) {
-      // Clear rate limit state on success
+    // Handle successful response (2xx, no error)
+    if (!error) {
       RateLimitManager.clear(rateLimitKey);
       return { ok: true, data };
     }
 
-    // Handle error response
-    if (error) {
-      // Check if it's a rate limit error (429)
-      // Note: supabase.functions.invoke doesn't expose status code directly,
-      // so we check the error message or data structure
-      if (data?.error === 'Too many requests' || data?.code === 'RATE_LIMIT_EXCEEDED') {
-        // Update rate limit state from response body
-        RateLimitManager.updateFrom429Response(rateLimitKey, data, identifier);
-        
-        return {
-          ok: false,
-          error: data.message || 'Rate limit exceeded',
-          retryAfterSeconds: data.retryAfter || data.retryAfterSeconds,
-          status: 429,
-        };
+    // For non-2xx responses, supabase.functions.invoke sets `error` (FunctionsHttpError).
+    // `data` may or may not be populated depending on the client version.
+    // Safely extract the response body from either `data` or `error.context`.
+    let errorBody = data;
+    if (!errorBody && (error as any)?.context) {
+      try {
+        errorBody = await (error as any).context.json();
+      } catch {
+        // context is not JSON-parseable, leave errorBody as null
       }
+    }
 
-      // Other errors
+    // Detect rate limit (429)
+    if (
+      errorBody?.error === 'Too many requests' ||
+      errorBody?.code === 'RATE_LIMIT_EXCEEDED' ||
+      (error as any)?.status === 429
+    ) {
+      RateLimitManager.updateFrom429Response(rateLimitKey, errorBody, identifier);
       return {
         ok: false,
-        error: error.message || 'Request failed',
-        status: 500,
+        error: errorBody?.message || 'Rate limit exceeded',
+        retryAfterSeconds: errorBody?.retryAfter || errorBody?.retryAfterSeconds,
+        status: 429,
       };
     }
 
-    // Unexpected response
+    // Detect service unavailable (503 — fail-closed OTP)
+    if (errorBody?.code === 'SERVICE_UNAVAILABLE' || (error as any)?.status === 503) {
+      return {
+        ok: false,
+        error: errorBody?.message || 'Service temporarily unavailable',
+        status: 503,
+      };
+    }
+
+    // All other errors
     return {
       ok: false,
-      error: 'Unexpected response from server',
-      status: 500,
+      error: errorBody?.error || errorBody?.message || error.message || 'Request failed',
+      status: (error as any)?.status || 500,
     };
   } catch (error) {
     console.error(`Error invoking ${functionName}:`, error);
