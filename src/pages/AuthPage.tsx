@@ -110,19 +110,19 @@ export default function AuthPage() {
         }
 
         // Step 2: Call auth-proxy Edge Function (with rate limiting)
-        const result = await invokeRateLimited(
+        const proxyResult = await invokeRateLimited(
           'auth-proxy',
           { email, password },
           'auth',
           email
         );
 
-        if (!result.ok) {
+        if (!proxyResult.ok) {
           // Handle rate limit error
-          if (result.status === 429) {
+          if (proxyResult.status === 429) {
             setError('Prea multe încercări. Vă rugăm să încercați din nou mai târziu.');
             setIsRateLimited(true);
-            setRateLimitCountdown(result.retryAfterSeconds || 240);
+            setRateLimitCountdown(proxyResult.retryAfterSeconds || 240);
             setLoading(false);
             return;
           }
@@ -134,17 +134,45 @@ export default function AuthPage() {
         }
 
         // Step 3: Set session from auth-proxy response
-        if (result.data?.session) {
-          await supabase.auth.setSession({
-            access_token: result.data.session.access_token,
-            refresh_token: result.data.session.refresh_token,
-          });
-          
-          // Clear rate limit state on success
-          RateLimitManager.clear('auth');
+        const tokens = proxyResult.data.session;
+        console.log('Proxy session user.id:', tokens.user?.id);  // Verify here!
+        await supabase.auth.setSession({
+          access_token: tokens.access_token,
+          refresh_token: tokens.refresh_token,
+        });
+        const { data: { user: verifiedUser }, error: verifyErr } = await supabase.auth.getUser();
+        console.log('Verified user:', verifiedUser, verifyErr);  // Log!
+        if (verifyErr || !verifiedUser) {
+          setError('Session verification failed');
+          setLoading(false);
+          return;
         }
+        // Manual profile (client token active post-getUser)
+        const { data: profile, error: profileErr } = await supabase
+          .from('profiles')
+          .select('role, status')
+          .eq('id', verifiedUser.id)  // Or 'user_id' if schema mismatch
+          .single();
+        console.log('Manual profile:', profile, profileErr);  // CRITICAL log!
+        if (profileErr || !profile) {
+          console.error('Profile error:', profileErr);
+          setError(profileErr?.message || 'No profile found');
+          setLoading(false);
+          return;
+        }
+        if (profile.status === 'banned') {
+          setError('Account banned');
+          await supabase.auth.signOut();
+          setLoading(false);
+          return;
+        }
+        // Success: optimistic redirect (context catches up via storage)
+        const target = profile.role === 'admin' ? '/admin' : profile.role === 'customer' ? '/home' : '/not-authorized';
+        navigate(target, { replace: true });
+        RateLimitManager.clear('auth');
+        setLoading(false);
 
-        // On successful sign-in, the global AuthContext listener will handle the redirect
+        // On successful sign-in, the global AuthContext listener will handle token refresh/etc.
       } catch (err) {
         console.error('Login error:', err);
         setError('A apărut o eroare neașteptată în timpul autentificării.');

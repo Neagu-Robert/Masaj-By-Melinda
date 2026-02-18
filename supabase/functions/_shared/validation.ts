@@ -1,7 +1,8 @@
 // Centralized input validation using Zod schemas for all Edge Functions
 
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
-import { corsHeaders, addRateLimitHeaders } from "./middleware.ts";
+import { corsHeaders } from "./cors.ts";
+import { addRateLimitHeaders } from "./middleware.ts";
 
 // Common validation schemas
 

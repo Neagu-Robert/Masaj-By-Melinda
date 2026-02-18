@@ -2,6 +2,9 @@
 
 import { corsHeaders, handleCors } from "./cors.ts";
 import { slidingWindowRateLimit, tokenBucketRateLimit, fixedWindowRateLimit, checkMultiLayerRateLimit, createRateLimitResponse, RATE_LIMITS } from "./rate-limit.ts";
+
+// Re-export RATE_LIMITS so consumer edge functions can import it from this barrel module
+export { RATE_LIMITS };
 import { validateRequest, createValidationErrorResponse } from "./validation.ts";
 import { requireAuth, requireAdmin } from "./auth.ts";
 import { log, logError, logPerformance, extractRequestContext, logRateLimitViolation, logValidationError, logAuthFailure } from "./logger.ts";
@@ -27,15 +30,46 @@ export interface Context {
 export function compose(...middlewares: Middleware[]): (handler: Handler) => (req: Request) => Promise<Response> {
   return (handler: Handler) => {
     return async (req: Request): Promise<Response> => {
-      const startTime = Date.now();
-      const requestContext = extractRequestContext(req);
+      // CRITICAL: Handle OPTIONS preflight requests IMMEDIATELY, before any other processing
+      // This ensures CORS works even if other parts of the middleware fail
+      if (req.method === 'OPTIONS') {
+        try {
+          return handleCors();
+        } catch {
+          // Absolute fallback for CORS
+          return new Response(null, {
+            status: 200,
+            headers: {
+              'Access-Control-Allow-Origin': '*',
+              'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+              'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+            },
+          });
+        }
+      }
 
-      const context: Context = {
-        startTime,
-        endpoint: requestContext.endpoint,
-        ip: requestContext.ip,
-        userAgent: requestContext.userAgent,
-      };
+      const startTime = Date.now();
+      
+      // Wrap everything in try-catch to prevent any uncaught errors
+      let context: Context;
+      try {
+        const requestContext = extractRequestContext(req);
+        context = {
+          startTime,
+          endpoint: requestContext.endpoint,
+          ip: requestContext.ip,
+          userAgent: requestContext.userAgent,
+        };
+      } catch (error) {
+        // If context extraction fails, create minimal context and continue
+        console.error('Context extraction failed:', error);
+        context = {
+          startTime,
+          endpoint: 'unknown',
+          ip: 'unknown',
+          userAgent: 'unknown',
+        };
+      }
 
       try {
         // Execute middleware chain
@@ -90,8 +124,21 @@ export function compose(...middlewares: Middleware[]): (handler: Handler) => (re
 
 // CORS middleware - handles OPTIONS requests and adds headers
 export const corsMiddleware: Middleware = async (req, context) => {
+  // Always handle OPTIONS requests first, before any other logic
   if (req.method === 'OPTIONS') {
-    return handleCors();
+    try {
+      return handleCors();
+    } catch (error) {
+      // Fallback: return CORS response even if handleCors fails
+      console.error('CORS handler error:', error);
+      return new Response(null, {
+        status: 200,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+        },
+      });
+    }
   }
   // For non-OPTIONS requests, headers will be added by the final response
 };
@@ -168,22 +215,28 @@ export function rateLimitMiddleware(config: {
 
 // Global IP rate limit middleware - applies to all public-facing endpoints
 export const globalIPRateLimitMiddleware: Middleware = async (req, context) => {
-  const ip = context.ip || req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+  try {
+    const ip = context.ip || req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
 
-  const result = await slidingWindowRateLimit(
-    ip,
-    'global-ip',
-    RATE_LIMITS.GLOBAL_IP.limit,
-    RATE_LIMITS.GLOBAL_IP.window
-  );
+    const result = await slidingWindowRateLimit(
+      ip,
+      'global-ip',
+      RATE_LIMITS.GLOBAL_IP.limit,
+      RATE_LIMITS.GLOBAL_IP.window
+    );
 
-  if (!result.allowed) {
-    logRateLimitViolation('global-ip', ip, RATE_LIMITS.GLOBAL_IP.limit, req);
-    return createRateLimitResponse(result.resetAt);
+    if (!result.allowed) {
+      logRateLimitViolation('global-ip', ip, RATE_LIMITS.GLOBAL_IP.limit, req);
+      return createRateLimitResponse(result.resetAt);
+    }
+
+    // For global limits, we don't update context.rateLimitInfo to avoid overriding more specific limits
+    // The global limit is just a safety net, not the primary limit users see
+  } catch (error) {
+    // Fail open - allow request if global rate limiting fails
+    // This ensures other rate limits can still protect the endpoint
+    logError(error instanceof Error ? error : new Error(String(error)), context.endpoint, { middleware: 'globalIPRateLimit' }, req);
   }
-
-  // For global limits, we don't update context.rateLimitInfo to avoid overriding more specific limits
-  // The global limit is just a safety net, not the primary limit users see
 };
 
 // Multi-layer rate limit middleware factory

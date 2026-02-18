@@ -23,12 +23,13 @@ export function AuthProvider({ children }) {
   const lastProfileFetch = useRef(0);
 
   // Helper function to fetch user profile
-  const fetchUserProfile = async (userId: string) => {
+  const fetchUserProfile = async (userId: string, force: boolean = false) => {
     if (isFetchingProfile.current) return;
     
     // Debounce profile fetches - don't fetch more than once per second
+    // Unless force is true (used for SIGNED_IN events)
     const now = Date.now();
-    if (now - lastProfileFetch.current < 1000) return;
+    if (!force && now - lastProfileFetch.current < 1000) return;
     
     isFetchingProfile.current = true;
     lastProfileFetch.current = now;
@@ -39,6 +40,8 @@ export function AuthProvider({ children }) {
         .select("role, status")
         .eq("id", userId)
         .single();
+      
+      console.log('Profile fetch result:', profile, error);
       
       if (error) {
         console.error('Error fetching profile:', error);
@@ -109,7 +112,7 @@ export function AuthProvider({ children }) {
 
     let ignore = false;
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (ignore) return;
       
       // Only process actual auth changes, not initial session
@@ -127,15 +130,19 @@ export function AuthProvider({ children }) {
         currentUserId.current = newUserId;
         
         if (session?.user) {
-          await fetchUserProfile(session.user.id);
+          // Schedule profile fetch outside the auth lock to prevent deadlock.
+          // setSession holds an internal lock; awaiting a Supabase DB query
+          // here would try to acquire the same lock via getSession → deadlock.
+          setTimeout(() => fetchUserProfile(session.user.id, true), 0);
         } else {
           setRole(null);
           setStatus(null);
         }
       } else if (session?.user && event === 'SIGNED_IN') {
-        // If same user but SIGNED_IN event, just ensure profile is up to date
-        // but don't trigger a full re-fetch unless necessary
-        console.log('User already signed in, ensuring profile is current');
+        // Same user ID but SIGNED_IN event (e.g., from setSession after auth-proxy)
+        console.log('User signed in, fetching profile for redirect');
+        setUser(session.user);
+        setTimeout(() => fetchUserProfile(session.user.id, true), 0);
       }
     });
 
