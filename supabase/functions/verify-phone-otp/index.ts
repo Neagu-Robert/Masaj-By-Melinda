@@ -305,13 +305,13 @@ const securedHandler = compose(
     }
     // No authentication required for guest verification
   },
-  // Rate limit by phone number (token bucket for burst tolerance)
+  // Rate limit by phone number (sliding window)
   rateLimitMiddleware({
     identifier: (req, context) => context.validatedData?.phone || 'unknown',
     endpoint: 'verify-phone-otp',
     limit: RATE_LIMITS.OTP_VERIFY.limit,
     window: RATE_LIMITS.OTP_VERIFY.window,
-    strategy: 'token',
+    strategy: 'sliding',
     failClosed: true,
   }),
   // Additional IP-based rate limiting

@@ -71,13 +71,13 @@ const securedHandler = compose(
   errorHandlerMiddleware,
   // Validate request body first (needed for phone-based rate limiting)
   validationMiddleware(RequestPhoneVerificationSchema),
-  // Rate limit by phone number (token bucket for burst tolerance)
+  // Rate limit by phone number (sliding window)
   rateLimitMiddleware({
     identifier: (req, context) => context.validatedData?.phone || 'unknown',
     endpoint: 'request-phone-verification',
     limit: RATE_LIMITS.OTP_REQUEST.limit,
     window: RATE_LIMITS.OTP_REQUEST.window,
-    strategy: 'token',
+    strategy: 'sliding',
     failClosed: true,
   }),
   // Additional IP-based rate limiting
