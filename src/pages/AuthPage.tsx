@@ -6,6 +6,7 @@ import { logAdminAction } from "@/lib/audit-logger";
 import { Eye, EyeOff } from 'lucide-react';
 import { RateLimitManager } from '@/lib/rate-limit-manager';
 import { invokeRateLimited } from '@/lib/supabase-functions';
+import { FormErrorBoundary } from '@/components/FormErrorBoundary';
 
 export default function AuthPage() {
   const { user, role, loading: authLoading } = useAuth();
@@ -226,98 +227,100 @@ export default function AuthPage() {
 return (
   <div className="min-h-screen bg-[url('/lovable-uploads/8659eb40-96fc-4579-9af8-1b649574c3ff.png')] bg-cover bg-center">
     <div className="min-h-screen w-full flex items-center justify-center backdrop-blur-sm bg-gray-900/60">
-    <form onSubmit={handleAuth} className="bg-gray-800/90 backdrop-blur-md p-8 rounded shadow-md w-full max-w-sm">
-      <div className="text-center mb-4">
-        <div className="text-2xl md:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-400 to-pink-500 mb-2">Masaj by Melinda</div>
-      </div>
-        <h2 className="text-2xl font-bold mb-6 text-center text-violet-400">
-          {isLogin ? 'Autentificare' : 'Înregistrare'}
-        </h2>
-        <input
-          className="w-full mb-3 p-2 rounded bg-gray-700 text-white disabled:opacity-50"
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-          required
-          disabled={isBanned}
-        />
-        <div className="relative mb-3">
+    <FormErrorBoundary feature="auth">
+      <form onSubmit={handleAuth} className="bg-gray-800/90 backdrop-blur-md p-8 rounded shadow-md w-full max-w-sm">
+        <div className="text-center mb-4">
+          <div className="text-2xl md:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-400 to-pink-500 mb-2">Masaj by Melinda</div>
+        </div>
+          <h2 className="text-2xl font-bold mb-6 text-center text-violet-400">
+            {isLogin ? 'Autentificare' : 'Înregistrare'}
+          </h2>
           <input
-            className="w-full p-2 rounded bg-gray-700 text-white disabled:opacity-50 pr-10"
-            type={showPassword ? 'text' : 'password'}
-            placeholder="Parolă"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
+            className="w-full mb-3 p-2 rounded bg-gray-700 text-white disabled:opacity-50"
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
             required
             disabled={isBanned}
           />
-          <button
-            type="button"
-            tabIndex={-1}
-            onClick={() => setShowPassword((prev) => !prev)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200"
-            aria-label={showPassword ? 'Ascunde parola' : 'Arată parola'}
-            disabled={isBanned}
-          >
-            {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-          </button>
-        </div>
-        {!isLogin && (
-          <>
+          <div className="relative mb-3">
             <input
-              className="w-full mb-3 p-2 rounded bg-gray-700 text-white disabled:opacity-50"
-              type="text"
-              placeholder="Prenume"
-              value={prenume}
-              onChange={e => setPrenume(e.target.value)}
+              className="w-full p-2 rounded bg-gray-700 text-white disabled:opacity-50 pr-10"
+              type={showPassword ? 'text' : 'password'}
+              placeholder="Parolă"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
               required
               disabled={isBanned}
             />
-            <input
-              className="w-full mb-3 p-2 rounded bg-gray-700 text-white disabled:opacity-50"
-              type="text"
-              placeholder="Nume"
-              value={nume}
-              onChange={e => setNume(e.target.value)}
-              required
+            <button
+              type="button"
+              tabIndex={-1}
+              onClick={() => setShowPassword((prev) => !prev)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200"
+              aria-label={showPassword ? 'Ascunde parola' : 'Arată parola'}
               disabled={isBanned}
-            />
-          </>
-        )}
-        {error && <div className="text-red-500 mb-3">{error}</div>}
-        {success && <div className="text-green-500 mb-3">{success}</div>}
-        <button
-          className="w-full bg-violet-600 hover:bg-violet-700 text-white py-2 rounded font-semibold disabled:bg-violet-800"
-          type="submit"
-          disabled={loading || isBanned || isRateLimited}
-        >
-          {loading 
-            ? 'Vă rugăm așteptați...' 
-            : isRateLimited 
-              ? `Încercați din nou (${RateLimitManager.formatTimeRemaining('auth')})`
-              : isLogin 
-                ? 'Autentificare' 
-                : 'Înregistrare'
-          }
-        </button>
-        <button
-          type="button"
-          className="w-full mt-4 text-sm text-violet-400 underline"
-          onClick={toggleFormMode}
-        >
-          {isLogin ? "Nu aveți cont? Înregistrați-vă" : "Aveți deja cont? Autentificați-vă"}
-        </button>
-        {isLogin && (
+            >
+              {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+            </button>
+          </div>
+          {!isLogin && (
+            <>
+              <input
+                className="w-full mb-3 p-2 rounded bg-gray-700 text-white disabled:opacity-50"
+                type="text"
+                placeholder="Prenume"
+                value={prenume}
+                onChange={e => setPrenume(e.target.value)}
+                required
+                disabled={isBanned}
+              />
+              <input
+                className="w-full mb-3 p-2 rounded bg-gray-700 text-white disabled:opacity-50"
+                type="text"
+                placeholder="Nume"
+                value={nume}
+                onChange={e => setNume(e.target.value)}
+                required
+                disabled={isBanned}
+              />
+            </>
+          )}
+          {error && <div className="text-red-500 mb-3">{error}</div>}
+          {success && <div className="text-green-500 mb-3">{success}</div>}
+          <button
+            className="w-full bg-violet-600 hover:bg-violet-700 text-white py-2 rounded font-semibold disabled:bg-violet-800"
+            type="submit"
+            disabled={loading || isBanned || isRateLimited}
+          >
+            {loading 
+              ? 'Vă rugăm așteptați...' 
+              : isRateLimited 
+                ? `Încercați din nou (${RateLimitManager.formatTimeRemaining('auth')})`
+                : isLogin 
+                  ? 'Autentificare' 
+                  : 'Înregistrare'
+            }
+          </button>
           <button
             type="button"
-            className="w-full mt-2 text-sm text-violet-400 underline"
-            onClick={() => navigate('/forgot-password')}
+            className="w-full mt-4 text-sm text-violet-400 underline"
+            onClick={toggleFormMode}
           >
-            Ați uitat parola?
+            {isLogin ? "Nu aveți cont? Înregistrați-vă" : "Aveți deja cont? Autentificați-vă"}
           </button>
-        )}
-      </form>
+          {isLogin && (
+            <button
+              type="button"
+              className="w-full mt-2 text-sm text-violet-400 underline"
+              onClick={() => navigate('/forgot-password')}
+            >
+              Ați uitat parola?
+            </button>
+          )}
+        </form>
+      </FormErrorBoundary>
     </div>
   </div>
 );

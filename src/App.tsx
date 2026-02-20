@@ -25,6 +25,7 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { ServicesProvider } from "./contexts/ServicesContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import NotAuthorized from "./pages/NotAuthorized";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 
 
 const queryClient = new QueryClient();
@@ -61,38 +62,40 @@ function App() {
         <ServicesProvider>
           <Toaster />
           <Sonner />
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<AuthPage />} />
-            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-            <Route path="/reset-password" element={<ResetPasswordPage />} />
-            <Route path="/booking-confirmation" element={<BookingConfirmationPage />} />
-            <Route path="/home" element={<Index />} />
-            <Route path="/book" element={<BookingPage />} />
-            <Route path="/pachete" element={<PachetePage />} />
-            <Route path="/profile" element={
-              <ProtectedRoute allowedRoles={['admin', 'customer']}>
-                <ProfilePage />
-              </ProtectedRoute>
-            } />
-            <Route path="/admin" element={
-              <ProtectedRoute allowedRoles={["admin"]}>
-                <DashboardLayout />
-              </ProtectedRoute>
-            }>
-              <Route index element={<AdminHome />} />
-              <Route path="bookings" element={<Bookings />} />
-              <Route path="availabilities" element={<Availabilities />} />
-              <Route path="analytics" element={<Analytics />} />
-              <Route path="users" element={<Users />} />
-              <Route path="auditlogs" element={<AuditLogs />} />
-              <Route path="confirmari" element={<Confirmari />} />
-        
-            </Route>
-            <Route path="/not-authorized" element={<NotAuthorized />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <ErrorBoundary>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/auth" element={<AuthPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/booking-confirmation" element={<BookingConfirmationPage />} />
+              <Route path="/home" element={<Index />} />
+              <Route path="/book" element={<BookingPage />} />
+              <Route path="/pachete" element={<PachetePage />} />
+              <Route path="/profile" element={
+                <ProtectedRoute allowedRoles={['admin', 'customer']}>
+                  <ProfilePage />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin" element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <DashboardLayout />
+                </ProtectedRoute>
+              }>
+                <Route index element={<AdminHome />} />
+                <Route path="bookings" element={<Bookings />} />
+                <Route path="availabilities" element={<Availabilities />} />
+                <Route path="analytics" element={<Analytics />} />
+                <Route path="users" element={<Users />} />
+                <Route path="auditlogs" element={<AuditLogs />} />
+                <Route path="confirmari" element={<Confirmari />} />
+          
+              </Route>
+              <Route path="/not-authorized" element={<NotAuthorized />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </ErrorBoundary>
         </ServicesProvider>
       </TooltipProvider>
     </QueryClientProvider>

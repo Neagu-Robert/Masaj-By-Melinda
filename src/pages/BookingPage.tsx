@@ -18,6 +18,7 @@ import { logAdminAction } from '@/lib/audit-logger';
 import { invokeRateLimited } from '@/lib/supabase-functions';
 import { usePhoneVerification } from '@/contexts/PhoneVerificationContext';
 import { PhoneVerificationModal } from '@/components/auth/PhoneVerificationModal';
+import { FormErrorBoundary } from '@/components/FormErrorBoundary';
 
 const AuthPromptMessage = () => {
   const navigate = useNavigate();
@@ -69,7 +70,7 @@ const BookingPageContent = () => {
   const [profileInfo, setProfileInfo] = useState<{ fullName: string; phoneNumber: string | null } | null>(null);
   const [useProfileName, setUseProfileName] = useState(false);
   const [useProfilePhone, setUseProfilePhone] = useState(false);
-  const { isVerified, startVerification, verificationStatus, error: verificationError, resetVerification } = usePhoneVerification();
+  const { isVerified, startVerification, verificationStatus, error: verificationError, resetVerification, canRequestOtp, isRateLimited } = usePhoneVerification();
 
   useEffect(() => {
     if (verificationError) {
@@ -129,6 +130,20 @@ const BookingPageContent = () => {
 
   const phoneNumberValue = form.watch('phoneNumber');
 
+  // Compute isVerifyThrottled: derive formatted phone and check throttling
+  const isVerifyThrottled = (() => {
+    if (!phoneNumberValue) return false;
+    // Normalize like the context: strip non-digits, then leading 40 or 0, expect 9 digits
+    let digits = phoneNumberValue.replace(/\D/g, '');
+    if (digits.startsWith('40')) {
+      digits = digits.slice(2);
+    } else if (digits.startsWith('0')) {
+      digits = digits.slice(1);
+    }
+    const formattedPhone = digits.length === 9 ? `+40${digits}` : null;
+    return formattedPhone ? (!canRequestOtp(formattedPhone) || isRateLimited) : false;
+  })();
+
   useEffect(() => {
     let isMounted = true;
 
@@ -177,42 +192,46 @@ const BookingPageContent = () => {
     }
   };
 
+  const handleVerificationSuccess = async () => {
+    // Query profiles (full_name, phone, phone_verified) for user.id from Supabase
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('full_name, phone, phone_verified')
+      .eq('id', user.id)
+      .single();
+
+    // Check for error or missing data
+    if (error || !profile) {
+      toast("Eroare", {
+        description: "Nu s-a putut verifica statusul telefonului. Vă rugăm să încercați din nou."
+      });
+      return;
+    }
+
+    // Only proceed if phone_verified is true
+    if (!profile.phone_verified) {
+      toast("Eroare", {
+        description: "Telefonul nu a fost verificat cu succes."
+      });
+      return;
+    }
+
+    // Update profileInfo state with the DB values
+    setProfileInfo({
+      fullName: profile.full_name || '',
+      phoneNumber: profile.phone || ''
+    });
+    // Set isPhoneVerified to true (sourced from the DB row)
+    setIsPhoneVerified(true);
+    // Call form.setValue('phoneNumber', profile.phone) so the form field matches the verified DB phone
+    form.setValue('phoneNumber', profile.phone || '');
+    // Set useProfilePhone(true)
+    setUseProfilePhone(true);
+  };
+
   const handleModalClose = () => {
     setIsVerificationModalOpen(false);
-    const phoneNumber = form.getValues('phoneNumber');
-    // Normalize like the context: strip non-digits, then leading 40 or 0, expect 9 digits
-    let digits = phoneNumber.replace(/\D/g, '');
-    if (digits.startsWith('40')) {
-      digits = digits.slice(2);
-    } else if (digits.startsWith('0')) {
-      digits = digits.slice(1);
-    }
-    const normalized = digits.length === 9 ? `+40${digits}` : null;
-    if (normalized && isVerified(normalized)) {
-      setIsPhoneVerified(true);
-      // If user is authenticated, update profile phone and phone_verified, then refetch profile data
-      if (user) {
-        (async () => {
-          try {
-            await supabase
-              .from('profiles')
-              .update({ phone: normalized, phone_verified: true, phone_verified_at: new Date().toISOString() })
-              .eq('id', user.id);
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('full_name, phone, phone_verified')
-              .eq('id', user.id)
-              .single();
-            setProfileInfo({ fullName: profile?.full_name || '', phoneNumber: profile?.phone || '' });
-            setUseProfilePhone(true);
-            form.setValue('phoneNumber', profile?.phone || '');
-          } catch (e) {
-            // Ignore errors silently in UI; verification state already true
-            console.error('Post-verify profile refresh failed', e);
-          }
-        })();
-      }
-    }
+    resetVerification();
   };
 
   const onSubmit = async (data: any) => {
@@ -329,54 +348,60 @@ const BookingPageContent = () => {
 
           {!user && <AuthPromptMessage />}
 
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-              {/* 1. Personal Details */}
-              <ContactForm
-                form={form}
-                profileInfo={profileInfo}
-                useProfileName={useProfileName}
-                setUseProfileName={setUseProfileName}
-                useProfilePhone={useProfilePhone}
-                setUseProfilePhone={setUseProfilePhone}
-                onVerifyPhone={handleVerifyPhone}
-                isPhoneVerified={isPhoneVerified}
-                disabled={!user}
-              />
-              
-              {/* 2. Service Selection */}
-              <ServiceSelection 
-                form={form} 
-                setSelectedService={setSelectedService}
-                disabled={!user}
-              />
-              
-              {/* 3. Date and Time Selection */}
-              <DateTimeSelection
-                requestedDate={requestedDate}
-                setRequestedDate={setRequestedDate}
-                requestedTime={requestedTime}
-                setRequestedTime={setRequestedTime}
-                disabled={!user}
-              />
-              
-              <div className="flex justify-center">
-                <Button
-                  type="submit"
-                  disabled={isSubmitting || !requestedDate.trim() || !selectedService || !user}
-                  className="bg-violet-600 hover:bg-violet-700 text-white px-8 py-3 text-lg font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isSubmitting ? 'Se procesează...' : 'Trimite cererea'}
-                </Button>
-              </div>
-            </form>
-          </Form>
+          <FormErrorBoundary feature="booking">
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                {/* 1. Personal Details */}
+                <ContactForm
+                  form={form}
+                  profileInfo={profileInfo}
+                  useProfileName={useProfileName}
+                  setUseProfileName={setUseProfileName}
+                  useProfilePhone={useProfilePhone}
+                  setUseProfilePhone={setUseProfilePhone}
+                  onVerifyPhone={handleVerifyPhone}
+                  isPhoneVerified={isPhoneVerified}
+                  disabled={!user}
+                  isVerifyPending={verificationStatus === 'pending'}
+                  isVerifyThrottled={isVerifyThrottled}
+                />
+                
+                {/* 2. Service Selection */}
+                <ServiceSelection 
+                  form={form} 
+                  setSelectedService={setSelectedService}
+                  disabled={!user}
+                />
+                
+                {/* 3. Date and Time Selection */}
+                <DateTimeSelection
+                  requestedDate={requestedDate}
+                  setRequestedDate={setRequestedDate}
+                  requestedTime={requestedTime}
+                  setRequestedTime={setRequestedTime}
+                  disabled={!user}
+                />
+                
+                <div className="flex justify-center">
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting || !requestedDate.trim() || !selectedService || !user}
+                    className="bg-violet-600 hover:bg-violet-700 text-white px-8 py-3 text-lg font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isSubmitting ? 'Se procesează...' : 'Trimite cererea'}
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </FormErrorBoundary>
         </div>
       </div>
       <PhoneVerificationModal
         isOpen={isVerificationModalOpen}
         onClose={handleModalClose}
         phoneNumber={form.getValues('phoneNumber')}
+        userId={user?.id}
+        onVerified={handleVerificationSuccess}
       />
     </div>
   );

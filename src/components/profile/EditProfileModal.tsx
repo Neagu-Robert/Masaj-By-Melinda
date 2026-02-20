@@ -73,38 +73,35 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
     }
   };
   
-  const handleModalClose = async () => {
-    setIsModalOpen(false);
+  const handleVerificationSuccess = async () => {
     const normalized = normalizePhone(phone);
-    if (normalized && isVerified(normalized)) {
-      try {
-        const { error: updateError } = await supabase
-          .from('profiles')
-          .update({
-            phone: normalized,
-            phone_verified: true,
-            phone_verified_at: new Date().toISOString(),
-          })
-          .eq('id', userId);
+    // Call supabase.from('profiles').update({ phone: normalized, phone_verified: true, phone_verified_at: new Date().toISOString() }) for userId
+    await supabase
+      .from('profiles')
+      .update({
+        phone: normalized,
+        phone_verified: true,
+        phone_verified_at: new Date().toISOString(),
+      })
+      .eq('id', userId);
+    // Refetch the profile row (full_name, phone, phone_verified)
+    const { data: refreshedProfile } = await supabase
+      .from('profiles')
+      .select('full_name, phone, phone_verified')
+      .eq('id', userId)
+      .single();
+    // Set local phoneVerified state to true
+    setPhoneVerified(true);
+    // Call onSuccess(refreshedProfile.full_name, refreshedProfile.phone)
+    onSuccess(refreshedProfile?.full_name || '', refreshedProfile?.phone || null);
+    // Call onClose()
+    onClose();
+    // Show the success toast
+    toast.success("Succes", { description: "Număr de telefon verificat cu succes." });
+  };
 
-        if (updateError) {
-          throw updateError;
-        }
-
-        setPhoneVerified(true);
-        toast.success("Succes", { description: "Număr de telefon verificat cu succes." });
-        const fullName = `${prenume.trim()} ${nume.trim()}`.trim();
-        onSuccess(fullName, normalized);
-        onClose();
-      } catch (error) {
-        console.error('Error updating phone verification status:', error);
-        toast.error("Eroare", { description: "Nu s-a putut salva starea de verificare a telefonului." });
-        // Do not call onSuccess or onClose to keep the user in the modal to see the error.
-        // The phoneVerified state remains false, which is correct.
-      }
-    } else {
-      toast.error("Eroare", { description: "Codul de verificare nu este valid." });
-    }
+  const handleModalClose = () => {
+    setIsModalOpen(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -239,6 +236,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
         isOpen={isModalOpen}
         onClose={handleModalClose}
         phoneNumber={phone}
+        onVerified={handleVerificationSuccess}
       />
       <AlertDialog open={showChangePhoneConfirmation} onOpenChange={setShowChangePhoneConfirmation}>
         <AlertDialogContent>

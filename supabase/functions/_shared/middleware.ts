@@ -8,7 +8,20 @@ export { RATE_LIMITS };
 import { validateRequest, createValidationErrorResponse } from "./validation.ts";
 import { requireAuth, requireAdmin } from "./auth.ts";
 import { log, logError, logPerformance, extractRequestContext, logRateLimitViolation, logValidationError, logAuthFailure } from "./logger.ts";
+import { captureException, isCriticalError } from "./sentry.ts";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+
+// Derive feature tag from endpoint
+function deriveFeatureTag(endpoint: string): string {
+  const featureMap: Record<string, string> = {
+    'auth-proxy': 'auth',
+    'create-booking': 'booking',
+    'request-phone-verification': 'phone-verification',
+    'verify-phone-otp': 'phone-verification',
+  };
+
+  return featureMap[endpoint] || endpoint.replace(/-/g, '-').toLowerCase();
+}
 
 // Middleware types
 export type Middleware = (req: Request, context: Context) => Promise<Response | void>;
@@ -99,6 +112,20 @@ export function compose(...middlewares: Middleware[]): (handler: Handler) => (re
         logPerformance(context.endpoint, Date.now() - startTime, false, req, {
           error: error instanceof Error ? error.message : String(error),
         });
+
+        // Send critical errors to Sentry
+        if (error instanceof Error && isCriticalError(error)) {
+          captureException(error, {
+            tags: {
+              layer: 'backend',
+              function: context.endpoint,
+              feature: deriveFeatureTag(context.endpoint),
+              severity: 'critical'
+            },
+            user: { id: context.user?.id, ip: context.ip },
+            extra: { endpoint: context.endpoint, request_id: crypto.randomUUID() }
+          });
+        }
 
         // Return generic error response
         return new Response(
@@ -193,7 +220,14 @@ export function rateLimitMiddleware(config: {
 
     } catch (error) {
       logError(error instanceof Error ? error : new Error(String(error)), context.endpoint, { middleware: 'rateLimit' }, req);
-      
+
+      // Send rate limit errors to Sentry (always critical since Upstash is down)
+      if (error instanceof Error) {
+        captureException(error, {
+          tags: { layer: 'backend', function: context.endpoint, feature: 'rate-limit', severity: 'critical' }
+        });
+      }
+
       // Check if fail-closed mode is enabled
       if (config.failClosed === true) {
         const headers = {
@@ -246,6 +280,13 @@ export const globalIPRateLimitMiddleware: Middleware = async (req, context) => {
     // Fail open - allow request if global rate limiting fails
     // This ensures other rate limits can still protect the endpoint
     logError(error instanceof Error ? error : new Error(String(error)), context.endpoint, { middleware: 'globalIPRateLimit' }, req);
+
+    // Send global IP rate limit errors to Sentry (always critical since Upstash is down)
+    if (error instanceof Error) {
+      captureException(error, {
+        tags: { layer: 'backend', function: context.endpoint, feature: 'global-ip-rate-limit', severity: 'critical' }
+      });
+    }
   }
 };
 
@@ -379,16 +420,19 @@ export function createJsonResponse(data: any, status: number = 200, rateLimitInf
 }
 
 // Helper function to create error responses with proper headers
-export function createErrorResponse(message: string, status: number = 400, code?: string, rateLimitInfo?: Context['rateLimitInfo']): Response {
+export function createErrorResponse(message: string, status: number = 400, code?: string, rateLimitInfo?: Context['rateLimitInfo'], payload?: any): Response {
   const headers = {
     'Content-Type': 'application/json',
     ...corsHeaders,
   };
 
-  const response = new Response(JSON.stringify({
+  const responseBody = {
     error: message,
     code: code || 'ERROR',
-  }), {
+    ...(payload && typeof payload === 'object' ? payload : {}),
+  };
+
+  const response = new Response(JSON.stringify(responseBody), {
     status,
     headers,
   });

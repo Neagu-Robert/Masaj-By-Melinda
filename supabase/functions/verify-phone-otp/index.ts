@@ -3,6 +3,7 @@ import { compose, corsMiddleware, globalIPRateLimitMiddleware, rateLimitMiddlewa
 import { requireAuth } from '../_shared/auth.ts';
 import { VerifyPhoneOTPSchema } from '../_shared/validation.ts';
 import { logOTPEvent } from '../_shared/logger.ts';
+import { captureException } from '../_shared/sentry.ts';
 import { Redis } from "https://esm.sh/@upstash/redis@1.28.0";
 
 const TWILIO_ACCOUNT_SID = Deno.env.get('TWILIO_SID');
@@ -61,6 +62,12 @@ async function checkOTPLockout(phone: string, ip: string): Promise<{ locked: boo
     return { locked: false };
   } catch (error) {
     console.error('Error checking OTP lockout:', error);
+    // Send to Sentry (Redis failures are critical)
+    if (error instanceof Error) {
+      captureException(error, {
+        tags: { layer: 'backend', function: 'verify-phone-otp', feature: 'otp', severity: 'critical' }
+      });
+    }
     // Fail open - allow attempt if Redis is unavailable
     return { locked: false };
   }
@@ -122,6 +129,12 @@ async function recordOTPFailure(phone: string, ip: string): Promise<void> {
     }
   } catch (error) {
     console.error('Error recording OTP failure:', error);
+    // Send to Sentry (Redis failures are critical)
+    if (error instanceof Error) {
+      captureException(error, {
+        tags: { layer: 'backend', function: 'verify-phone-otp', feature: 'otp', severity: 'critical' }
+      });
+    }
     // Don't fail the request if we can't record the failure
   }
 }
@@ -273,6 +286,13 @@ const handler = async (req: Request, context: any) => {
       error: error instanceof Error ? error.message : 'Unknown error',
       userId: userId || 'guest',
     });
+
+    // Send to Sentry
+    if (error instanceof Error) {
+      captureException(error, {
+        tags: { layer: 'backend', function: 'verify-phone-otp', feature: 'otp', severity: 'critical' }
+      });
+    }
 
     // Apply timing delay even for errors
     const elapsed = Date.now() - startTime;

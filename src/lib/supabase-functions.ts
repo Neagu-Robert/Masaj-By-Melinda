@@ -2,6 +2,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import * as Sentry from '@sentry/react';
 
 const inferFunctionsBase = (): string => {
   const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL as string | undefined;
@@ -92,7 +93,20 @@ export async function invokeRateLimited(
       };
     }
 
-    // All other errors
+    // All other errors — report to Sentry
+    Sentry.captureMessage(errorBody?.error || error.message, {
+      level: 'error',
+      tags: {
+        layer: 'frontend',
+        endpoint: functionName,
+        feature: rateLimitKey.split('_')[0],
+      },
+      extra: {
+        errorBody,
+        status: (error as any)?.status || 500,
+      },
+    });
+
     return {
       ok: false,
       error: errorBody?.error || errorBody?.message || error.message || 'Request failed',
@@ -100,6 +114,16 @@ export async function invokeRateLimited(
     };
   } catch (error) {
     console.error(`Error invoking ${functionName}:`, error);
+    
+    // Report network/unexpected errors to Sentry
+    Sentry.captureException(error, {
+      tags: {
+        layer: 'frontend',
+        endpoint: functionName,
+        severity: 'critical',
+      },
+    });
+
     return {
       ok: false,
       error: error instanceof Error ? error.message : 'Unknown error',

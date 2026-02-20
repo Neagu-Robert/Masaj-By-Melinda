@@ -29,7 +29,7 @@ export async function getAuthenticatedUser(req: Request): Promise<{ user: User |
     const token = authHeader.substring(7); // Remove 'Bearer ' prefix
     const client = createUserClient(token);
 
-    const { data: { user }, error } = await client.auth.getUser();
+    const { data: { user }, error } = await client.auth.getUser(token);
 
     if (error) {
       return { user: null, error: error.message };

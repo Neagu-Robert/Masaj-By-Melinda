@@ -2,6 +2,7 @@ import { compose, corsMiddleware, globalIPRateLimitMiddleware, rateLimitMiddlewa
 import { AuthProxySchema, sanitizeEmail } from '../_shared/validation.ts';
 import { createAdminClient } from '../_shared/supabase-client.ts';
 import { logAuthFailure, logSecurityEvent } from '../_shared/logger.ts';
+import { captureException } from '../_shared/sentry.ts';
 
 // Handler function with security layers
 const handler = async (req: Request, context: any) => {
@@ -46,12 +47,22 @@ const handler = async (req: Request, context: any) => {
 
   } catch (error) {
     // Log critical errors
+    const emailDomain = normalizedEmail.includes('@')
+      ? normalizedEmail.split('@')[1]
+      : 'unknown';
+
     logSecurityEvent('auth_proxy_error', req, {
       error: error instanceof Error ? error.message : 'Unknown error',
-      emailDomain: normalizedEmail.includes('@') 
-        ? normalizedEmail.split('@')[1] 
-        : 'unknown',
+      emailDomain,
     });
+
+    // Send to Sentry
+    if (error instanceof Error) {
+      captureException(error, {
+        tags: { layer: 'backend', function: 'auth-proxy', feature: 'auth', severity: 'critical' },
+        extra: { emailDomain }
+      });
+    }
 
     // Return generic error message
     return createErrorResponse(

@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, useRef } from "react";
 import { supabase } from "../integrations/supabase/client";
+import * as Sentry from '@sentry/react';
 
 type AuthContextValue = {
   user: any;
@@ -22,8 +23,18 @@ export function AuthProvider({ children }) {
   const isFetchingProfile = useRef(false);
   const lastProfileFetch = useRef(0);
 
+  // Helper function to mask email for Sentry
+  const maskEmail = (email: string | undefined): string => {
+    if (!email) return '';
+    const parts = email.split('@');
+    if (parts.length === 2) {
+      return `***@${parts[1]}`;
+    }
+    return email;
+  };
+
   // Helper function to fetch user profile
-  const fetchUserProfile = async (userId: string, force: boolean = false) => {
+  const fetchUserProfile = async (userId: string, userEmail: string | undefined, force: boolean = false) => {
     if (isFetchingProfile.current) return;
     
     // Debounce profile fetches - don't fetch more than once per second
@@ -41,8 +52,6 @@ export function AuthProvider({ children }) {
         .eq("id", userId)
         .single();
       
-      console.log('Profile fetch result:', profile, error);
-      
       if (error) {
         console.error('Error fetching profile:', error);
         setRole(null);
@@ -50,6 +59,14 @@ export function AuthProvider({ children }) {
       } else {
         setRole(profile?.role || null);
         setStatus(profile?.status || null);
+        
+        // Set Sentry user context after successful profile fetch using current email
+        if (userEmail) {
+          Sentry.setUser({
+            id: userId,
+            email: maskEmail(userEmail),
+          });
+        }
       }
     } catch (error) {
       console.error('Error in fetchUserProfile:', error);
@@ -76,11 +93,12 @@ export function AuthProvider({ children }) {
         currentUserId.current = session?.user?.id || null;
         
         if (session?.user) {
-          await fetchUserProfile(session.user.id);
+          await fetchUserProfile(session.user.id, session.user.email);
         } else {
           // No authenticated user
           setRole(null);
           setStatus(null);
+          Sentry.setUser(null);
         }
       } catch (error) {
         console.error('Error loading user data:', error);
@@ -133,16 +151,16 @@ export function AuthProvider({ children }) {
           // Schedule profile fetch outside the auth lock to prevent deadlock.
           // setSession holds an internal lock; awaiting a Supabase DB query
           // here would try to acquire the same lock via getSession → deadlock.
-          setTimeout(() => fetchUserProfile(session.user.id, true), 0);
+          setTimeout(() => fetchUserProfile(session.user.id, session.user.email, true), 0);
         } else {
           setRole(null);
           setStatus(null);
+          Sentry.setUser(null);
         }
       } else if (session?.user && event === 'SIGNED_IN') {
         // Same user ID but SIGNED_IN event (e.g., from setSession after auth-proxy)
-        console.log('User signed in, fetching profile for redirect');
         setUser(session.user);
-        setTimeout(() => fetchUserProfile(session.user.id, true), 0);
+        setTimeout(() => fetchUserProfile(session.user.id, session.user.email, true), 0);
       }
     });
 

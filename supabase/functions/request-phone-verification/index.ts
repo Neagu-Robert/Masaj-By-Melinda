@@ -1,6 +1,7 @@
 import { compose, corsMiddleware, globalIPRateLimitMiddleware, rateLimitMiddleware, validationMiddleware, loggingMiddleware, errorHandlerMiddleware, createJsonResponse, createErrorResponse, RATE_LIMITS } from '../_shared/middleware.ts';
 import { RequestPhoneVerificationSchema } from '../_shared/validation.ts';
 import { logOTPEvent } from '../_shared/logger.ts';
+import { captureException } from '../_shared/sentry.ts';
 
 const TWILIO_ACCOUNT_SID = Deno.env.get('TWILIO_SID');
 const TWILIO_AUTH_TOKEN = Deno.env.get('TWILIO_AUTH_TOKEN');
@@ -39,6 +40,30 @@ const handler = async (req: Request, context: any) => {
         statusCode: response.status,
       });
 
+      // Check for Twilio rate-limit errors before generic 500 fallback
+      const twilioErrorCode = result.code;
+      const isRateLimitError =
+        twilioErrorCode === 60203 || // Max send attempts reached for this number
+        twilioErrorCode === 60212 || // Too many concurrent requests
+        twilioErrorCode === 20429 || // Too many requests (general)
+        response.status === 429;     // HTTP 429 from Twilio
+
+      if (isRateLimitError) {
+        // Send to Sentry with lower severity for expected rate-limit errors
+        captureException(new Error('Twilio rate limit exceeded'), {
+          tags: { layer: 'backend', function: 'request-phone-verification', feature: 'otp', severity: 'warning' },
+          extra: { statusCode: response.status, twilioCode: twilioErrorCode }
+        });
+
+        return createErrorResponse('Rate limit exceeded. Please wait before requesting another code.', 429, 'PROVIDER_RATE_LIMITED', context.rateLimitInfo, { retryAfter: 60 });
+      }
+
+      // Send to Sentry for other Twilio errors
+      captureException(new Error('Twilio SMS send failed'), {
+        tags: { layer: 'backend', function: 'request-phone-verification', feature: 'otp', severity: 'critical' },
+        extra: { statusCode: response.status }
+      });
+
       // Don't expose Twilio errors to client
       return createErrorResponse('Failed to send verification code. Please try again.', 500, 'SMS_SEND_FAILED', context.rateLimitInfo);
     }
@@ -58,6 +83,13 @@ const handler = async (req: Request, context: any) => {
     logOTPEvent('otp_failed', phone, req, {
       error: error instanceof Error ? error.message : 'Unknown error',
     });
+
+    // Send to Sentry
+    if (error instanceof Error) {
+      captureException(error, {
+        tags: { layer: 'backend', function: 'request-phone-verification', feature: 'otp', severity: 'critical' }
+      });
+    }
 
     return createErrorResponse('Failed to send verification code. Please try again.', 500, 'SMS_SEND_FAILED', context.rateLimitInfo);
   }

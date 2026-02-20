@@ -23,6 +23,8 @@ type ContactFormProps = {
   onVerifyPhone: () => void;
   isPhoneVerified: boolean;
   disabled?: boolean;
+  isVerifyPending?: boolean;
+  isVerifyThrottled?: boolean;
 };
 
 const ContactForm = ({
@@ -35,6 +37,8 @@ const ContactForm = ({
   onVerifyPhone,
   isPhoneVerified,
   disabled,
+  isVerifyPending,
+  isVerifyThrottled,
 }: ContactFormProps) => {
   const phoneNumber = form.watch('phoneNumber');
 
@@ -139,9 +143,9 @@ const ContactForm = ({
                       type="button"
                       onClick={handleVerifyPhone}
                       className="bg-gray-600 hover:bg-gray-500 text-white text-sm h-auto px-4 py-2"
-                      disabled={disabled || !phoneNumber || phoneNumber.replace(/\D/g, '').length !== 10}
+                      disabled={disabled || !phoneNumber || phoneNumber.replace(/\D/g, '').length !== 10 || isVerifyPending || isVerifyThrottled}
                     >
-                      Verifică numărul de telefon
+                      {isVerifyPending ? "Se trimite codul…" : "Verifică numărul de telefon"}
                     </Button>
                   )}
                 </div>

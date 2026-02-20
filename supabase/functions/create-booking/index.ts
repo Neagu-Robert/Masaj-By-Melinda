@@ -2,6 +2,7 @@ import { createAdminClient } from '../_shared/supabase-client.ts';
 import { compose, corsMiddleware, authMiddleware, rateLimitMiddleware, validationMiddleware, loggingMiddleware, errorHandlerMiddleware, createJsonResponse, createErrorResponse } from '../_shared/middleware.ts';
 import { CreateBookingSchema } from '../_shared/validation.ts';
 import { log, logError, logBookingEvent } from '../_shared/logger.ts';
+import { captureException } from '../_shared/sentry.ts';
 
 // Handler function with security layers
 const handler = async (req: Request, context: any) => {
@@ -37,6 +38,10 @@ const handler = async (req: Request, context: any) => {
 
     if (insertError || !booking) {
       logError(new Error('Booking insert failed'), 'create-booking', { error: insertError, userId }, req);
+      captureException(new Error('Booking insert failed'), {
+        tags: { layer: 'backend', function: 'create-booking', feature: 'booking', severity: 'critical' },
+        extra: { userId, insertError }
+      });
       return createErrorResponse('Something went wrong, try again', 500, 'BOOKING_INSERT_FAILED', context.rateLimitInfo);
     }
 
@@ -108,6 +113,74 @@ const handler = async (req: Request, context: any) => {
       // Don't block the response
     }
 
+    // Send SMS notifications to admin phones (non-blocking)
+    try {
+      // Read and parse admin phone numbers
+      const adminPhonesRaw = (Deno as any).env.get('ADMIN_PHONE_NUMBERS');
+      const adminPhones = adminPhonesRaw
+        ? adminPhonesRaw.split(',').map(phone => phone.trim()).filter(phone => phone.length > 0)
+        : [];
+
+      if (adminPhones.length === 0) {
+        log('WARN', 'No admin phone numbers configured, skipping SMS notifications', { bookingId });
+      } else {
+        // Compose SMS message
+        const bookingIdShort = bookingId.slice(0, 8);
+        const timepart = requested_time_text ? `, ${requested_time_text}` : '';
+        let smsMessage = `Rezervare noua: ${service_type} - ${requested_date_text}${timepart}. Client: ${first_name} ${last_name} ${phone_number}. ID: ${bookingIdShort}`;
+
+        // Truncate if too long (160 char SMS limit)
+        if (smsMessage.length > 160) {
+          smsMessage = smsMessage.slice(0, 157) + '...';
+        }
+
+        // Dispatch SMS to each admin number concurrently
+        const SUPABASE_URL = (Deno as any).env.get('SUPABASE_URL');
+        const ANON_KEY = (Deno as any).env.get('SUPABASE_ANON_KEY');
+
+        if (SUPABASE_URL && ANON_KEY) {
+          const smsPromises = adminPhones.map(adminPhone =>
+            fetch(`${SUPABASE_URL}/functions/v1/send-sms`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${ANON_KEY}`,
+              },
+              body: JSON.stringify({
+                to: adminPhone,
+                message: smsMessage,
+              }),
+            })
+          );
+
+          Promise.allSettled(smsPromises).then(smsResults => {
+            smsResults.forEach((result, index) => {
+              const adminPhone = adminPhones[index];
+              if (result.status === 'fulfilled') {
+                const response = result.value;
+                if (response.ok) {
+                  log('INFO', 'Admin SMS sent successfully', { bookingId, adminPhone });
+                } else {
+                  response.text().then(errorText => {
+                    logError(new Error('Admin SMS failed'), 'create-booking', { error: errorText, bookingId, adminPhone }, req);
+                  });
+                }
+              } else {
+                logError(result.reason instanceof Error ? result.reason : new Error('Admin SMS network error'), 'create-booking', { bookingId, adminPhone }, req);
+              }
+            });
+          }).catch(error => {
+            logError(error instanceof Error ? error : new Error('SMS notification failed'), 'create-booking', { bookingId }, req);
+          });
+        } else {
+          log('WARN', 'Missing Supabase credentials for SMS dispatch', { bookingId });
+        }
+      }
+    } catch (smsError) {
+      logError(smsError instanceof Error ? smsError : new Error('SMS notification failed'), 'create-booking', { bookingId }, req);
+      // Don't block the response
+    }
+
     // Format success message with time text
     const timeDisplay = requested_time_text ? `, ${requested_time_text}` : '';
     const successMessage = `Rezervare primită! Cererea dumneavoastră pentru ${service_type} (${requested_date_text}${timeDisplay}) a fost trimisă cu succes. Veți fi contactat pentru confirmare.`;
@@ -120,6 +193,12 @@ const handler = async (req: Request, context: any) => {
 
   } catch (error) {
     logError(error instanceof Error ? error : new Error('Create booking error'), 'create-booking', { userId }, req);
+    if (error instanceof Error) {
+      captureException(error, {
+        tags: { layer: 'backend', function: 'create-booking', feature: 'booking', severity: 'critical' },
+        user: { id: userId }
+      });
+    }
     return createErrorResponse('Something went wrong, try again', 500, 'INTERNAL_ERROR', context.rateLimitInfo);
   }
 };
