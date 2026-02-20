@@ -113,72 +113,78 @@ const handler = async (req: Request, context: any) => {
       // Don't block the response
     }
 
-    // Send SMS notifications to admin phones (non-blocking)
+    // Send SMS notifications to admin phones directly via Twilio (non-blocking)
     try {
-      // Read and parse admin phone numbers
       const adminPhonesRaw = (Deno as any).env.get('ADMIN_PHONE_NUMBERS');
       const adminPhones = adminPhonesRaw
-        ? adminPhonesRaw.split(',').map(phone => phone.trim()).filter(phone => phone.length > 0)
+        ? adminPhonesRaw.split(',').map((phone: string) => phone.trim()).filter((phone: string) => phone.length > 0)
         : [];
 
       if (adminPhones.length === 0) {
-        log('WARN', 'No admin phone numbers configured, skipping SMS notifications', { bookingId });
+        log('WARN', 'No admin phone numbers configured (ADMIN_PHONE_NUMBERS secret missing), skipping SMS', { bookingId });
       } else {
-        // Compose SMS message
-        const bookingIdShort = bookingId.slice(0, 8);
-        const timepart = requested_time_text ? `, ${requested_time_text}` : '';
-        let smsMessage = `Rezervare noua: ${service_type} - ${requested_date_text}${timepart}. Client: ${first_name} ${last_name} ${phone_number}. ID: ${bookingIdShort}`;
+        const TWILIO_SID = (Deno as any).env.get('TWILIO_SID');
+        const TWILIO_AUTH_TOKEN = (Deno as any).env.get('TWILIO_AUTH_TOKEN');
+        const TWILIO_PHONE_NUMBER = (Deno as any).env.get('TWILIO_PHONE_NUMBER');
 
-        // Truncate if too long (160 char SMS limit)
-        if (smsMessage.length > 160) {
-          smsMessage = smsMessage.slice(0, 157) + '...';
-        }
+        if (!TWILIO_SID || !TWILIO_AUTH_TOKEN || !TWILIO_PHONE_NUMBER) {
+          log('WARN', 'Twilio credentials not configured, skipping SMS notifications', { bookingId });
+        } else {
+          const bookingIdShort = bookingId.slice(0, 8);
+          const timepart = requested_time_text ? `, ${requested_time_text}` : '';
+          let smsMessage = `Rezervare noua: ${service_type} - ${requested_date_text}${timepart}. Client: ${first_name} ${last_name} ${phone_number}. ID: ${bookingIdShort}`;
 
-        // Dispatch SMS to each admin number concurrently
-        const SUPABASE_URL = (Deno as any).env.get('SUPABASE_URL');
-        const ANON_KEY = (Deno as any).env.get('SUPABASE_ANON_KEY');
+          if (smsMessage.length > 160) {
+            smsMessage = smsMessage.slice(0, 157) + '...';
+          }
 
-        if (SUPABASE_URL && ANON_KEY) {
-          const smsPromises = adminPhones.map(adminPhone =>
-            fetch(`${SUPABASE_URL}/functions/v1/send-sms`, {
+          const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_SID}/Messages.json`;
+          const authHeader = 'Basic ' + btoa(`${TWILIO_SID}:${TWILIO_AUTH_TOKEN}`);
+
+          const smsPromises = adminPhones.map(async (adminPhone: string) => {
+            const body = new URLSearchParams();
+            body.append('To', adminPhone);
+            body.append('From', TWILIO_PHONE_NUMBER);
+            body.append('Body', smsMessage);
+
+            const response = await fetch(twilioUrl, {
               method: 'POST',
               headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${ANON_KEY}`,
+                'Authorization': authHeader,
+                'Content-Type': 'application/x-www-form-urlencoded',
               },
-              body: JSON.stringify({
-                to: adminPhone,
-                message: smsMessage,
-              }),
-            })
-          );
-
-          Promise.allSettled(smsPromises).then(smsResults => {
-            smsResults.forEach((result, index) => {
-              const adminPhone = adminPhones[index];
-              if (result.status === 'fulfilled') {
-                const response = result.value;
-                if (response.ok) {
-                  log('INFO', 'Admin SMS sent successfully', { bookingId, adminPhone });
-                } else {
-                  response.text().then(errorText => {
-                    logError(new Error('Admin SMS failed'), 'create-booking', { error: errorText, bookingId, adminPhone }, req);
-                  });
-                }
-              } else {
-                logError(result.reason instanceof Error ? result.reason : new Error('Admin SMS network error'), 'create-booking', { bookingId, adminPhone }, req);
-              }
+              body: body.toString(),
             });
-          }).catch(error => {
-            logError(error instanceof Error ? error : new Error('SMS notification failed'), 'create-booking', { bookingId }, req);
+
+            const result = await response.json();
+
+            if (!response.ok) {
+              logError(new Error('Admin SMS Twilio API error'), 'create-booking', {
+                twilioStatus: response.status,
+                twilioError: result.message || result.code,
+                bookingId,
+                adminPhone,
+              }, req);
+            } else {
+              log('INFO', 'Admin SMS sent successfully', { bookingId, adminPhone, messageSid: result.sid });
+            }
           });
-        } else {
-          log('WARN', 'Missing Supabase credentials for SMS dispatch', { bookingId });
+
+          const smsResults = await Promise.allSettled(smsPromises);
+          for (const result of smsResults) {
+            if (result.status === 'rejected') {
+              logError(
+                result.reason instanceof Error ? result.reason : new Error('Admin SMS network error'),
+                'create-booking',
+                { bookingId },
+                req,
+              );
+            }
+          }
         }
       }
     } catch (smsError) {
       logError(smsError instanceof Error ? smsError : new Error('SMS notification failed'), 'create-booking', { bookingId }, req);
-      // Don't block the response
     }
 
     // Format success message with time text
