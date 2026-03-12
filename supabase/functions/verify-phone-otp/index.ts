@@ -4,6 +4,7 @@ import { requireAuth } from '../_shared/auth.ts';
 import { VerifyPhoneOTPSchema } from '../_shared/validation.ts';
 import { logOTPEvent } from '../_shared/logger.ts';
 import { captureException } from '../_shared/sentry.ts';
+import { sleep } from '../_shared/sleep.ts';
 import { Redis } from "https://esm.sh/@upstash/redis@1.28.0";
 
 const TWILIO_ACCOUNT_SID = Deno.env.get('TWILIO_SID');
@@ -250,7 +251,7 @@ const handler = async (req: Request, context: any) => {
       // Apply escalating timing delay to prevent timing attacks
       const elapsed = Date.now() - startTime;
       if (elapsed < escalatingDelay) {
-        await new Promise(resolve => setTimeout(resolve, escalatingDelay - elapsed));
+        await sleep(escalatingDelay - elapsed);
       }
 
       return createJsonResponse({
@@ -274,7 +275,7 @@ const handler = async (req: Request, context: any) => {
       // Apply escalating timing delay to prevent timing attacks
       const elapsed = Date.now() - startTime;
       if (elapsed < escalatingDelay) {
-        await new Promise(resolve => setTimeout(resolve, escalatingDelay - elapsed));
+        await sleep(escalatingDelay - elapsed);
       }
 
       return createErrorResponse('Invalid verification code.', 400, 'INVALID_OTP', context.rateLimitInfo);
@@ -297,7 +298,7 @@ const handler = async (req: Request, context: any) => {
     // Apply timing delay even for errors
     const elapsed = Date.now() - startTime;
     if (elapsed < VERIFICATION_DELAY) {
-      await new Promise(resolve => setTimeout(resolve, VERIFICATION_DELAY - elapsed));
+      await sleep(VERIFICATION_DELAY - elapsed);
     }
 
     return createErrorResponse('Verification failed. Please try again.', 500, 'VERIFICATION_FAILED', context.rateLimitInfo);

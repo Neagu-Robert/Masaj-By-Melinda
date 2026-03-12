@@ -29,6 +29,7 @@ export default function DashboardLayout() {
 
   const handleNavigation = (path: string) => {
     setIsMobileMenuOpen(false);
+    // Qwiet SAST warning-sink-redirect: false positive — React Router client-side SPA routing with path from static navItems/actionItems internal routes, not a user-controlled URL.
     navigate(path);
   };
 

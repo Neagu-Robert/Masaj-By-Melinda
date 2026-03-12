@@ -19,6 +19,7 @@ import {
 
 const SIDEBAR_COOKIE_NAME = "sidebar:state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
+const SIDEBAR_COOKIE_ATTRIBUTES = `path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}; SameSite=Strict; Secure`
 const SIDEBAR_WIDTH = "16rem"
 const SIDEBAR_WIDTH_MOBILE = "18rem"
 const SIDEBAR_WIDTH_ICON = "3rem"
@@ -81,8 +82,9 @@ const SidebarProvider = React.forwardRef<
           _setOpen(openState)
         }
 
-        // This sets the cookie to keep the sidebar state.
-        document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`
+        // This sets a scoped, SameSite, secure-preferring cookie to keep the sidebar state.
+        const encodedState = encodeURIComponent(openState ? "expanded" : "collapsed")
+        document.cookie = `${SIDEBAR_COOKIE_NAME}=${encodedState}; ${SIDEBAR_COOKIE_ATTRIBUTES}`
       },
       [setOpenProp, open]
     )

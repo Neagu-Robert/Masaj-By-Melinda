@@ -89,6 +89,7 @@ const MassageServices = () => {
               <div className="mt-4 flex justify-end">
                 <Button
                   className="bg-violet-600 hover:bg-violet-700 text-white"
+                  // Qwiet SAST warning-sink-redirect: false positive — React Router client-side SPA routing; path is the internal '/book' route with a URL-encoded service name sourced from the ServicesContext/DB, not an arbitrary external URL.
                   onClick={() => navigate(`/book?service=${encodeURIComponent(service.name)}`, { state: { service: service.name } })}
                 >
                   Rezervă acum

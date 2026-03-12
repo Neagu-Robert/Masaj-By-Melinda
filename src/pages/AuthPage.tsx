@@ -169,6 +169,7 @@ export default function AuthPage() {
         }
         // Success: optimistic redirect (context catches up via storage)
         const target = profile.role === 'admin' ? '/admin' : profile.role === 'customer' ? '/home' : '/not-authorized';
+      // Qwiet SAST warning-sink-redirect: false positive — React Router client-side SPA routing; target is derived from DB-controlled role enum (admin|customer), not a user-supplied URL.
         navigate(target, { replace: true });
         RateLimitManager.clear('auth');
         setLoading(false);

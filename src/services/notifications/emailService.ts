@@ -1,7 +1,9 @@
 import { 
   BREVO_FROM_EMAIL, 
   BREVO_FROM_NAME,
-  EMAIL_NOTIFICATIONS_ENABLED 
+  EMAIL_NOTIFICATIONS_ENABLED,
+  MAX_RETRY_ATTEMPTS,
+  RETRY_DELAY_MS
 } from './config';
 import { 
   NotificationPayload, 
@@ -9,6 +11,7 @@ import {
   BookingNotificationData 
 } from './types';
 import { logNotification } from './loggingService';
+import { sleep } from '@/lib/utils';
 
 // Email templates
 const emailTemplates = {
@@ -910,8 +913,10 @@ export const retryEmailNotification = async (
   payload: NotificationPayload,
   retryCount = 0
 ): Promise<NotificationResult> => {
-  if (retryCount >= 3) { // Fixed retry count for Express API
-    const error = new Error(`Numărul maxim de reîncercări (3) a fost atins pentru notificarea prin email de tipul: ${payload.type}`);
+  if (retryCount >= MAX_RETRY_ATTEMPTS) {
+    const error = new Error(
+      `Numărul maxim de reîncercări (${MAX_RETRY_ATTEMPTS}) a fost atins pentru notificarea prin email de tipul: ${payload.type}`
+    );
     
     // Log the final failed attempt
     await logNotification({
@@ -937,11 +942,14 @@ export const retryEmailNotification = async (
   try {
     return await sendEmailNotification(payload);
   } catch (error) {
-    console.error(`Reîncercare email ${retryCount + 1}/3 eșuată:`, error);
+    console.error(
+      `Reîncercare email ${retryCount + 1}/${MAX_RETRY_ATTEMPTS} eșuată:`,
+      error
+    );
     
     // Exponential backoff for retries
-    const delay = Math.pow(2, retryCount) * 1000;
-    await new Promise(resolve => setTimeout(resolve, delay));
+    const delay = RETRY_DELAY_MS * Math.pow(2, retryCount);
+    await sleep(delay);
     
     return retryEmailNotification(payload, retryCount + 1);
   }

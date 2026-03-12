@@ -18,6 +18,7 @@ const BookingHeader = () => {
     if (location.pathname === HOME_PATH) {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
+      // Qwiet SAST warning-sink-redirect: false positive — React Router client-side SPA routing; HOME_PATH is a hardcoded internal route, not user-controlled.
       navigate(HOME_PATH);
     }
   };
@@ -26,6 +27,7 @@ const BookingHeader = () => {
     setIsMobileMenuOpen(false);
     // Navigate to homepage first if not already there
     if (location.pathname !== HOME_PATH) {
+      // Qwiet SAST warning-sink-redirect: false positive — React Router client-side SPA routing; path is the constant HOME_PATH internal route, state is used only for in-page scrolling.
       navigate(HOME_PATH, { state: { scrollTo: elementId } });
       return;
     }
@@ -38,6 +40,7 @@ const BookingHeader = () => {
 
   const handleNavigation = (path: string) => {
     setIsMobileMenuOpen(false);
+    // Qwiet SAST warning-sink-redirect: false positive — React Router client-side SPA routing with path chosen from a fixed set of internal routes ('/admin', '/pachete', '/book', '/profile'), not user input.
     navigate(path);
   };
 

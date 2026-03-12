@@ -12,6 +12,7 @@ import {
   BookingNotificationData 
 } from './types';
 import { logNotification } from './loggingService';
+import { sleep } from '@/lib/utils';
 
 // SMS templates - All SMS notifications are sent to admins only
 const smsTemplates = {
@@ -237,7 +238,7 @@ export const retrySmsNotification = async (
 
   // Wait before retrying (exponential backoff)
   const delay = RETRY_DELAY_MS * Math.pow(2, retryCount);
-  await new Promise(resolve => setTimeout(resolve, delay));
+  await sleep(delay);
 
   console.log(`Se reîncearcă notificarea SMS (încercarea ${retryCount + 1}/${MAX_RETRY_ATTEMPTS})`);
   
