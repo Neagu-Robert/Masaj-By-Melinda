@@ -28,6 +28,12 @@ function getMonthDays(month: Date) {
   return days;
 }
 
+import type { MetaFunction } from "react-router";
+
+export const meta: MetaFunction = () => {
+  return [{ name: "robots", content: "noindex, nofollow" }];
+};
+
 export default function Availabilities() {
   const { user: adminUser } = useAuth();
   const [currentMonth, setCurrentMonth] = useState(new Date());

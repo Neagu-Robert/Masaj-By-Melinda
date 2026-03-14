@@ -19,6 +19,12 @@ const actionItems = [
   { name: "Vezi Site-ul", path: "/home" },
 ]
 
+import type { MetaFunction } from "react-router";
+
+export const meta: MetaFunction = () => {
+  return [{ name: "robots", content: "noindex, nofollow" }];
+};
+
 export default function DashboardLayout() {
   const location = useLocation();
   const navigate = useNavigate();

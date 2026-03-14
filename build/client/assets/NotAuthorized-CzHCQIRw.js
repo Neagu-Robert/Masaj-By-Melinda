@@ -1,1 +1,0 @@
-import{w as t}from"./chunk-LFPYN7LY-DM6yoSAT.js";import{j as e}from"./jsx-runtime-CTrXFwVU.js";const a=t(function(){return e.jsxs("div",{className:"flex flex-col items-center justify-center h-screen",children:[e.jsx("h1",{className:"text-3xl font-bold mb-4",children:"Neautorizat"}),e.jsx("p",{children:"Nu aveți permisiunea de a accesa această pagină."})]})});export{a as default};

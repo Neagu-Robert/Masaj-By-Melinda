@@ -33,6 +33,12 @@ type User = {
   created_at: string;
 };
 
+import type { MetaFunction } from "react-router";
+
+export const meta: MetaFunction = () => {
+  return [{ name: "robots", content: "noindex, nofollow" }];
+};
+
 export default function Users() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);

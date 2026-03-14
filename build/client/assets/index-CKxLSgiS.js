@@ -1,1 +1,0 @@
-import{r as t}from"./chunk-LFPYN7LY-DM6yoSAT.js";import"./jsx-runtime-CTrXFwVU.js";var o=t.createContext(void 0);function i(r){const e=t.useContext(o);return r||e||"ltr"}function s(r){const e=t.useRef({value:r,previous:r});return t.useMemo(()=>(e.current.value!==r&&(e.current.previous=e.current.value,e.current.value=r),e.current.previous),[r])}export{s as a,i as u};

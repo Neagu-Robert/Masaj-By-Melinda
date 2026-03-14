@@ -849,6 +849,12 @@ function ProfilePageContent() {
   );
 }
 
+import type { MetaFunction } from "react-router";
+
+export const meta: MetaFunction = () => {
+  return [{ name: "robots", content: "noindex, nofollow" }];
+};
+
 export default function ProfilePage() {
   return (
     <ProtectedRoute allowedRoles={['admin', 'customer']}>

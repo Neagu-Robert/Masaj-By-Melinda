@@ -12,6 +12,13 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import type { MetaFunction } from "react-router";
+
+export const meta: MetaFunction = () => {
+  return [
+    { name: "robots", content: "noindex, nofollow" }
+  ];
+};
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { ServicesProvider } from "./contexts/ServicesContext";
 import { PhoneVerificationProvider } from "./contexts/PhoneVerificationContext";
@@ -143,6 +150,28 @@ export default function Root() {
           <ScrollRestoration />
           <Scripts />
         </React.StrictMode>
+      </body>
+    </html>
+  );
+}
+
+export function HydrateFallback() {
+  return (
+    <html lang="ro">
+      <head>
+        <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Loading...</title>
+        <Meta />
+        <Links />
+      </head>
+      <body>
+        <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-violet-600" role="status">
+            <span className="sr-only">Se încarcă...</span>
+          </div>
+        </div>
+        <Scripts />
       </body>
     </html>
   );

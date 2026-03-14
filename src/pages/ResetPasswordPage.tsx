@@ -6,6 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, Lock, Eye, EyeOff } from 'lucide-react';
 import { resetPassword, validatePassword, doPasswordsMatch } from '@/services/auth/passwordReset';
 
+import type { MetaFunction } from "react-router";
+
+export const meta: MetaFunction = () => {
+  return [{ name: "robots", content: "noindex, nofollow" }];
+};
+
 export default function ResetPasswordPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();

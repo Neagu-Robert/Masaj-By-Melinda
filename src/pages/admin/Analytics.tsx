@@ -88,6 +88,12 @@ function getHourSlot(timeStr) {
   return `${h.padStart(2, "0")}:00`;
 }
 
+import type { MetaFunction } from "react-router";
+
+export const meta: MetaFunction = () => {
+  return [{ name: "robots", content: "noindex, nofollow" }];
+};
+
 export default function Analytics() {
   const [serviceData, setServiceData] = useState([]);
   const [loading, setLoading] = useState(true);

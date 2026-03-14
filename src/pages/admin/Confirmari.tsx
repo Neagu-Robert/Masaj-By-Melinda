@@ -510,4 +510,10 @@ const Confirmari = () => {
   );
 };
 
+import type { MetaFunction } from "react-router";
+
+export const meta: MetaFunction = () => {
+  return [{ name: "robots", content: "noindex, nofollow" }];
+};
+
 export default Confirmari;

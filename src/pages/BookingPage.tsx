@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import type { MetaFunction } from 'react-router';
 import { useNavigate, useLocation } from 'react-router';
 import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
@@ -415,6 +416,23 @@ const BookingPage = () => {
       </BookingsProvider>
     </AvailabilitiesProvider>
   );
+};
+
+export const meta: MetaFunction = () => {
+  return [
+    { title: "Programare Online Masaj în Oradea | Masaj by Melinda" },
+    { name: "description", content: "Rezervă acum online o sesiune de masaj terapeutic sau remodelare corporală la Masaj by Melinda în Oradea. Alege relaxarea și starea de bine pe care o meriți!" },
+    { tagName: "link", rel: "canonical", href: "[DOMAIN_TBD]/book" },
+    { property: "og:type", content: "website" },
+    { property: "og:title", content: "Programare Online Masaj în Oradea | Masaj by Melinda" },
+    { property: "og:description", content: "Rezervă acum online o sesiune de masaj terapeutic sau remodelare corporală la Masaj by Melinda în Oradea. Alege relaxarea și starea de bine pe care o meriți!" },
+    { property: "og:url", content: "[DOMAIN_TBD]/book" },
+    { property: "og:image", content: "/lovable-uploads/8659eb40-96fc-4579-9af8-1b649574c3ff.png" },
+    { name: "twitter:card", content: "summary_large_image" },
+    { name: "twitter:title", content: "Programare Online Masaj în Oradea | Masaj by Melinda" },
+    { name: "twitter:description", content: "Rezervă acum online o sesiune de masaj terapeutic sau remodelare corporală la Masaj by Melinda în Oradea. Alege relaxarea și starea de bine pe care o meriți!" },
+    { name: "twitter:image", content: "/lovable-uploads/8659eb40-96fc-4579-9af8-1b649574c3ff.png" }
+  ];
 };
 
 export default BookingPage;

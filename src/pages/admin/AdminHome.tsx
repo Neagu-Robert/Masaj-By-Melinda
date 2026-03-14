@@ -1,5 +1,11 @@
 import React from "react";
 
+import type { MetaFunction } from "react-router";
+
+export const meta: MetaFunction = () => {
+  return [{ name: "robots", content: "noindex, nofollow" }];
+};
+
 export default function AdminHome() {
   return (
     <div className="max-w-2xl mx-auto mt-12 bg-gray-800/50 rounded-lg shadow-lg p-8">

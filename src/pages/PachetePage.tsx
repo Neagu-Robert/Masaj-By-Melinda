@@ -1,5 +1,6 @@
 
 import React from 'react';
+import type { MetaFunction } from 'react-router';
 import Navbar from '../components/Navbar';
 import { Card, CardContent } from '@/components/ui/card';
 import { Package, Gift, Phone, Mail } from 'lucide-react';
@@ -131,6 +132,23 @@ const PachetePage = () => {
       </div>
     </div>
   );
+};
+
+export const meta: MetaFunction = () => {
+  return [
+    { title: "Pachete și Prețuri Masaj Oradea | Masaj by Melinda" },
+    { name: "description", content: "Alege pachetele noastre avantajoase pentru masaj și remodelare corporală în Oradea. Oferte speciale și pachete de loialitate la Masaj by Melinda." },
+    { tagName: "link", rel: "canonical", href: "[DOMAIN_TBD]/pachete" },
+    { property: "og:type", content: "website" },
+    { property: "og:title", content: "Pachete și Prețuri Masaj Oradea | Masaj by Melinda" },
+    { property: "og:description", content: "Alege pachetele noastre avantajoase pentru masaj și remodelare corporală în Oradea. Oferte speciale și pachete de loialitate la Masaj by Melinda." },
+    { property: "og:url", content: "[DOMAIN_TBD]/pachete" },
+    { property: "og:image", content: "/lovable-uploads/8659eb40-96fc-4579-9af8-1b649574c3ff.png" },
+    { name: "twitter:card", content: "summary_large_image" },
+    { name: "twitter:title", content: "Pachete și Prețuri Masaj Oradea | Masaj by Melinda" },
+    { name: "twitter:description", content: "Alege pachetele noastre avantajoase pentru masaj și remodelare corporală în Oradea. Oferte speciale și pachete de loialitate la Masaj by Melinda." },
+    { name: "twitter:image", content: "/lovable-uploads/8659eb40-96fc-4579-9af8-1b649574c3ff.png" }
+  ];
 };
 
 export default PachetePage;

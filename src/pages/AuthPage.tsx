@@ -8,6 +8,12 @@ import { RateLimitManager } from '@/lib/rate-limit-manager';
 import { invokeRateLimited } from '@/lib/supabase-functions';
 import { FormErrorBoundary } from '@/components/FormErrorBoundary';
 
+import type { MetaFunction } from "react-router";
+
+export const meta: MetaFunction = () => {
+  return [{ name: "robots", content: "noindex, nofollow" }];
+};
+
 export default function AuthPage() {
   const { user, role, loading: authLoading } = useAuth();
   const navigate = useNavigate();
