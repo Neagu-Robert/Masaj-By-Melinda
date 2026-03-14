@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useServices } from '@/contexts/ServicesContext';
@@ -19,6 +19,7 @@ import { useBookingNotifications } from '@/services/notifications/hooks';
 import { Calendar as UICalendar } from '@/components/ui/calendar';
 import { previewCreateRecurring, confirmCreateRecurring, cancelRecurring, cancelRecurringInstance, RecurrenceType } from '@/services/recurring/service';
 import { toast } from '@/components/ui/use-toast';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
 
 function ProfilePageContent() {
   const { user, role } = useAuth();
@@ -850,10 +851,12 @@ function ProfilePageContent() {
 
 export default function ProfilePage() {
   return (
-    <BookingsProvider>
-      <AvailabilitiesProvider>
-        <ProfilePageContent />
-      </AvailabilitiesProvider>
-    </BookingsProvider>
+    <ProtectedRoute allowedRoles={['admin', 'customer']}>
+      <BookingsProvider>
+        <AvailabilitiesProvider>
+          <ProfilePageContent />
+        </AvailabilitiesProvider>
+      </BookingsProvider>
+    </ProtectedRoute>
   );
 } 

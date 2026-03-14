@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router';
 import { Button } from './ui/button';
 import { Home, Package, Calendar, Menu, X, User } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';

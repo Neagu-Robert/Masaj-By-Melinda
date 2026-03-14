@@ -9,7 +9,7 @@ import {
 } from "./ui/card";
 import { useServices } from "@/contexts/ServicesContext";
 import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 
 const MassageServices = () => {
   const { services, loading, error } = useServices();

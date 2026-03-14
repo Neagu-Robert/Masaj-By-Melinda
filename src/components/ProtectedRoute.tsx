@@ -1,5 +1,5 @@
 import { useAuth } from "../contexts/AuthContext";
-import { Navigate } from "react-router-dom";
+import { Navigate } from "react-router";
 import React from "react";
 
 export function ProtectedRoute({ children, allowedRoles = ['admin'] }) {
