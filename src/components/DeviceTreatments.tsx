@@ -50,7 +50,7 @@ const DeviceTreatments = () => {
   if (loading) {
     return (
       <div className="container mx-auto px-4">
-        <h3 className="text-2xl font-semibold text-center text-white mb-8">Tratamente cu dispozitive</h3>
+        <h3 className="text-2xl font-semibold text-center text-white mb-8">Tehnologie Modernă pentru Remodelare Corporală</h3>
         <div className="grid md:grid-cols-2 gap-8">
           {[...Array(4)].map((_, index) => (
             <Card 
@@ -82,7 +82,7 @@ const DeviceTreatments = () => {
   if (error) {
     return (
       <div className="container mx-auto px-4">
-        <h3 className="text-2xl font-semibold text-center text-white mb-8">Tratamente cu dispozitive</h3>
+        <h3 className="text-2xl font-semibold text-center text-white mb-8">Tehnologie Modernă pentru Remodelare Corporală</h3>
         <div className="text-center text-red-400">
           Eroare la încărcarea serviciilor: {error}
         </div>
@@ -92,7 +92,7 @@ const DeviceTreatments = () => {
 
   return (
     <div className="container mx-auto px-4">
-      <h3 className="text-2xl font-semibold text-center text-white mb-8">Tratamente cu dispozitive</h3>
+      <h3 className="text-2xl font-semibold text-center text-white mb-8">Tehnologie Modernă pentru Remodelare Corporală</h3>
       <div className="grid md:grid-cols-2 gap-8">
         {deviceServices.map((service, index) => {
           const image = deviceTreatmentImages[service.name as keyof typeof deviceTreatmentImages];

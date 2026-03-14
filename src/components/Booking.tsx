@@ -9,7 +9,7 @@ const Booking = () => {
     <div className="py-12 md:py-20 px-4">
       <div className="container mx-auto">
         <h2 className="text-2xl md:text-3xl font-semibold text-center text-white mb-8 md:mb-12 leading-tight">
-          Rezervă direct de pe site sau contactează-ne
+          Programează Online Masaj sau Tratament în Oradea
         </h2>
         <div className="flex justify-center">
           <Button 

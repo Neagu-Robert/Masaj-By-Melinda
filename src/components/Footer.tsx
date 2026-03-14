@@ -1,4 +1,4 @@
-import { Mail, MapPin, Phone } from 'lucide-react';
+import { Mail, MapPin, Phone, Star, CheckCircle, Cpu } from 'lucide-react';
 
 const Footer = () => {
   return (
@@ -10,6 +10,20 @@ const Footer = () => {
             <p className="text-gray-400">
               Relaxare, remodelare și răsfăț pentru trup și suflet.
             </p>
+            <ul className="mt-4 flex flex-col gap-2">
+              <li className="flex items-center gap-2 text-sm text-violet-400">
+                <Star size={16} />
+                <span>[NUMĂR] ani de experiență</span>
+              </li>
+              <li className="flex items-center gap-2 text-sm text-violet-400">
+                <CheckCircle size={16} />
+                <span>Certificată profesional</span>
+              </li>
+              <li className="flex items-center gap-2 text-sm text-violet-400">
+                <Cpu size={16} />
+                <span>Echipamente moderne</span>
+              </li>
+            </ul>
           </div>
           <div className="space-y-4">
             <h3 className="text-xl font-semibold text-white mb-4">Contactează-ne</h3>

@@ -24,7 +24,7 @@ const MassageServices = () => {
     return (
       <div className="container mx-auto px-4">
         <h3 className="text-xl md:text-2xl font-semibold text-center text-white mb-6 md:mb-8">
-          Masaje
+          Masaje Terapeutice și de Relaxare
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
           {[...Array(7)].map((_, index) => (
@@ -51,7 +51,7 @@ const MassageServices = () => {
     return (
       <div className="container mx-auto px-4">
         <h3 className="text-xl md:text-2xl font-semibold text-center text-white mb-6 md:mb-8">
-          Masaje
+          Masaje Terapeutice și de Relaxare
         </h3>
         <div className="text-center text-red-400">
           Eroare la încărcarea serviciilor: {error}
@@ -63,7 +63,7 @@ const MassageServices = () => {
   return (
     <div className="container mx-auto px-4">
       <h3 className="text-xl md:text-2xl font-semibold text-center text-white mb-6 md:mb-8">
-        Masaje
+        Masaje Terapeutice și de Relaxare
       </h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 [&>*:last-child:nth-child(2n+1)]:md:col-span-2 [&>*:last-child:nth-child(2n+1)]:md:mx-auto [&>*:last-child:nth-child(2n+1)]:md:max-w-2xl">
         {massageServices.map((service) => (
