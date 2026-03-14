@@ -136,13 +136,13 @@ export default function AuthPage() {
 
         // Step 3: Set session from auth-proxy response
         const tokens = proxyResult.data.session;
-        console.log('Proxy session user.id:', tokens.user?.id);  // Verify here!
+        //console.log('Proxy session user.id:', tokens.user?.id);  // Verify here!
         await supabase.auth.setSession({
           access_token: tokens.access_token,
           refresh_token: tokens.refresh_token,
         });
         const { data: { user: verifiedUser }, error: verifyErr } = await supabase.auth.getUser();
-        console.log('Verified user:', verifiedUser, verifyErr);  // Log!
+        //console.log('Verified user:', verifiedUser, verifyErr);  // Log!
         if (verifyErr || !verifiedUser) {
           setError('Session verification failed');
           setLoading(false);
@@ -154,7 +154,7 @@ export default function AuthPage() {
           .select('role, status')
           .eq('id', verifiedUser.id)  // Or 'user_id' if schema mismatch
           .single();
-        console.log('Manual profile:', profile, profileErr);  // CRITICAL log!
+        //console.log('Manual profile:', profile, profileErr);  // CRITICAL log!
         if (profileErr || !profile) {
           console.error('Profile error:', profileErr);
           setError(profileErr?.message || 'No profile found');
