@@ -49,45 +49,30 @@ export function createAdminClient(): SupabaseClient {
   return adminClient;
 }
 
-// User client factory - for user-scoped operations (respects RLS)
-const userClientCache = new Map<string, SupabaseClient>();
-
 export function createUserClient(authToken: string): SupabaseClient {
-  if (!userClientCache.has(authToken)) {
-    const url = Deno.env.get("SUPABASE_URL");
-    const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
+  const url = Deno.env.get("SUPABASE_URL");
+  const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
 
-    if (!url) {
-      throw new Error("Missing SUPABASE_URL environment variable");
-    }
-
-    if (!anonKey) {
-      throw new Error("Missing SUPABASE_ANON_KEY environment variable");
-    }
-
-    const client = createClient(url, anonKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-      global: {
-        headers: {
-          'Authorization': `Bearer ${authToken}`,
-          'X-Client-Info': 'supabase-edge-function',
-        },
-      },
-    });
-
-    userClientCache.set(authToken, client);
-
-    // Clean up old clients after some time to prevent memory leaks
-    // In a real implementation, you might want a more sophisticated cleanup strategy
-    setTimeout(() => {
-      userClientCache.delete(authToken);
-    }, 30 * 60 * 1000); // 30 minutes
+  if (!url) {
+    throw new Error("Missing SUPABASE_URL environment variable");
   }
 
-  return userClientCache.get(authToken)!;
+  if (!anonKey) {
+    throw new Error("Missing SUPABASE_ANON_KEY environment variable");
+  }
+
+  return createClient(url, anonKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+    global: {
+      headers: {
+        'Authorization': `Bearer ${authToken}`,
+        'X-Client-Info': 'supabase-edge-function',
+      },
+    },
+  });
 }
 
 // Client configuration helper
