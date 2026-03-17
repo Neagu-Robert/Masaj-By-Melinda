@@ -31,7 +31,7 @@ const handler = async (req: Request, context: any) => {
       return createErrorResponse('Cannot delete your own account.', 400, 'SELF_DELETION', context.rateLimitInfo);
     }
 
-    // Delete the user from auth schema
+    // Delete the user from auth schema (cascades to profiles → bookings via ON DELETE CASCADE)
     const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
 
     if (deleteError) {

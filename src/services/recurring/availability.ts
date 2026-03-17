@@ -32,7 +32,7 @@ export async function confirmCreateRecurringAvailability(
 
 export async function cancelRecurringAvailability(id: string) {
   const { data, error } = await supabase.functions.invoke('cancel-recurring-availabilities', {
-    body: { id },
+    body: { recurringId: id },
   });
   if (error) throw new Error(error.message || 'Function error');
   return data as any;

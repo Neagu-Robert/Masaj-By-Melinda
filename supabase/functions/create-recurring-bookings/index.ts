@@ -83,8 +83,9 @@ const handler = async (req: Request, context: any) => {
     const original = booking as BookingRow;
 
     // Check ownership - user must own the booking or be admin
-    if (original.user_id !== context.user.id && context.profile?.role !== 'admin') {
-      return createErrorResponse('Access denied. You can only manage your own bookings.', 403, 'ACCESS_DENIED', context.rateLimitInfo);
+    const ownershipResult = await requireOwnership(req, original.user_id || '');
+    if (ownershipResult instanceof Response) {
+      return ownershipResult;
     }
 
     // Check if booking is already recurring
@@ -192,7 +193,14 @@ const handler = async (req: Request, context: any) => {
       skippedCount: skippedInstances.length,
     });
 
-    if (context.profile?.role === 'admin') {
+    // Check if user is admin for audit logging
+    const { data: userProfile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', context.user.id)
+      .single();
+
+    if (userProfile?.role === 'admin') {
       logAdminAction('create_recurring_bookings', context.user.id, bookingId, {
         recurrenceType,
         horizonDays,

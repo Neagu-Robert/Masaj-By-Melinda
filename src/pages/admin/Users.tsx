@@ -127,7 +127,7 @@ export default function Users() {
     try {
       // Call our edge function to delete the user
       const { error: deleteError } = await supabase.functions.invoke('delete-user', {
-        body: { userId: userToDelete.id }
+        body: { userId: userToDelete.id, confirm: true }
       });
 
       if (deleteError) throw deleteError;

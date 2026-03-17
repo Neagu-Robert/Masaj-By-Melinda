@@ -7,7 +7,6 @@ import { createAdminClient, createUserClient } from "./supabase-client.ts";
 // Types for our profiles table
 interface Profile {
   id: string;
-  user_id: string;
   role: 'customer' | 'admin';
   phone?: string;
   verified: boolean;
@@ -73,16 +72,16 @@ export async function requireAdmin(req: Request): Promise<{ user: User; profile:
     const { data: profile, error } = await client
       .from('profiles')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('id', user.id)
       .single();
 
     if (error) {
       console.error('Profile lookup error:', error);
-      return createUnauthorizedResponse('Profile not found');
+      return createForbiddenResponse('Profile not found');
     }
 
     if (!profile) {
-      return createUnauthorizedResponse('Profile not found');
+      return createForbiddenResponse('Profile not found');
     }
 
     if (profile.role !== 'admin') {
@@ -119,7 +118,7 @@ export async function requireOwnership(
     const { data: profile, error } = await client
       .from('profiles')
       .select('role')
-      .eq('user_id', user.id)
+      .eq('id', user.id)
       .single();
 
     if (error || !profile || profile.role !== 'admin') {
@@ -182,7 +181,7 @@ export async function getUserContext(req: Request): Promise<{
       const { data: profile } = await client
         .from('profiles')
         .select('role')
-        .eq('user_id', authResult.user.id)
+        .eq('id', authResult.user.id)
         .single();
 
       return {
