@@ -39,11 +39,34 @@ const handler = async (req: Request, context: any) => {
       return createErrorResponse('Failed to delete user account.', 500, 'DELETION_FAILED', context.rateLimitInfo);
     }
 
-    // Log admin action
+    // Log admin action (console)
     logAdminAction('delete_user', context.user.id, userId, {
       targetRole: targetProfile.role,
       confirmed: confirm,
     }, req);
+
+    // Explicit DB Audit Write
+    try {
+      const { error: auditError } = await supabaseAdmin
+        .from('admin_audit_logs')
+        .insert({
+          user_id: context.user.id,
+          action: 'user.delete',
+          target_type: 'user',
+          target_id: userId,
+          details: JSON.stringify({
+            targetRole: targetProfile.role,
+            confirmed: confirm,
+            timestamp: new Date().toISOString()
+          })
+        });
+      
+      if (auditError) {
+        console.warn('Failed to insert audit log for user deletion:', auditError);
+      }
+    } catch (auditException) {
+      console.warn('Exception while inserting audit log:', auditException);
+    }
 
     return createJsonResponse({
       success: true,
