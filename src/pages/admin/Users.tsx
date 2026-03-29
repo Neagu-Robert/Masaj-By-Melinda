@@ -21,7 +21,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { logAdminAction } from "@/lib/audit-logger";
 import { useAuth } from "@/contexts/AuthContext";
 
 type User = {
@@ -97,26 +96,6 @@ export default function Users() {
       ));
 
       toast.success(`Utilizator ${newStatus === 'banned' ? 'blocat' : 'deblocat'} cu succes`);
-
-      console.log("[AuditLog] Attempting to log action:", {
-        adminId: user?.id,
-        action: newStatus === 'banned' ? 'user.ban' : 'user.unban',
-        targetUserId: userToUpdate.id,
-        targetUserEmail: userToUpdate.email
-      });
-
-      if (!user?.id) {
-        console.error('[AuditLog] No admin user id available, skipping log.');
-        return;
-      }
-
-      await logAdminAction(
-        user.id,
-        newStatus === 'banned' ? 'user.ban' : 'user.unban',
-        "user",
-        userToUpdate.id,
-        `User status for ${userToUpdate.email} changed to ${newStatus}`
-      );
     } catch (err) {
       console.error('Error updating user status:', err);
       toast.error('Eroare la actualizarea statusului utilizatorului');
@@ -135,25 +114,6 @@ export default function Users() {
       // Update local state
       setUsers(users.filter(u => u.id !== userToDelete.id));
       toast.success('Utilizator șters cu succes');
-      
-      console.log("[AuditLog] Attempting to log DELETE:", {
-          adminId: user?.id,
-          targetUserId: userToDelete.id,
-          targetUserEmail: userToDelete.email
-      });
-      
-      if (!user?.id) {
-          console.error('[AuditLog] No admin user id available, skipping log.');
-          return;
-      }
-
-      await logAdminAction(
-        user.id,
-        "user.delete",
-        "user",
-        userToDelete.id,
-        `Deleted user ${userToDelete.email}`
-      );
     } catch (err) {
       console.error('Error deleting user:', err);
       if (err.message?.includes('foreign key constraint')) {

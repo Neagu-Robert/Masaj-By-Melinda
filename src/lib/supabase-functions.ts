@@ -10,8 +10,7 @@ const inferFunctionsBase = (): string => {
     // For localhost or hosted URLs, derive functions path from the actual supplied base URL
     return supabaseUrl.replace(/\/?$/, '') + '/functions/v1';
   }
-  // Fallback to the known project functions domain (ensure production keeps working)
-  return 'https://dgzmqlwqlfmdbnwqjjjr.functions.supabase.co';
+  throw new Error('SUPABASE_URL is not configured');
 };
 
 export const FUNCTIONS_BASE: string = inferFunctionsBase();
@@ -114,7 +113,7 @@ export async function invokeRateLimited(
     };
   } catch (error) {
     console.error(`Error invoking ${functionName}:`, error);
-    
+
     // Report network/unexpected errors to Sentry
     Sentry.captureException(error, {
       tags: {

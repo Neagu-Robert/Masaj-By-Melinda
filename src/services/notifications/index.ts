@@ -27,8 +27,5 @@ export {
 
 // Export configuration
 export {
-  EMAIL_NOTIFICATIONS_ENABLED,
-  SMS_NOTIFICATIONS_ENABLED,
-  NOTIFICATION_QUEUE_ENABLED,
-  validateConfig
+  EMAIL_NOTIFICATIONS_ENABLED
 } from './config'; 

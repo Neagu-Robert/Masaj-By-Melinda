@@ -8,13 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import BookingFormModal from "@/components/admin/BookingFormModal";
 import { useAuth } from "@/contexts/AuthContext";
-import { logAdminAction } from "@/lib/audit-logger";
 import { useBookingNotifications } from "@/services/notifications/hooks";
 import { supabase } from "@/integrations/supabase/client";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Edit, Trash2, Plus, Calendar as CalendarIcon } from "lucide-react";
 import { Calendar as UICalendar } from '@/components/ui/calendar';
-import { previewCreateRecurring, confirmCreateRecurring, cancelRecurring, cancelRecurringInstance, RecurrenceType } from '@/services/recurring/service';
 
 function getStatusBadge(status?: string) {
   if (!status || status === 'confirmed') {
@@ -48,21 +46,7 @@ export default function Bookings() {
   const { user: adminUser } = useAuth();
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
-  const { 
-    sendBookingCancellationAdmin,
-    sendRecurringCreatedAdmin,
-    sendRecurringCancelledAdmin,
-    sendRecurringInstanceCancelledAdmin
-  } = useBookingNotifications();
-
-  // Recurring UI state (admin)
-  const [recurringOpen, setRecurringOpen] = useState(false);
-  const [recurrenceType, setRecurrenceType] = useState<RecurrenceType>('weekly');
-  const [horizon, setHorizon] = useState<30 | 60 | 90>(30);
-  const [preview, setPreview] = useState<{ date: string; time: string; available: boolean; reason?: string }[] | null>(null);
-  const [previewLoading, setPreviewLoading] = useState(false);
-  const [selectedBookingForRecurring, setSelectedBookingForRecurring] = useState<any>(null);
-  const [selectedPreviewDates, setSelectedPreviewDates] = useState<Set<string>>(new Set());
+  const { sendBookingCancellationAdmin } = useBookingNotifications();
 
   // Calendar selection state
   const [selectedDay, setSelectedDay] = useState<Date>(() => {
@@ -70,9 +54,6 @@ export default function Bookings() {
     d.setHours(0,0,0,0);
     return d;
   });
-
-  // Recurring instances for coloring and list
-  const [recurringInstances, setRecurringInstances] = useState<{ id?: string; booking_id: string; date: string; hour: string; status: boolean; service_type?: string; userName?: string; userEmail?: string; userPhone?: string }[]>([]);
 
   // Filter/search state
   const [searchName, setSearchName] = useState("");
@@ -96,18 +77,8 @@ export default function Bookings() {
       const serviceDetails = getServiceByName(bookingToDelete?.service_type);
       const serviceId = serviceDetails?.id || null;
       
-      // Delete the booking
       await deleteBooking(id);
       toast({ title: "Rezervare ștearsă" });
-      
-      // Log the admin action
-      await logAdminAction(
-        adminUser?.id || "",
-        "booking.delete",
-        "booking",
-        id,
-        `Deleted booking ID ${id}`
-      );
 
       // Send notification if booking had a user
       if (bookingToDelete && (bookingToDelete as any).user_id) {
@@ -188,45 +159,7 @@ export default function Bookings() {
   // Get unique service types for dropdown
   const serviceTypes = Array.from(new Set(bookings.map((b: any) => b.service_type).filter(Boolean)));
 
-  // Load recurring instances for all recurring roots
-  React.useEffect(() => {
-    const loadRecurring = async () => {
-      try {
-        const recurringRoots = bookings.filter((b: any) => b.recurring);
-        const rootIds = recurringRoots.map((b: any) => b.id);
-        const serviceByRoot: Record<string, string> = {};
-        const userLabelByRoot: Record<string, { name: string; email: string; phone: string }> = {};
-        recurringRoots.forEach((b: any) => {
-          serviceByRoot[b.id] = b.service_type;
-          userLabelByRoot[b.id] = {
-            name: `${b.first_name || ''} ${b.last_name || ''}`.trim(),
-            email: b.profiles?.email || '',
-            phone: b.phone_number || ''
-          };
-        });
-        if (rootIds.length === 0) { setRecurringInstances([]); return; }
-        const { data } = await supabase
-          .from('recurring_bookings')
-          .select('id,booking_id,date,hour,status')
-          .in('booking_id', rootIds);
-        setRecurringInstances((data || []).map((r: any) => ({
-          id: r.id,
-          booking_id: r.booking_id,
-          date: r.date,
-          hour: r.hour,
-          status: r.status,
-          service_type: serviceByRoot[r.booking_id],
-          userName: userLabelByRoot[r.booking_id]?.name,
-          userEmail: userLabelByRoot[r.booking_id]?.email,
-          userPhone: userLabelByRoot[r.booking_id]?.phone,
-        })));
-      } catch (e) {
-        console.error('Error loading recurring instances (admin):', e);
-        setRecurringInstances([]);
-      }
-    };
-    loadRecurring();
-  }, [bookings]);
+  // Load recurring instances effect removed
 
   // Calendar modifiers
   const todayMidnight = new Date();
@@ -244,157 +177,24 @@ export default function Bookings() {
     return dt;
   };
   const confirmedBookings = bookings.filter((b: any) => b.status === 'confirmed');
-  const recurringSet = new Set<string>();
   const pastBookedSet = new Set<string>();
   const futureBookedSet = new Set<string>();
   const unconfirmedSet = new Set<string>();
-  // mark original recurring
-  confirmedBookings.forEach((b: any) => { if (b.recurring) recurringSet.add(b.booking_date); });
+
   // mark unconfirmed bookings
   bookings.forEach((b: any) => {
     if (b.status === 'unconfirmed' && b.requested_date_text) {
       unconfirmedSet.add(b.requested_date_text);
     }
   });
-  // mark planned recurring instances: only add those with TRUE status
-  recurringInstances.forEach((r) => { if (r.status) recurringSet.add(r.date); });
+
   // regular booked
   confirmedBookings.forEach((b: any) => {
     const d = parseLocalDate(b.booking_date);
     const key = b.booking_date;
-    if (!b.recurring) {
-      if (d < todayMidnight) pastBookedSet.add(key);
-      else if (d > todayMidnight) futureBookedSet.add(key);
-    }
+    if (d < todayMidnight) pastBookedSet.add(key);
+    else if (d > todayMidnight) futureBookedSet.add(key);
   });
-
-  const openRecurringModal = (booking: any) => {
-    setSelectedBookingForRecurring(booking);
-    setPreview(null);
-    setRecurrenceType('weekly');
-    setHorizon(30);
-    setRecurringOpen(true);
-    setSelectedPreviewDates(new Set());
-  };
-  const previewRecurring = async () => {
-    if (!selectedBookingForRecurring) return;
-    setPreviewLoading(true);
-    try {
-      const result = await previewCreateRecurring(selectedBookingForRecurring.id, recurrenceType, horizon);
-      setPreview(result.preview);
-      const defaults = new Set(result.preview.filter(p => p.available).map(p => p.date));
-      setSelectedPreviewDates(defaults);
-    } catch (e) {
-      toast({ title: 'Eroare', description: (e as any).message, variant: 'destructive' });
-    } finally { setPreviewLoading(false); }
-  };
-  const confirmRecurring = async () => {
-    if (!selectedBookingForRecurring) return;
-    try {
-      const dates = Array.from(selectedPreviewDates);
-      const result = await confirmCreateRecurring(selectedBookingForRecurring.id, recurrenceType, horizon, dates);
-      setRecurringOpen(false);
-      setPreview(null);
-      setSelectedPreviewDates(new Set());
-      toast({ title: 'Recurență creată', description: `${result.createdCount} instanțe create.` });
-      // Notify user via email only
-      try {
-        const serviceDetails = getServiceByName(selectedBookingForRecurring.service_type);
-        const serviceId = serviceDetails?.id || null;
-        await sendRecurringCreatedAdmin({
-          bookingId: selectedBookingForRecurring.id,
-          userId: selectedBookingForRecurring.user_id || '',
-          userName: `${selectedBookingForRecurring.first_name || ''} ${selectedBookingForRecurring.last_name || ''}`.trim(),
-          userEmail: selectedBookingForRecurring.profiles?.email || '',
-          userPhone: selectedBookingForRecurring.phone_number || '',
-          serviceName: selectedBookingForRecurring.service_type,
-          serviceId,
-          serviceProvider: 'Melinda',
-          bookingDate: selectedBookingForRecurring.booking_date,
-          bookingTime: selectedBookingForRecurring.booking_time,
-          duration: serviceDetails?.duration || 60,
-          price: serviceDetails?.price || 140.0,
-          notes: `${recurrenceType} for ${horizon} days`,
-          status: 'recurring_enabled_admin',
-        });
-      } catch (e) { console.error('Admin recurring create notify error:', e); }
-    } catch (e) {
-      toast({ title: 'Eroare', description: (e as any).message, variant: 'destructive' });
-    }
-  };
-  const cancelRecurringAdmin = async (booking: any) => {
-    try {
-      const ok = window.confirm('Anulați recurența și eliminați toate instanțele viitoare?');
-      if (!ok) return;
-      const res = await cancelRecurring(booking.id);
-      toast({ title: 'Recurență anulată', description: `${res.deletedCount} instanțe viitoare eliminate.` });
-      try {
-        const serviceDetails = getServiceByName(booking.service_type);
-        const serviceId = serviceDetails?.id || null;
-        await sendRecurringCancelledAdmin({
-          bookingId: booking.id,
-          userId: booking.user_id || '',
-          userName: `${booking.first_name || ''} ${booking.last_name || ''}`.trim(),
-          userEmail: booking.profiles?.email || '',
-          userPhone: booking.phone_number || '',
-          serviceName: booking.service_type,
-          serviceId,
-          serviceProvider: 'Melinda',
-          bookingDate: booking.booking_date,
-          bookingTime: booking.booking_time,
-          duration: serviceDetails?.duration || 60,
-          price: serviceDetails?.price || 140.0,
-          status: 'recurring_cancelled_admin',
-        });
-      } catch (e) { console.error('Admin recurring cancel notify error:', e); }
-    } catch (e) {
-      toast({ title: 'Eroare', description: (e as any).message, variant: 'destructive' });
-    }
-  };
-
-  const handleTogglePreviewDate = (date: string) => {
-    setSelectedPreviewDates(prev => {
-      const next = new Set(prev);
-      if (next.has(date)) next.delete(date); else next.add(date);
-      return next;
-    });
-  };
-
-  const handleCancelRecurringInstance = async (instance: { id?: string; booking_id: string; date: string; hour: string; service_type?: string; userName?: string; userEmail?: string; userPhone?: string }) => {
-    if (!instance?.id) return;
-    const ok = window.confirm(`Anulați această instanță recurentă specifică din ${instance.date}?`);
-    if (!ok) return;
-    try {
-      await cancelRecurringInstance(Number(instance.id));
-      // Refresh list by removing the cancelled one from state
-      setRecurringInstances(prev => prev.filter(r => r.id !== instance.id));
-      toast({ title: 'Instanță recurentă anulată', description: `Instanța din ${instance.date} anulată.` });
-      try {
-        const serviceDetails = getServiceByName(instance.service_type || '');
-        const serviceId = serviceDetails?.id || null;
-        // Find the root booking to get the real userId
-        const root = bookings.find((b: any) => b.id === instance.booking_id);
-        const realUserId = root?.user_id || null;
-        await sendRecurringInstanceCancelledAdmin({
-          bookingId: instance.booking_id,
-          userId: realUserId,
-          userName: instance.userName || '',
-          userEmail: instance.userEmail || '',
-          userPhone: instance.userPhone || '',
-          serviceName: instance.service_type || '',
-          serviceId,
-          serviceProvider: 'Melinda',
-          bookingDate: instance.date,
-          bookingTime: String(instance.hour).slice(0,5),
-          duration: serviceDetails?.duration || 60,
-          price: serviceDetails?.price || 140.0,
-          status: 'recurring_instance_cancelled_admin',
-        });
-      } catch (e) { console.error('Admin single-instance cancel notify error:', e); }
-    } catch (e) {
-      toast({ title: 'Eroare', description: (e as any).message, variant: 'destructive' });
-    }
-  };
 
   return (
     <div className="max-w-6xl mx-auto p-4 bg-gray-900 min-h-screen">
@@ -459,14 +259,12 @@ export default function Bookings() {
                 }}
                 modifiers={{
                   today: (date) => dateKey(date) === dateKey(todayMidnight),
-                  recurring: (date) => recurringSet.has(dateKey(date)),
                   pastBooked: (date) => pastBookedSet.has(dateKey(date)),
                   futureBooked: (date) => futureBookedSet.has(dateKey(date)),
                   unconfirmed: (date) => unconfirmedSet.has(dateKey(date))
                 }}
                 modifiersClassNames={{
                   today: "bg-blue-600/60 text-white rounded-lg shadow-lg",
-                  recurring: "bg-green-600/60 text-white rounded-lg shadow-lg",
                   pastBooked: "bg-purple-900/70 text-white rounded-lg shadow-lg",
                   futureBooked: "bg-violet-600/80 text-white rounded-lg shadow-lg",
                   unconfirmed: "bg-yellow-600/40 text-white rounded-lg shadow-lg"
@@ -484,38 +282,10 @@ export default function Bookings() {
                 const dayBookings = filteredBookings
                   .filter((b: any) => b.status === 'confirmed' && parseLocalDate(b.booking_date).getTime() === dayKey)
                   .sort((a:any,b:any)=> parseLocalDate(a.booking_date).getTime()-parseLocalDate(b.booking_date).getTime());
-                const dayRecurring = recurringInstances
-                  .filter(r => r.status && (() => { const d = parseLocalDate(r.date); return d.getTime()===dayKey; })())
-                  .sort((a,b)=> parseLocalDate(a.date).getTime()-parseLocalDate(b.date).getTime());
                 if (loading) return <div className="text-gray-400">Se încarcă...</div>;
-                if (dayBookings.length===0 && dayRecurring.length===0) return <div className="text-gray-400">Nu există rezervări pentru această dată.</div>;
+                if (dayBookings.length===0) return <div className="text-gray-400">Nu există rezervări pentru această dată.</div>;
                 return (
                   <>
-                    {dayRecurring.map((r, idx) => (
-                      <Card key={`rec-${r.booking_id}-${r.date}-${r.hour}-${idx}`} className="bg-gray-800/50 border-green-600/50 hover:border-green-500/60 transition-colors duration-200">
-                        <CardContent className="p-4 space-y-2">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <div className="text-sm text-gray-400">Recurent</div>
-                              <div className="text-white font-medium">{r.service_type}</div>
-                              <div className="text-xs text-gray-400">{r.userName} ({r.userEmail}) {r.userPhone ? `• ${r.userPhone}` : ''}</div>
-                            </div>
-                            <div className="text-right text-white text-sm">{r.date} la {String(r.hour).slice(0,5)}</div>
-                          </div>
-                          <div className="flex justify-end gap-2 pt-2 border-t border-gray-700">
-                            {r.id && (
-                              <Button variant="ghost" size="sm" className="text-yellow-300 hover:text-yellow-200 hover:bg-yellow-500/10" onClick={() => handleCancelRecurringInstance(r)}>
-                                Anulează această recurență
-                              </Button>
-                            )}
-                            <Button variant="ghost" size="sm" className="text-violet-300 hover:text-violet-200 hover:bg-violet-500/20" onClick={() => {
-                              const root = bookings.find((b:any) => b.id === r.booking_id);
-                              if (root) cancelRecurringAdmin(root);
-                            }}>Anulează toate recurențele</Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
                     {dayBookings.map((b: any) => (
                       <Card key={b.id} className="bg-gray-800/50 border-gray-700 hover:border-violet-500/50 transition-colors duration-200">
                         <CardContent className="p-4 space-y-2">
@@ -533,11 +303,6 @@ export default function Bookings() {
                           <div className="flex justify-end gap-2 pt-2 border-t border-gray-700">
                             <Button variant="ghost" size="sm" onClick={() => handleEdit(b)} className="text-white hover:text-gray-300">Editează</Button>
                             <Button variant="ghost" size="sm" onClick={() => handleDelete(b.id)} className="text-red-400 hover:text-red-300">Șterge</Button>
-                            {b.recurring ? (
-                              <Button variant="ghost" size="sm" className="text-violet-300 hover:text-violet-200" onClick={() => cancelRecurringAdmin(b)}>Anulează Recurența</Button>
-                            ) : (
-                              <Button variant="ghost" size="sm" className="text-green-300 hover:text-green-200" onClick={() => openRecurringModal(b)}>Fă Recurent</Button>
-                            )}
                           </div>
                         </CardContent>
                       </Card>
@@ -560,49 +325,12 @@ export default function Bookings() {
           const dayBookings = filteredBookings
             .filter((b: any) => b.status === 'confirmed' && parseLocalDate(b.booking_date).getTime() === dayKey)
             .sort((a:any,b:any)=> parseLocalDate(a.booking_date).getTime()-parseLocalDate(b.booking_date).getTime());
-          const dayRecurring = recurringInstances
-            .filter(r => r.status && (() => { const d = parseLocalDate(r.date); return d.getTime()===dayKey; })())
-            .sort((a,b)=> parseLocalDate(a.date).getTime()-parseLocalDate(b.date).getTime());
-          
-          if (dayBookings.length === 0 && dayRecurring.length === 0) {
+          if (dayBookings.length === 0) {
             return <div className="text-center py-8 text-gray-400">Nu există rezervări pentru această dată.</div>;
           }
           
           return (
             <>
-              {/* Show recurring instances first */}
-              {dayRecurring.map((r, idx) => (
-                <Card key={`mobile-rec-${r.booking_id}-${r.date}-${r.hour}-${idx}`} className="bg-gray-800/50 border-green-600/50">
-                  <CardContent className="p-4 space-y-3">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <div className="text-sm text-gray-400 mb-1">Recurent</div>
-                        <div className="text-white font-medium">{r.service_type}</div>
-                        <div className="text-xs text-gray-400">{r.userName} ({r.userEmail})</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-sm text-gray-400 mb-1">Oră</div>
-                        <div className="text-white text-sm">{String(r.hour).slice(0,5)}</div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex justify-end space-x-2 pt-2 border-t border-gray-700">
-                      {r.id && (
-                        <Button variant="ghost" size="sm" className="text-yellow-300 hover:text-yellow-200 hover:bg-yellow-500/10" onClick={() => handleCancelRecurringInstance(r)}>
-                          Anulează această recurență
-                        </Button>
-                      )}
-                      <Button variant="ghost" size="sm" className="text-violet-300 hover:text-violet-200 hover:bg-violet-500/20" onClick={() => {
-                        const root = bookings.find((b:any) => b.id === r.booking_id);
-                        if (root) cancelRecurringAdmin(root);
-                      }}>
-                        Anulează toate recurențele
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-              
               {/* Show regular bookings */}
               {dayBookings.map((b: any) => (
                 <Card key={`mobile-${b.id}`} className="bg-gray-800/50 border-gray-700">
@@ -643,15 +371,6 @@ export default function Bookings() {
                         <Trash2 className="h-3 w-3 mr-1" />
                         Șterge
                       </Button>
-                      {b.recurring ? (
-                        <Button variant="ghost" size="sm" className="text-violet-300 hover:text-violet-200 text-xs px-2 py-1" onClick={() => cancelRecurringAdmin(b)}>
-                          Anulează Recurența
-                        </Button>
-                      ) : (
-                        <Button variant="ghost" size="sm" className="text-green-300 hover:text-green-200 text-xs px-2 py-1" onClick={() => openRecurringModal(b)}>
-                          Fă Recurent
-                        </Button>
-                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -663,72 +382,6 @@ export default function Bookings() {
       
       <BookingFormModal open={modalOpen} onClose={handleModalClose} booking={selectedBooking} />
 
-      {/* Recurring Modal (Admin) */}
-      {recurringOpen && selectedBookingForRecurring && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <div className="bg-gray-900 border border-gray-700 rounded-lg w-full max-w-lg p-6">
-            <h3 className="text-xl font-semibold text-violet-300 mb-4">Fă Recurent</h3>
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm text-gray-300 mb-1">Recurență</label>
-                  <Select value={recurrenceType} onValueChange={(v) => setRecurrenceType(v as RecurrenceType)}>
-                    <SelectTrigger className="w-full bg-gray-800 text-white border border-gray-600">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-gray-800/90 text-white">
-                      <SelectItem value="weekly">Săptămânal</SelectItem>
-                      <SelectItem value="biweekly">La două săptămâni</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="block text-sm text-gray-300 mb-1">Durată</label>
-                  <Select value={String(horizon)} onValueChange={(v) => setHorizon(Number(v) as 30 | 60 | 90)}>
-                    <SelectTrigger className="w-full bg-gray-800 text-white border border-gray-600">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-gray-800/90 text-white">
-                      <SelectItem value="30">30 zile</SelectItem>
-                      <SelectItem value="60">60 zile</SelectItem>
-                      <SelectItem value="90">90 zile</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <Button onClick={previewRecurring} disabled={previewLoading} className="bg-violet-600 hover:bg-violet-700 text-white">{previewLoading ? 'Se previzualizează...' : 'Previzualizare'}</Button>
-                <Button variant="outline" onClick={() => setRecurringOpen(false)} className="border-gray-600 text-gray-300 hover:bg-gray-800">Închide</Button>
-              </div>
-              {preview && (
-                <div className="max-h-64 overflow-auto border border-gray-700 rounded p-3 bg-gray-800">
-                  <div className="text-sm text-gray-300 mb-2">Previzualizare ({preview.length} date)</div>
-                  <ul className="space-y-2 text-sm">
-                    {preview.map((p, idx) => {
-                      const selected = selectedPreviewDates.has(p.date);
-                      return (
-                        <li key={idx} className={`flex items-center justify-between rounded px-2 py-1 ${p.available ? (selected ? 'border border-green-500/60 bg-green-600/10' : 'border border-gray-600/50 bg-gray-700/40') : 'opacity-60'}`}>
-                          <span className={p.available ? 'text-white' : 'text-gray-400'}>
-                            {p.date} la {p.time} {p.available ? '' : `(indisponibil: ${p.reason})`}
-                          </span>
-                          {p.available && (
-                            <Button size="sm" variant="ghost" onClick={() => handleTogglePreviewDate(p.date)} className={selected ? 'text-yellow-300 hover:text-yellow-200' : 'text-green-300 hover:text-green-200'}>
-                              {selected ? 'Deselectează' : 'Selectează'}
-                            </Button>
-                          )}
-                        </li>
-                      );
-                    })}
-                  </ul>
-                  <div className="mt-3">
-                    <Button onClick={confirmRecurring} className="bg-green-600 hover:bg-green-700 text-white">Confirmă Recurența</Button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 } 

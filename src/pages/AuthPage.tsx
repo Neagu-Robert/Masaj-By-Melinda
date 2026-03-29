@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { logAdminAction } from "@/lib/audit-logger";
 import { Eye, EyeOff } from 'lucide-react';
 import { RateLimitManager } from '@/lib/rate-limit-manager';
 import { invokeRateLimited } from '@/lib/supabase-functions';

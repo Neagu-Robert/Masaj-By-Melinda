@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSameMonth, isSameDay, format } from "date-fns";
 import { useAvailabilities } from "../../contexts/AvailabilitiesContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { logAdminAction } from "@/lib/audit-logger";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -238,15 +237,6 @@ export default function Availabilities() {
     try {
       await upsertAvailabilities(upserts);
       toast.success("Disponibilitățile au fost salvate cu succes!");
-
-      // Log the action
-      await logAdminAction(
-        adminUser?.id || "",
-        "availability.update",
-        "availability",
-        adminUser?.id || "", // Target ID is the admin who made the change
-        `Updated availability for admin ID ${adminUser?.id} on ${format(currentMonth, "MMMM yyyy")}`
-      );
     } catch (error) {
       console.error("Error saving availabilities:", error);
       toast.error("Salvarea disponibilităților a eșuat.");

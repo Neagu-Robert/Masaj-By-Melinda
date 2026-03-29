@@ -1,9 +1,7 @@
 import { sendEmailNotification, retryEmailNotification } from './emailService';
-import { sendSmsNotification, retrySmsNotification } from './smsService';
 import { logNotification } from './loggingService';
 import { NotificationPayload, NotificationResult, NotificationPreference } from './types';
 import { supabase } from '../../integrations/supabase/client';
-import { ADMIN_PHONE_NUMBERS } from './config';
 
 /**
  * Get user notification preferences
@@ -96,126 +94,6 @@ const getServiceDetails = async (serviceId: number | null, serviceName: string):
 };
 
 /**
- * Send reminder notifications using Vercel API route
- */
-const sendReminderNotifications = async (): Promise<NotificationResult[]> => {
-  const results: NotificationResult[] = [];
-  
-  try {
-    // Replace getApiBaseUrl with Supabase Edge Function URL
-    const { getSupabaseFunctionUrl, supabaseAuthHeader } = await import('@/lib/supabase-functions');
-    const AUTH_HEADER = await supabaseAuthHeader();
-    
-    // Call the Vercel API route for reminders
-    const response = await fetch(getSupabaseFunctionUrl('send-reminders'), {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...AUTH_HEADER,
-      }
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || `HTTP ${response.status}: ${response.statusText}`);
-    }
-
-    if (!data.success) {
-      throw new Error(data.message || 'Failed to send reminders');
-    }
-
-    // Log successful reminder processing
-    await logNotification({
-      notificationType: 'reminder',
-      channel: 'email',
-      recipientId: null, // System-wide reminder
-      success: true,
-      sentAt: new Date().toISOString(),
-      data: { message: data.message, results: data.results }
-    });
-
-    results.push({
-      success: true,
-      channel: 'email',
-      messageId: `reminder-${Date.now()}`,
-      timestamp: Date.now()
-    });
-
-  } catch (error) {
-    console.error('Error sending reminder notifications:', error);
-    
-    // Log failed reminder processing
-    await logNotification({
-      notificationType: 'reminder',
-      channel: 'email',
-      recipientId: null, // System-wide reminder
-      success: false,
-      error: error.message,
-      sentAt: new Date().toISOString()
-    });
-
-    results.push({
-      success: false,
-      channel: 'email',
-      error: error as Error,
-      timestamp: Date.now()
-    });
-  }
-
-  return results;
-};
-
-/**
- * Send SMS notifications to all admin numbers
- */
-const sendAdminSmsNotifications = async (
-  notificationType: string,
-  bookingData: any
-): Promise<NotificationResult[]> => {
-  const results: NotificationResult[] = [];
-  
-  // Get service details for accurate duration and price
-  const serviceDetails = await getServiceDetails(bookingData.serviceId, bookingData.serviceName);
-  
-  // Update booking data with service details
-  const enrichedBookingData = {
-    ...bookingData,
-    duration: serviceDetails.duration,
-    price: serviceDetails.price
-  };
-  
-  // Send SMS to all admin numbers using the notification type as template
-  for (const adminPhone of ADMIN_PHONE_NUMBERS) {
-    try {
-      const adminPayload: NotificationPayload = {
-        type: notificationType as any, // Use the notification type directly as template
-        recipient: {
-          userId: null, // Admin notifications don't have a specific user
-          email: '', // Not needed for SMS
-          phone: adminPhone,
-          name: 'Admin'
-        },
-        data: enrichedBookingData
-      };
-
-      const smsResult = await sendSmsNotification(adminPayload);
-      results.push(smsResult);
-    } catch (error) {
-      console.error('Error sending admin SMS notification:', error);
-      results.push({
-        success: false,
-        channel: 'sms',
-        error: error as Error,
-        timestamp: Date.now()
-      });
-    }
-  }
-
-  return results;
-};
-
-/**
  * Send a notification through the appropriate channels based on notification type
  */
 export const sendNotification = async (payload: NotificationPayload): Promise<NotificationResult[]> => {
@@ -279,24 +157,6 @@ export const sendNotification = async (payload: NotificationPayload): Promise<No
       case 'reminder':
         shouldSend = preferences.reminderEnabled;
         break;
-      case 'recurring_created_profile':
-        shouldSend = preferences.bookingCreationEnabled;
-        break;
-      case 'recurring_cancelled_profile':
-        shouldSend = preferences.bookingCancellationEnabled;
-        break;
-      case 'recurring_created_admin':
-        shouldSend = preferences.bookingCreationEnabled;
-        break;
-      case 'recurring_cancelled_admin':
-        shouldSend = preferences.bookingCancellationEnabled;
-        break;
-      case 'recurring_instance_cancelled_profile':
-        shouldSend = preferences.bookingCancellationEnabled;
-        break;
-      case 'recurring_instance_cancelled_admin':
-        shouldSend = preferences.bookingCancellationEnabled;
-        break;
       case 'password_changed':
       case 'password_reset_requested':
         shouldSend = preferences.passwordChangeEnabled;
@@ -311,58 +171,6 @@ export const sendNotification = async (payload: NotificationPayload): Promise<No
 
   // Handle different notification types according to new specifications
   switch (payload.type) {
-    case 'recurring_created_profile':
-      // Email to customer (respects booking creation prefs)
-      if (shouldSendEmailNotification(payload.type) && payload.recipient.email) {
-        try {
-          const emailResult = await sendEmailNotification(enrichedPayload);
-          results.push(emailResult);
-        } catch (error) {
-          console.error('Error sending recurring created email:', error);
-          results.push({ success: false, channel: 'email', error: error as Error, timestamp: Date.now() });
-        }
-      }
-      // Admin SMS
-      {
-        const adminSmsResults = await sendAdminSmsNotifications(payload.type, enrichedPayload.data);
-        results.push(...adminSmsResults);
-      }
-      break;
-
-    case 'recurring_cancelled_profile':
-      // Email to customer (respects booking cancellation prefs)
-      if (shouldSendEmailNotification(payload.type) && payload.recipient.email) {
-        try {
-          const emailResult = await sendEmailNotification(enrichedPayload);
-          results.push(emailResult);
-        } catch (error) {
-          console.error('Error sending recurring cancelled email:', error);
-          results.push({ success: false, channel: 'email', error: error as Error, timestamp: Date.now() });
-        }
-      }
-      // Admin SMS
-      {
-        const adminSmsResults = await sendAdminSmsNotifications(payload.type, enrichedPayload.data);
-        results.push(...adminSmsResults);
-      }
-      break;
-    case 'recurring_instance_cancelled_profile':
-      // Email to customer (respects booking cancellation prefs)
-      if (shouldSendEmailNotification(payload.type) && payload.recipient.email) {
-        try {
-          const emailResult = await sendEmailNotification(enrichedPayload);
-          results.push(emailResult);
-        } catch (error) {
-          console.error('Error sending recurring instance cancelled (profile) email:', error);
-          results.push({ success: false, channel: 'email', error: error as Error, timestamp: Date.now() });
-        }
-      }
-      // Admin SMS (always)
-      {
-        const adminSmsResults = await sendAdminSmsNotifications(payload.type, enrichedPayload.data);
-        results.push(...adminSmsResults);
-      }
-      break;
     case 'booking_created_customer':
       // Send email to customer (check email preferences)
       if (shouldSendEmailNotification(payload.type) && payload.recipient.email) {
@@ -379,10 +187,6 @@ export const sendNotification = async (payload: NotificationPayload): Promise<No
           });
         }
       }
-      
-      // Always send SMS to admins (no preference check)
-      const adminSmsResults = await sendAdminSmsNotifications(payload.type, enrichedPayload.data);
-      results.push(...adminSmsResults);
       break;
 
     case 'booking_updated_profile':
@@ -402,16 +206,6 @@ export const sendNotification = async (payload: NotificationPayload): Promise<No
           });
         }
       }
-      
-      // Always send SMS to admins (no preference check)
-      const adminSmsResults2 = await sendAdminSmsNotifications(payload.type, enrichedPayload.data);
-      results.push(...adminSmsResults2);
-      break;
-
-    case 'booking_created_admin':
-      // Always send SMS to admins (no preference check)
-      const adminSmsResults3 = await sendAdminSmsNotifications(payload.type, enrichedPayload.data);
-      results.push(...adminSmsResults3);
       break;
 
     case 'booking_updated_admin':
@@ -430,10 +224,6 @@ export const sendNotification = async (payload: NotificationPayload): Promise<No
           });
         }
       }
-      
-      // Always send SMS to admins (no preference check)
-      const adminSmsResults4 = await sendAdminSmsNotifications(payload.type, enrichedPayload.data);
-      results.push(...adminSmsResults4);
       break;
 
     case 'booking_cancelled_admin':
@@ -450,44 +240,6 @@ export const sendNotification = async (payload: NotificationPayload): Promise<No
             error: error as Error,
             timestamp: Date.now()
           });
-        }
-      }
-      break;
-
-    case 'recurring_created_admin':
-      // Email only to customer (respect creation prefs); no admin SMS
-      if (shouldSendEmailNotification(payload.type) && payload.recipient.email) {
-        try {
-          const emailResult = await sendEmailNotification(enrichedPayload);
-          results.push(emailResult);
-        } catch (error) {
-          console.error('Error sending recurring created (admin) email:', error);
-          results.push({ success: false, channel: 'email', error: error as Error, timestamp: Date.now() });
-        }
-      }
-      break;
-
-    case 'recurring_cancelled_admin':
-      // Email only to customer (respect cancellation prefs); no admin SMS
-      if (shouldSendEmailNotification(payload.type) && payload.recipient.email) {
-        try {
-          const emailResult = await sendEmailNotification(enrichedPayload);
-          results.push(emailResult);
-        } catch (error) {
-          console.error('Error sending recurring cancelled (admin) email:', error);
-          results.push({ success: false, channel: 'email', error: error as Error, timestamp: Date.now() });
-        }
-      }
-      break;
-    case 'recurring_instance_cancelled_admin':
-      // Email only to customer (respect cancellation prefs); no admin SMS
-      if (shouldSendEmailNotification(payload.type) && payload.recipient.email) {
-        try {
-          const emailResult = await sendEmailNotification(enrichedPayload);
-          results.push(emailResult);
-        } catch (error) {
-          console.error('Error sending recurring instance cancelled (admin) email:', error);
-          results.push({ success: false, channel: 'email', error: error as Error, timestamp: Date.now() });
         }
       }
       break;
@@ -562,10 +314,6 @@ export const sendNotification = async (payload: NotificationPayload): Promise<No
           });
         }
       }
-      
-      // Always send SMS to admins
-      const approvalSmsResults = await sendAdminSmsNotifications(payload.type, enrichedPayload.data);
-      results.push(...approvalSmsResults);
       break;
 
     case 'booking_confirmed_by_admin':
@@ -625,18 +373,6 @@ export const sendNotification = async (payload: NotificationPayload): Promise<No
       // NO SMS to admin - admin performed this action themselves
       break;
 
-    case 'booking_suggestion_accepted':
-      // SMS to admin only (no customer email needed)
-      const acceptedSmsResults = await sendAdminSmsNotifications(payload.type, enrichedPayload.data);
-      results.push(...acceptedSmsResults);
-      break;
-
-    case 'booking_suggestion_declined':
-      // SMS to admin only (no customer email needed)
-      const declinedSmsResults = await sendAdminSmsNotifications(payload.type, enrichedPayload.data);
-      results.push(...declinedSmsResults);
-      break;
-
     default:
       // Default behavior for other notification types
       // Send email notification (check email preferences)
@@ -649,22 +385,6 @@ export const sendNotification = async (payload: NotificationPayload): Promise<No
           results.push({
             success: false,
             channel: 'email',
-            error: error as Error,
-            timestamp: Date.now()
-          });
-        }
-      }
-
-      // Send SMS notification (always sent to admins regardless of preferences)
-      if (payload.recipient.phone) {
-        try {
-          const smsResult = await sendSmsNotification(enrichedPayload);
-          results.push(smsResult);
-        } catch (error) {
-          console.error('Error sending SMS notification:', error);
-          results.push({
-            success: false,
-            channel: 'sms',
             error: error as Error,
             timestamp: Date.now()
           });
@@ -694,7 +414,7 @@ export const notify = async (payload: NotificationPayload): Promise<Notification
       if (result.channel === 'email') {
         retryResult = await retryEmailNotification(payload);
       } else {
-        retryResult = await retrySmsNotification(payload);
+        retryResult = result;
       }
       
       results[i] = retryResult;
@@ -702,12 +422,4 @@ export const notify = async (payload: NotificationPayload): Promise<Notification
   }
   
   return results;
-};
-
-/**
- * Send reminder notifications (for manual triggering)
- */
-export const sendReminders = async (): Promise<NotificationResult[]> => {
-  console.log('Sending reminder notifications...');
-  return await sendReminderNotifications();
 }; 

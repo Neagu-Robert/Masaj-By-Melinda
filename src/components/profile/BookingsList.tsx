@@ -8,34 +8,25 @@ interface Booking {
   service_type: string;
   booking_date: string;
   booking_time: string;
-  recurring?: boolean;
   status?: 'unconfirmed' | 'confirmed' | 'rejected' | 'suggested';
 }
 
 interface BookingsListProps {
   selectedDay: Date;
   bookings: Booking[];
-  recurringInstances?: { id?: string; booking_id: string; date: string; hour: string; status: boolean; service_type?: string }[];
   onEditClick: (booking: Booking) => void;
   onCancelBooking: (booking: Booking) => void;
-  onOpenRecurring: (booking: Booking) => void;
-  onCancelRecurring: (booking: Booking) => void;
   user: any;
   role: string;
-  onCancelRecurringInstance?: (instance: any) => void;
 }
 
 const BookingsList: React.FC<BookingsListProps> = ({
   selectedDay,
   bookings,
-  recurringInstances = [],
   onEditClick,
   onCancelBooking,
-  onOpenRecurring,
-  onCancelRecurring,
   user,
-  role,
-  onCancelRecurringInstance
+  role
 }) => {
   // Helper to format date and time as 'HH:mm | DD/MM/YYYY'
   function formatBookingDateTime(dateStr: string, timeStr: string) {
@@ -72,12 +63,6 @@ const BookingsList: React.FC<BookingsListProps> = ({
     return d.getTime() === selectedDay.getTime();
   }).sort((a, b) => new Date(a.booking_date).getTime() - new Date(b.booking_date).getTime());
 
-  const dayRecurring = recurringInstances.filter(r => {
-    const d = new Date(r.date);
-    d.setHours(0,0,0,0);
-    return d.getTime() === selectedDay.getTime();
-  }).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
   return (
     <div className="bg-gray-800/50 rounded-lg p-4 h-full">
       <h3 className="text-lg font-semibold text-violet-300 mb-4">
@@ -90,7 +75,7 @@ const BookingsList: React.FC<BookingsListProps> = ({
       </h3>
       
       <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
-        {dayBookings.length === 0 && dayRecurring.length === 0 ? (
+        {dayBookings.length === 0 ? (
           <div className="flex items-center justify-center h-32 text-gray-400">
             <div className="text-center">
               <Calendar className="h-12 w-12 mx-auto mb-2 opacity-50" />
@@ -99,62 +84,7 @@ const BookingsList: React.FC<BookingsListProps> = ({
           </div>
         ) : (
           <>
-          {/* Recurring planned instances (from recurring_bookings) */}
-          {dayRecurring.map((r) => (
-            <Card key={`rec-${r.booking_id}-${r.date}-${r.hour}`} className={`bg-gray-800/50 ${r.status ? 'border-green-600/50 hover:border-green-500/60' : 'border-gray-600/50'} transition-colors duration-200`}>
-              <CardContent className="p-4 space-y-3">
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <div className="text-sm text-gray-400 mb-1">Serviciu (recurent)</div>
-                    <div className="text-white font-medium">{r.service_type || 'Serviciu'}</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-sm text-gray-400 mb-1">Data</div>
-                    <div className="text-white text-sm">{formatBookingDateTime(r.date, r.hour?.slice(0,5) || '00:00')}</div>
-                  </div>
-                </div>
-                {!r.status && (
-                  <div className="text-xs text-yellow-300">Omis din cauza datei deja ocupate</div>
-                )}
-                <div className="flex justify-end space-x-2 pt-2 border-t border-gray-700">
-                  {/* Cancel single instance if handler provided and we have instance id */}
-                  {onCancelRecurringInstance && r.id && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onCancelRecurringInstance(r)}
-                      className="text-yellow-300 hover:text-yellow-200 hover:bg-yellow-500/10 transition-colors duration-200"
-                    >
-                      Anulează această recurență
-                    </Button>
-                  )}
-                  {/* Cancel entire series */}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      const root = bookings.find(b => b.id === r.booking_id);
-                      if (root) {
-                        onCancelRecurring(root);
-                      } else {
-                        onCancelRecurring({
-                          id: r.booking_id,
-                          service_type: r.service_type || 'Serviciu',
-                          booking_date: r.date,
-                          booking_time: (r.hour || '').slice(0,5),
-                        } as Booking);
-                      }
-                    }}
-                    className="text-violet-300 hover:text-violet-200 hover:bg-violet-500/20 transition-colors duration-200"
-                  >
-                    Anulează toate recurențele
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-
-          {/* Regular bookings (non-recurring or original root booking row) */}
+          {/* Regular bookings */}
           {dayBookings.map((booking) => {
             const isUnconfirmed = booking.status === 'unconfirmed' || booking.status === 'suggested';
             return (
@@ -190,17 +120,6 @@ const BookingsList: React.FC<BookingsListProps> = ({
                       <Trash2 className="h-3 w-3 mr-1" />
                       Anulează
                     </Button>
-                    {role !== 'customer' && (
-                      booking.recurring ? (
-                        <Button variant="ghost" size="sm" onClick={() => onCancelRecurring(booking)} className="text-violet-300 hover:text-violet-200 hover:bg-violet-500/20 transition-colors duration-200 text-xs px-2 py-1">
-                          Anulează Recurența
-                        </Button>
-                      ) : (
-                        <Button variant="ghost" size="sm" onClick={() => onOpenRecurring(booking)} disabled={isUnconfirmed} className={`text-green-300 hover:text-green-200 hover:bg-green-500/20 transition-colors duration-200 text-xs px-2 py-1 ${isUnconfirmed ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                          Fă Recurent
-                        </Button>
-                      )
-                    )}
                 </div>
               </CardContent>
             </Card>

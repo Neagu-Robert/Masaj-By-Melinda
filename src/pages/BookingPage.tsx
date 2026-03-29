@@ -15,7 +15,6 @@ import { AvailabilitiesProvider } from '@/contexts/AvailabilitiesContext';
 import { BookingsProvider } from '@/contexts/BookingsContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useServices } from '@/contexts/ServicesContext';
-import { logAdminAction } from '@/lib/audit-logger';
 import { invokeRateLimited } from '@/lib/supabase-functions';
 import { usePhoneVerification } from '@/contexts/PhoneVerificationContext';
 import { PhoneVerificationModal } from '@/components/auth/PhoneVerificationModal';
@@ -300,15 +299,7 @@ const BookingPageContent = () => {
       }
 
       // Step 8: Success — log audit action (edge function handles email notification)
-      if (user) {
-        await logAdminAction(
-          user.id,
-          'booking.create.customer',
-          'booking',
-          result.data.booking_id,
-          `Customer created booking request for ${selectedService} - requested date: ${requestedDate}${requestedTime ? ', time: ' + requestedTime : ''}`
-        );
-      }
+      // Removed audit log call
 
       // Step 9: Show success toast using message from edge function
       toast("Rezervare primită!", {

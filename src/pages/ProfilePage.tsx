@@ -17,7 +17,6 @@ import PasswordChangeModal from '@/components/profile/PasswordChangeModal';
 import BookingsList from '@/components/profile/BookingsList';
 import { useBookingNotifications } from '@/services/notifications/hooks';
 import { Calendar as UICalendar } from '@/components/ui/calendar';
-import { previewCreateRecurring, confirmCreateRecurring, cancelRecurring, cancelRecurringInstance, RecurrenceType } from '@/services/recurring/service';
 import { toast } from '@/components/ui/use-toast';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 
@@ -28,14 +27,7 @@ function ProfilePageContent() {
   const [profile, setProfile] = useState(null);
   const [bookings, setBookings] = useState([]);
   const [pendingBookings, setPendingBookings] = useState([]);
-  const [recurringInstances, setRecurringInstances] = useState<{
-    id?: string;
-    booking_id: string;
-    date: string;
-    hour: string;
-    status: boolean;
-    service_type?: string;
-  }[]>([]);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeView, setActiveView] = useState('details');
@@ -45,14 +37,7 @@ function ProfilePageContent() {
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [isPasswordChangeOpen, setIsPasswordChangeOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { sendRecurringCreatedProfile, sendRecurringCancelledProfile, sendBookingCancellationProfile, sendRecurringInstanceCancelledProfile } = useBookingNotifications();
-  // Recurring UI state
-  const [recurringOpen, setRecurringOpen] = useState(false);
-  const [recurrenceType, setRecurrenceType] = useState<RecurrenceType>('weekly');
-  const [horizon, setHorizon] = useState<30 | 60 | 90>(30);
-  const [preview, setPreview] = useState<{ date: string; time: string; available: boolean; reason?: string }[] | null>(null);
-  const [previewLoading, setPreviewLoading] = useState(false);
-  const [selectedPreviewDates, setSelectedPreviewDates] = useState<Set<string>>(new Set());
+  const { sendBookingCancellationProfile } = useBookingNotifications();
   // Calendar selection state
   const [selectedDay, setSelectedDay] = useState<Date>(() => {
     const d = new Date();
@@ -97,39 +82,7 @@ function ProfilePageContent() {
           setBookings(confirmed);
         }
 
-        // Fetch recurring plan instances for this user's recurring bookings
-        const { data: recurringRoots } = await supabase
-          .from('bookings')
-          .select('id, service_type, recurring')
-          .eq('user_id', user.id)
-          .eq('recurring', true);
 
-        const recurringRootIds = (recurringRoots || []).map((b: any) => b.id);
-        const serviceTypeByRoot: Record<string, string> = {};
-        (recurringRoots || []).forEach((b: any) => { serviceTypeByRoot[b.id] = b.service_type; });
-
-        if (recurringRootIds.length > 0) {
-          const { data: recInst } = await supabase
-            .from('recurring_bookings')
-            .select('id,booking_id,date,hour,status')
-            .in('booking_id', recurringRootIds);
-          if (isMounted && recInst) {
-            setRecurringInstances(
-              recInst.map((r: any) => ({
-                id: r.id,
-                booking_id: r.booking_id,
-                date: r.date,
-                hour: r.hour,
-                status: r.status,
-                service_type: serviceTypeByRoot[r.booking_id],
-              }))
-            );
-          } else if (isMounted) {
-            setRecurringInstances([]);
-          }
-        } else if (isMounted) {
-          setRecurringInstances([]);
-        }
 
         if (isMounted) {
           setLoading(false);
@@ -157,147 +110,7 @@ function ProfilePageContent() {
     setIsModalOpen(true);
   };
 
-  const handleCancelRecurringInstance = async (instance: { id?: string; booking_id: string; date: string; hour: string; service_type?: string }) => {
-    if (!instance?.id) return;
-    const ok = window.confirm(`Anulați această instanță recurentă specifică din ${instance.date}?`);
-    if (!ok) return;
-    try {
-      await cancelRecurringInstance(Number(instance.id));
-      setRefreshTrigger(c => c + 1);
-      try {
-        const serviceDetails = getServiceByName(instance.service_type || '');
-        const serviceId = serviceDetails?.id || null;
-        await sendRecurringInstanceCancelledProfile({
-          bookingId: instance.booking_id,
-          userId: user.id,
-          userName: profile?.full_name || user.email,
-          userEmail: user.email,
-          userPhone: profile?.phone || '',
-          serviceName: instance.service_type || '',
-          serviceId,
-          serviceProvider: 'Melinda',
-          bookingDate: instance.date,
-          bookingTime: String(instance.hour).slice(0, 5),
-          duration: serviceDetails?.duration || 60,
-          price: serviceDetails?.price || 140.0,
-          status: 'recurring_instance_cancelled',
-        });
-      } catch (e) { console.error('Error sending single-instance cancel notification:', e); }
-      toast({ title: 'Instanță recurentă anulată', description: `Instanța din ${instance.date} anulată.` });
-    } catch (e: any) {
-      toast({ title: 'Eroare', description: e.message, variant: 'destructive' });
-    }
-  };
-  // Recurring: open modal and fetch preview
-  const handleOpenRecurring = async (booking: any) => {
-    setSelectedBooking(booking);
-    setRecurringOpen(true);
-    setPreview(null);
-    setRecurrenceType('weekly');
-    setHorizon(30);
-    setSelectedPreviewDates(new Set());
-  };
 
-  const handlePreviewRecurring = async () => {
-    if (!selectedBooking) return;
-    setPreviewLoading(true);
-    try {
-      const result = await previewCreateRecurring(selectedBooking.id, recurrenceType, horizon);
-      setPreview(result.preview);
-      const defaults = new Set(result.preview.filter(p => p.available).map(p => p.date));
-      setSelectedPreviewDates(defaults);
-    } catch (e: any) {
-      toast({ title: 'Eroare', description: e.message, variant: 'destructive' });
-    } finally {
-      setPreviewLoading(false);
-    }
-  };
-
-  const handleConfirmRecurring = async () => {
-    if (!selectedBooking) return;
-    try {
-      const selectedDates = Array.from(selectedPreviewDates);
-      const result = await confirmCreateRecurring(selectedBooking.id, recurrenceType, horizon, selectedDates);
-      setRecurringOpen(false);
-      setPreview(null);
-      setSelectedPreviewDates(new Set());
-      setRefreshTrigger(c => c + 1);
-      const selectedCount = selectedDates.length || result.createdCount + result.skippedCount;
-      const baseMsg = result.skippedCount > 0
-        ? `${result.createdCount} create, ${result.skippedCount} omise.`
-        : `${result.createdCount} instanțe create.`;
-      toast({ title: 'Recurență creată', description: `${baseMsg} (${selectedCount} selectate)` });
-
-      // Send notifications: user email and admin SMS via booking_updated_profile
-      try {
-        const serviceDetails = getServiceByName(selectedBooking.service_type);
-        const serviceId = serviceDetails?.id || null;
-        await sendRecurringCreatedProfile({
-          bookingId: selectedBooking.id,
-          userId: user.id,
-          userName: profile?.full_name || user.email,
-          userEmail: user.email,
-          userPhone: profile?.phone || '',
-          serviceName: selectedBooking.service_type,
-          serviceId,
-          serviceProvider: 'Melinda',
-          bookingDate: selectedBooking.booking_date,
-          bookingTime: selectedBooking.booking_time,
-          duration: serviceDetails?.duration || 60,
-          price: serviceDetails?.price || 140.0,
-          notes: `${recurrenceType} for ${horizon} days`,
-          status: 'recurring_enabled',
-        });
-      } catch (e) {
-        console.error('Error sending recurring creation notification:', e);
-      }
-    } catch (e: any) {
-      toast({ title: 'Eroare', description: e.message, variant: 'destructive' });
-    }
-  };
-
-  const handleTogglePreviewDate = (date: string) => {
-    setSelectedPreviewDates(prev => {
-      const next = new Set(prev);
-      if (next.has(date)) next.delete(date); else next.add(date);
-      return next;
-    });
-  };
-
-  const handleCancelRecurring = async (booking: any) => {
-    try {
-      const ok = window.confirm('Anulați recurența și eliminați toate instanțele viitoare?');
-      if (!ok) return;
-      const res = await cancelRecurring(booking.id);
-      setRefreshTrigger(c => c + 1);
-      toast({ title: 'Recurență anulată', description: `${res.deletedCount} instanțe viitoare eliminate.` });
-
-      // Send notifications: user email and admin SMS via booking_updated_profile
-      try {
-        const serviceDetails = getServiceByName(booking.service_type);
-        const serviceId = serviceDetails?.id || null;
-        await sendRecurringCancelledProfile({
-          bookingId: booking.id,
-          userId: user.id,
-          userName: profile?.full_name || user.email,
-          userEmail: user.email,
-          userPhone: profile?.phone || '',
-          serviceName: booking.service_type,
-          serviceId,
-          serviceProvider: 'Melinda',
-          bookingDate: booking.booking_date,
-          bookingTime: booking.booking_time,
-          duration: serviceDetails?.duration || 60,
-          price: serviceDetails?.price || 140.0,
-          status: 'recurring_cancelled',
-        });
-      } catch (e) {
-        console.error('Error sending recurring cancellation notification:', e);
-      }
-    } catch (e: any) {
-      toast({ title: 'Eroare', description: e.message, variant: 'destructive' });
-    }
-  };
 
   const handleCancelBooking = async (booking) => {
     if (!window.confirm('Sigur doriți să anulați această rezervare?')) {
@@ -427,32 +240,13 @@ function ProfilePageContent() {
   const pastBookedSet = new Set<string>();
   const futureBookedSet = new Set<string>();
 
-  // Mark original recurring booking date as recurring (green)
-  bookings.forEach((b: any) => {
-    const key = toKey(b.booking_date);
-    if (b.recurring) recurringSet.add(key);
-  });
-
-  // Mark planned recurring instances (green) from recurring_bookings
-  // Only mark as green if the instance status is TRUE
-  recurringInstances.forEach((r) => {
-    const d = new Date(r.date);
-    d.setHours(0, 0, 0, 0);
-    const key = d.toISOString().slice(0, 10);
-    if (r.status) {
-      recurringSet.add(key);
-    }
-  });
-
-  // Non-recurring booked dates
+  // Booked dates
   bookings.forEach((b: any) => {
     const d = new Date(b.booking_date);
     d.setHours(0, 0, 0, 0);
     const key = d.toISOString().slice(0, 10);
-    if (!b.recurring) {
-      if (d < todayMidnight) pastBookedSet.add(key);
-      else if (d > todayMidnight) futureBookedSet.add(key);
-    }
+    if (d < todayMidnight) pastBookedSet.add(key);
+    else if (d > todayMidnight) futureBookedSet.add(key);
   });
 
 
@@ -742,97 +536,16 @@ function ProfilePageContent() {
                   <BookingsList
                     selectedDay={selectedDay}
                     bookings={bookings}
-                    recurringInstances={recurringInstances}
                     onEditClick={handleEditClick}
                     onCancelBooking={handleCancelBooking}
-                    onOpenRecurring={handleOpenRecurring}
-                    onCancelRecurring={handleCancelRecurring}
                     user={user}
                     role={role}
-                    onCancelRecurringInstance={handleCancelRecurringInstance}
                   />
                 </div>
               </div>
             </section>
           )}
         </main>
-        {/* Recurring Modal */}
-        {recurringOpen && selectedBooking && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-            <div className="bg-gray-900 border border-gray-700 rounded-lg w-full max-w-lg p-6">
-              <h3 className="text-xl font-semibold text-violet-300 mb-4">Doriți să faceți această rezervare recurentă?</h3>
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-sm text-gray-300 mb-1">Recurență</label>
-                    <select
-                      value={recurrenceType}
-                      onChange={(e) => setRecurrenceType(e.target.value as RecurrenceType)}
-                      className="w-full bg-gray-800 text-white border border-gray-600 rounded px-3 py-2"
-                    >
-                      <option value="weekly">Săptămânal</option>
-                      <option value="biweekly">La două săptămâni</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm text-gray-300 mb-1">Durată</label>
-                    <select
-                      value={horizon}
-                      onChange={(e) => setHorizon(Number(e.target.value) as 30 | 60 | 90)}
-                      className="w-full bg-gray-800 text-white border border-gray-600 rounded px-3 py-2"
-                    >
-                      <option value={30}>30 zile</option>
-                      <option value={60}>60 zile</option>
-                      <option value={90}>90 zile</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <Button onClick={handlePreviewRecurring} disabled={previewLoading} className="bg-violet-600 hover:bg-violet-700 text-white">
-                    {previewLoading ? 'Se previzualizează...' : 'Previzualizare'}
-                  </Button>
-                  <Button variant="outline" onClick={() => setRecurringOpen(false)} className="border-gray-600 text-gray-600 hover:bg-gray-800">
-                    Închide
-                  </Button>
-                </div>
-
-                {preview && (
-                  <div className="max-h-64 overflow-auto border border-gray-700 rounded p-3 bg-gray-800">
-                    <div className="text-sm text-gray-300 mb-2">Previzualizare ({preview.length} date)</div>
-                    <ul className="space-y-2 text-sm">
-                      {preview.map((p, idx) => {
-                        const selected = selectedPreviewDates.has(p.date);
-                        return (
-                          <li key={idx} className={`flex items-center justify-between rounded px-2 py-1 ${p.available ? (selected ? 'border border-green-500/60 bg-green-600/10' : 'border border-gray-600/50 bg-gray-700/40') : 'opacity-60'}`}>
-                            <span className={p.available ? 'text-white' : 'text-gray-400'}>
-                              {p.date} la {p.time} {p.available ? '' : `(indisponibil: ${p.reason})`}
-                            </span>
-                            {p.available && (
-                              <Button size="sm" variant="ghost" onClick={() => handleTogglePreviewDate(p.date)} className={selected ? 'text-yellow-300 hover:text-yellow-200' : 'text-green-300 hover:text-green-200'}>
-                                {selected ? 'Deselectează' : 'Selectează'}
-                              </Button>
-                            )}
-                          </li>
-                        );
-                      })}
-                    </ul>
-                    <div className="mt-3 flex gap-2">
-                      {preview.some(p => !p.available) && (
-                        <div className="text-xs text-yellow-300">Unele date sunt indisponibile. Continuarea va crea doar instanțele disponibile.</div>
-                      )}
-                    </div>
-                    <div className="mt-3">
-                      <Button onClick={handleConfirmRecurring} className="bg-green-600 hover:bg-green-700 text-white">
-                        Confirmă Recurența
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
         <EditBookingModal
           open={isModalOpen}
           onClose={() => setIsModalOpen(false)}

@@ -5,12 +5,6 @@ export type NotificationType =
   | 'booking_created_customer'
   | 'booking_updated_profile'
   | 'booking_cancelled_profile'
-  | 'recurring_created_profile'
-  | 'recurring_cancelled_profile'
-  | 'recurring_created_admin'
-  | 'recurring_cancelled_admin'
-  | 'recurring_instance_cancelled_profile'
-  | 'recurring_instance_cancelled_admin'
   | 'booking_created_admin'
   | 'booking_updated_admin'
   | 'booking_cancelled_admin'
@@ -23,7 +17,7 @@ export type NotificationType =
   | 'booking_suggestion_accepted'
   | 'booking_suggestion_declined';
 
-export type NotificationChannel = 'email' | 'sms';
+export type NotificationChannel = 'email';
 
 // New interface for database preferences
 export interface NotificationPreferences {

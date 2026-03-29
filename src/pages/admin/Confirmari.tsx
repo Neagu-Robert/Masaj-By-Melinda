@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../integrations/supabase/client';
 import { toast } from 'sonner';
-import { logAdminAction } from '../../lib/audit-logger';
 import { useAuth } from '../../contexts/AuthContext';
 import { useBookingNotifications } from '../../services/notifications/hooks';
 import { useServices } from '../../contexts/ServicesContext';
@@ -131,13 +130,6 @@ const Confirmari = () => {
       });
     } else {
       toast.success('Rezervare respinsă!');
-      logAdminAction(
-        user?.id || '',
-        'booking.delete',
-        'booking',
-        booking.id,
-        'Booking rejected by admin',
-      );
       if (booking.profiles) {
         const serviceDetails = services.find((s) => s.id === booking.service_id);
         sendBookingRejectedByAdmin({
@@ -312,15 +304,6 @@ const Confirmari = () => {
           status: 'confirmed'
         });
       }
-
-      // Log admin action
-      await logAdminAction(
-        user?.id || '',
-        'booking.update.admin',
-        'booking',
-        selectedBookingForAction.id,
-        `Admin confirmed booking: date ${formatDateForDB(selectedDate)} at ${selectedTime}`
-      );
 
       toast.success('Rezervare confirmată!');
       handleCloseModal();

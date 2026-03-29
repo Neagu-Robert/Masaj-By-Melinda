@@ -6,7 +6,6 @@ import { useServices } from "../../contexts/ServicesContext";
 import { useAvailabilities } from "../../contexts/AvailabilitiesContext";
 import { toast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { logAdminAction } from "@/lib/audit-logger";
 import { supabase } from "@/integrations/supabase/client";
 import { useBookingNotifications } from "@/services/notifications/hooks";
 import { Button } from "@/components/ui/button";
@@ -167,15 +166,6 @@ export default function BookingFormModal({ open, onClose, booking }: BookingForm
 
         await updateBooking(booking.id, updatedBooking);
 
-        // Log the admin booking update action
-        await logAdminAction(
-          adminUser?.id || '',
-          'booking.update.admin',
-          'booking',
-          booking.id,
-          `Admin a actualizat rezervarea pentru ${values.service_type} pe ${formatDateForDB(bookingDate)} la ${bookingTime}`
-        );
-
         // Send admin notification for booking update
         try {
           await sendBookingUpdateAdmin({
@@ -225,15 +215,6 @@ export default function BookingFormModal({ open, onClose, booking }: BookingForm
         };
 
         await addBooking(newBooking);
-
-        // Log the admin booking creation action
-        await logAdminAction(
-          adminUser?.id || '',
-          'booking.create.admin',
-          'booking',
-          'new',
-          `Admin a creat rezervare pentru ${values.service_type} pe ${formatDateForDB(bookingDate)} la ${bookingTime}`
-        );
 
         // Send admin notification for new booking
         try {
