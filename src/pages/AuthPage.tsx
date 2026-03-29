@@ -76,11 +76,10 @@ export default function AuthPage() {
         .from('profiles')
         .select('id, email')
         .eq('email', email)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') {
-        // PGRST116 is "not found" error, which is expected for new users
-        console.error('Error checking existing user or new user registration:', error);
+      if (error) {
+        console.error('Error checking existing user:', error);
         return null;
       }
 
@@ -186,7 +185,14 @@ export default function AuthPage() {
         setError('A apărut o eroare neașteptată în timpul autentificării.');
       }
     } else {
-      // REGISTER (keep existing logic - no changes)
+      // REGISTER
+      const fullName = `${prenume.trim()} ${nume.trim()}`;
+      if (!/^[A-Za-zÀ-ÖØ-öø-ÿĂăÂâÎîȘșȚț \-']{1,100}$/.test(fullName) || fullName.trim() === '') {
+        setError('Numele poate conține doar litere, spații, cratime și apostrofuri (max. 100 caractere).');
+        setLoading(false);
+        return;
+      }
+
       const existingUser = await checkExistingUser(email);
       
       if (existingUser) {
@@ -195,22 +201,17 @@ export default function AuthPage() {
         return;
       }
 
-      const { data, error } = await supabase.auth.signUp({ email, password });
+      const { data, error } = await supabase.auth.signUp({ 
+        email, 
+        password, 
+        options: { data: { full_name: fullName } } 
+      });
+
       if (error) {
         setError(error.message);
       } else if (data.user) {
-        const fullName = `${prenume.trim()} ${nume.trim()}`;
-        const { error: updateError } = await supabase
-          .from('profiles')
-          .update({ full_name: fullName })
-          .eq('id', data.user.id);
-
-        if (updateError) {
-          setError('Eroare la actualizarea numelui complet: ' + updateError.message);
-        } else {
-          setSuccess('Înregistrare reușită! Vă rugăm să verificați emailul pentru a vă activa contul.');
-          setIsLogin(true);
-        }
+        setSuccess('Înregistrare reușită! Vă rugăm să verificați emailul pentru a vă activa contul.');
+        setIsLogin(true);
       }
     }
     setLoading(false);
@@ -235,7 +236,7 @@ return (
   <div className="min-h-screen bg-[url('/lovable-uploads/8659eb40-96fc-4579-9af8-1b649574c3ff.png')] bg-cover bg-center">
     <div className="min-h-screen w-full flex items-center justify-center backdrop-blur-sm bg-gray-900/60">
     <FormErrorBoundary feature="auth">
-      <form onSubmit={handleAuth} className="bg-gray-800/90 backdrop-blur-md p-8 rounded shadow-md w-full max-w-sm">
+      <form onSubmit={handleAuth} className="bg-gray-800/90 backdrop-blur-md p-8 rounded shadow-md w-full max-w-sm mx-4 sm:mx-auto">
         <div className="text-center mb-4">
           <div className="text-2xl md:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-400 to-pink-500 mb-2">Masaj by Melinda</div>
         </div>
@@ -243,7 +244,7 @@ return (
             {isLogin ? 'Autentificare' : 'Înregistrare'}
           </h2>
           <input
-            className="w-full mb-3 p-2 rounded bg-gray-700 text-white disabled:opacity-50"
+            className="w-full mb-3 p-2 rounded bg-gray-700 text-white disabled:opacity-50 min-h-[44px] text-base"
             type="email"
             placeholder="Email"
             value={email}
@@ -253,7 +254,7 @@ return (
           />
           <div className="relative mb-3">
             <input
-              className="w-full p-2 rounded bg-gray-700 text-white disabled:opacity-50 pr-10"
+              className="w-full p-2 rounded bg-gray-700 text-white disabled:opacity-50 pr-10 min-h-[44px] text-base"
               type={showPassword ? 'text' : 'password'}
               placeholder="Parolă"
               value={password}
@@ -275,7 +276,7 @@ return (
           {!isLogin && (
             <>
               <input
-                className="w-full mb-3 p-2 rounded bg-gray-700 text-white disabled:opacity-50"
+                className="w-full mb-3 p-2 rounded bg-gray-700 text-white disabled:opacity-50 min-h-[44px] text-base"
                 type="text"
                 placeholder="Prenume"
                 value={prenume}
@@ -284,7 +285,7 @@ return (
                 disabled={isBanned}
               />
               <input
-                className="w-full mb-3 p-2 rounded bg-gray-700 text-white disabled:opacity-50"
+                className="w-full mb-3 p-2 rounded bg-gray-700 text-white disabled:opacity-50 min-h-[44px] text-base"
                 type="text"
                 placeholder="Nume"
                 value={nume}
@@ -297,7 +298,7 @@ return (
           {error && <div className="text-red-500 mb-3">{error}</div>}
           {success && <div className="text-green-500 mb-3">{success}</div>}
           <button
-            className="w-full bg-violet-600 hover:bg-violet-700 text-white py-2 rounded font-semibold disabled:bg-violet-800"
+            className="w-full bg-violet-600 hover:bg-violet-700 text-white py-2 rounded font-semibold disabled:bg-violet-800 min-h-[48px]"
             type="submit"
             disabled={loading || isBanned || isRateLimited}
           >
@@ -312,7 +313,7 @@ return (
           </button>
           <button
             type="button"
-            className="w-full mt-4 text-sm text-violet-400 underline"
+            className="w-full mt-4 text-sm text-violet-400 underline min-h-[44px] py-2"
             onClick={toggleFormMode}
           >
             {isLogin ? "Nu aveți cont? Înregistrați-vă" : "Aveți deja cont? Autentificați-vă"}
@@ -320,7 +321,7 @@ return (
           {isLogin && (
             <button
               type="button"
-              className="w-full mt-2 text-sm text-violet-400 underline"
+              className="w-full mt-2 text-sm text-violet-400 underline min-h-[44px] py-2"
               onClick={() => navigate('/forgot-password')}
             >
               Ați uitat parola?

@@ -13,7 +13,7 @@ const Footer = () => {
             <ul className="mt-4 flex flex-col gap-2">
               <li className="flex items-center gap-2 text-sm text-violet-400">
                 <Star size={16} />
-                <span>[NUMĂR] ani de experiență</span>
+                <span>10 ani de experiență</span>
               </li>
               <li className="flex items-center gap-2 text-sm text-violet-400">
                 <CheckCircle size={16} />
@@ -42,7 +42,7 @@ const Footer = () => {
           </div>
         </div>
         <div className="border-t border-gray-700 mt-8 pt-6 text-center text-gray-500 text-sm">
-          <p>&copy; {new Date().getFullYear()} Masaj by Melinda. Toate drepturile rezervate.</p>
+          <p>&copy; 2026 Masaj by Melinda. Toate drepturile rezervate.</p>
         </div>
       </div>
     </footer>

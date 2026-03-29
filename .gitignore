@@ -31,6 +31,9 @@ node_modules/
 .vscode
 .env.local
 
+# Supabase
+supabase/.temp
+
 # OS specific
 
 # Task files

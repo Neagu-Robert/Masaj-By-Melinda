@@ -56,7 +56,7 @@ function ProfilePageContent() {
   // Calendar selection state
   const [selectedDay, setSelectedDay] = useState<Date>(() => {
     const d = new Date();
-    d.setHours(0,0,0,0);
+    d.setHours(0, 0, 0, 0);
     return d;
   });
 
@@ -86,7 +86,7 @@ function ProfilePageContent() {
           .select('*')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false });
-        
+
         if (bookingsError) {
           setError('Eroare la preluarea rezervărilor.');
           console.error('Bookings fetch error:', bookingsError);
@@ -109,9 +109,9 @@ function ProfilePageContent() {
         (recurringRoots || []).forEach((b: any) => { serviceTypeByRoot[b.id] = b.service_type; });
 
         if (recurringRootIds.length > 0) {
-        const { data: recInst } = await supabase
-          .from('recurring_bookings')
-          .select('id,booking_id,date,hour,status')
+          const { data: recInst } = await supabase
+            .from('recurring_bookings')
+            .select('id,booking_id,date,hour,status')
             .in('booking_id', recurringRootIds);
           if (isMounted && recInst) {
             setRecurringInstances(
@@ -152,7 +152,7 @@ function ProfilePageContent() {
       });
       return;
     }
-    
+
     setSelectedBooking(booking);
     setIsModalOpen(true);
   };
@@ -177,7 +177,7 @@ function ProfilePageContent() {
           serviceId,
           serviceProvider: 'Melinda',
           bookingDate: instance.date,
-          bookingTime: String(instance.hour).slice(0,5),
+          bookingTime: String(instance.hour).slice(0, 5),
           duration: serviceDetails?.duration || 60,
           price: serviceDetails?.price || 140.0,
           status: 'recurring_instance_cancelled',
@@ -360,7 +360,7 @@ function ProfilePageContent() {
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
-      navigate('/');
+      navigate('/home');
     } catch (error) {
       console.error('Error signing out:', error);
     }
@@ -437,8 +437,8 @@ function ProfilePageContent() {
   // Only mark as green if the instance status is TRUE
   recurringInstances.forEach((r) => {
     const d = new Date(r.date);
-    d.setHours(0,0,0,0);
-    const key = d.toISOString().slice(0,10);
+    d.setHours(0, 0, 0, 0);
+    const key = d.toISOString().slice(0, 10);
     if (r.status) {
       recurringSet.add(key);
     }
@@ -448,7 +448,7 @@ function ProfilePageContent() {
   bookings.forEach((b: any) => {
     const d = new Date(b.booking_date);
     d.setHours(0, 0, 0, 0);
-    const key = d.toISOString().slice(0,10);
+    const key = d.toISOString().slice(0, 10);
     if (!b.recurring) {
       if (d < todayMidnight) pastBookedSet.add(key);
       else if (d > todayMidnight) futureBookedSet.add(key);
@@ -464,18 +464,16 @@ function ProfilePageContent() {
         <nav className="flex flex-col space-y-4">
           <button
             onClick={() => setActiveView('details')}
-            className={`flex items-center space-x-3 text-lg rounded-md p-2 transition-colors ${
-              activeView === 'details' ? 'bg-violet-600/50 text-white' : 'hover:bg-gray-700'
-            }`}
+            className={`flex items-center space-x-3 text-lg rounded-md p-2 transition-colors ${activeView === 'details' ? 'bg-violet-600/50 text-white' : 'hover:bg-gray-700'
+              }`}
           >
             <User />
             <span>Detalii Profil</span>
           </button>
           <button
             onClick={() => setActiveView('bookings')}
-            className={`flex items-center space-x-3 text-lg rounded-md p-2 transition-colors ${
-              activeView === 'bookings' ? 'bg-violet-600/50 text-white' : 'hover:bg-gray-700'
-            }`}
+            className={`flex items-center space-x-3 text-lg rounded-md p-2 transition-colors ${activeView === 'bookings' ? 'bg-violet-600/50 text-white' : 'hover:bg-gray-700'
+              }`}
           >
             <Calendar />
             <span>Rezervări</span>
@@ -520,11 +518,10 @@ function ProfilePageContent() {
               <div className="space-y-1">
                 <Button
                   variant="ghost"
-                  className={`w-full justify-start h-12 text-left ${
-                    activeView === 'details'
+                  className={`w-full justify-start h-12 text-left ${activeView === 'details'
                       ? "bg-violet-400/20 text-violet-300"
                       : "text-gray-300 hover:text-white hover:bg-white/10"
-                  }`}
+                    }`}
                   onClick={() => handleViewChange('details')}
                 >
                   <User className="mr-3 h-5 w-5" />
@@ -532,11 +529,10 @@ function ProfilePageContent() {
                 </Button>
                 <Button
                   variant="ghost"
-                  className={`w-full justify-start h-12 text-left ${
-                    activeView === 'bookings'
+                  className={`w-full justify-start h-12 text-left ${activeView === 'bookings'
                       ? "bg-violet-400/20 text-violet-300"
                       : "text-gray-300 hover:text-white hover:bg-white/10"
-                  }`}
+                    }`}
                   onClick={() => handleViewChange('bookings')}
                 >
                   <Calendar className="mr-3 h-5 w-5" />
@@ -559,7 +555,7 @@ function ProfilePageContent() {
 
         <main className="flex-1 p-4 md:p-8 overflow-y-auto">
           {error && <div className="bg-red-900/50 text-red-300 p-4 rounded-md mb-6 md:mb-8">{error}</div>}
-          
+
           {activeView === 'details' && (
             <section id="profile-details">
               <h2 className="text-xl md:text-3xl font-bold mb-4 md:mb-6 text-violet-300 border-b border-gray-700 pb-2 flex items-center justify-between">
@@ -588,11 +584,10 @@ function ProfilePageContent() {
                   <div className="flex items-center space-x-2">
                     <p className="text-base md:text-lg mt-1">{profile.phone || 'Necompletat'}</p>
                     {profile.phone && (
-                      <span className={`text-xs font-medium px-2 py-1 rounded-full ${
-                        profile.phone_verified 
-                          ? 'bg-green-500/20 text-green-300' 
+                      <span className={`text-xs font-medium px-2 py-1 rounded-full ${profile.phone_verified
+                          ? 'bg-green-500/20 text-green-300'
                           : 'bg-yellow-500/20 text-yellow-300'
-                      }`}>
+                        }`}>
                         {profile.phone_verified ? 'Verificat' : 'Neverificat'}
                       </span>
                     )}
@@ -603,7 +598,7 @@ function ProfilePageContent() {
                   <p className="text-base md:text-lg mt-1 capitalize">{role === 'customer' ? 'Client' : role}</p>
                 </div>
               </div>
-              
+
               {/* Password Change Section */}
               <div className="bg-gray-800/50 p-4 md:p-6 rounded-lg mb-6">
                 <div className="flex flex-col md:flex-row md:items-center justify-between mb-4">
@@ -620,21 +615,21 @@ function ProfilePageContent() {
                   Păstrați-vă contul în siguranță actualizând periodic parola.
                 </p>
               </div>
-              
+
               {/* Notification Preferences */}
-              <NotificationPreferences 
-                userId={user.id} 
-                userRole={role} 
+              <NotificationPreferences
+                userId={user.id}
+                userRole={role}
               />
               {role === 'admin' && (
                 <div className="bg-blue-900/20 border border-blue-700/50 rounded-lg p-4 mt-4">
                   <p className="text-blue-300 text-sm">
-                    <strong>Notă:</strong> Notificările SMS sunt întotdeauna trimise către administratorul principal indiferent de preferințe. 
+                    <strong>Notă:</strong> Notificările SMS sunt întotdeauna trimise către administratorul principal indiferent de preferințe.
                     Preferințele de email controlează doar notificările prin email.
                   </p>
                 </div>
               )}
-              
+
               <EditProfileModal
                 open={isEditProfileOpen}
                 onClose={() => setIsEditProfileOpen(false)}
@@ -657,17 +652,17 @@ function ProfilePageContent() {
                       variant: "destructive",
                     });
                     // Fallback to optimistic update, but only for non-verification fields
-                    setProfile((prev) => ({ 
-                      ...prev, 
-                      full_name: newName, 
-                      phone: newPhone 
+                    setProfile((prev) => ({
+                      ...prev,
+                      full_name: newName,
+                      phone: newPhone
                     }));
                   } else if (refreshedProfile) {
                     setProfile(refreshedProfile);
                   }
                 }}
               />
-              
+
               <PasswordChangeModal
                 open={isPasswordChangeOpen}
                 onClose={() => setIsPasswordChangeOpen(false)}
@@ -678,7 +673,7 @@ function ProfilePageContent() {
           {activeView === 'bookings' && (
             <section id="booking-history">
               <h2 className="text-xl md:text-3xl font-bold mb-4 md:mb-6 text-violet-300 border-b border-gray-700 pb-2">Rezervări</h2>
-              
+
               {/* Pending Requests Section */}
               {pendingBookings.length > 0 && (
                 <Card className="bg-gray-800/50 border-yellow-500/50 mb-6">
@@ -712,25 +707,25 @@ function ProfilePageContent() {
 
               {/* Side-by-side layout: Calendar on left, Bookings on right */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                               {/* Calendar view - Left side */}
-               <div className="bg-gray-800/50 rounded-lg p-4">
-                 <div className="mb-3 text-gray-300">Selectați o dată pentru a vizualiza rezervările.</div>
-                 <div className="flex justify-center">
-                   <UICalendar
-                     mode="single"
-                     selected={selectedDay}
-                     onSelect={(d) => { if (d) { d.setHours(0,0,0,0); setSelectedDay(d); } }}
+                {/* Calendar view - Left side */}
+                <div className="bg-gray-800/50 rounded-lg p-4">
+                  <div className="mb-3 text-gray-300">Selectați o dată pentru a vizualiza rezervările.</div>
+                  <div className="flex justify-center">
+                    <UICalendar
+                      mode="single"
+                      selected={selectedDay}
+                      onSelect={(d) => { if (d) { d.setHours(0, 0, 0, 0); setSelectedDay(d); } }}
                       className="rounded-md border border-gray-600 bg-gray-800 text-violet-300 p-3 md:p-4 max-w-[300px] md:max-w-none"
-                     classNames={{
+                      classNames={{
                         day: "h-10 w-10 md:h-14 md:w-14 p-0 font-normal aria-selected:opacity-100 rounded-lg transition-all duration-200 hover:scale-110 hover:bg-violet-500/20 cursor-pointer",
                         head_cell: "text-muted-foreground rounded-md w-10 md:w-14 font-normal text-xs md:text-sm",
                         cell: "h-10 w-10 md:h-14 md:w-14 text-center text-xs md:text-sm p-0 relative",
-                     }}
+                      }}
                       modifiers={{
                         today: (date) => date.toDateString() === todayMidnight.toDateString(),
-                        recurring: (date) => recurringSet.has(date.toISOString().slice(0,10)),
-                        pastBooked: (date) => pastBookedSet.has(date.toISOString().slice(0,10)),
-                        futureBooked: (date) => futureBookedSet.has(date.toISOString().slice(0,10))
+                        recurring: (date) => recurringSet.has(date.toISOString().slice(0, 10)),
+                        pastBooked: (date) => pastBookedSet.has(date.toISOString().slice(0, 10)),
+                        futureBooked: (date) => futureBookedSet.has(date.toISOString().slice(0, 10))
                       }}
                       modifiersClassNames={{
                         today: "bg-blue-600 text-white rounded-lg shadow-lg",

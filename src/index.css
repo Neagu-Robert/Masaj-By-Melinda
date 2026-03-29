@@ -100,6 +100,14 @@
     @apply bg-background text-foreground;
   }
 
+  html {
+    touch-action: manipulation;
+  }
+
+  input, select, textarea {
+    font-size: 16px;
+  }
+
   /* Custom scrollbar styling for dark theme */
   * {
     scrollbar-width: thin;

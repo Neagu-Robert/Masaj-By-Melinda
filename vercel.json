@@ -7,6 +7,11 @@
   },
   "routes": [
     {
+      "src": "/home",
+      "status": 301,
+      "headers": { "Location": "/" }
+    },
+    {
       "src": "/assets/(.*)",
       "dest": "/assets/$1"
     },
@@ -19,12 +24,28 @@
       "dest": "/favicon.ico"
     },
     {
+      "src": "/sitemap.xml",
+      "dest": "/sitemap.xml"
+    },
+    {
       "src": "/robots.txt",
       "dest": "/robots.txt"
+    },
+    {
+      "src": "^/$",
+      "dest": "/index.html"
+    },
+    {
+      "src": "^/book$",
+      "dest": "/book/index.html"
+    },
+    {
+      "src": "^/pachete$",
+      "dest": "/pachete/index.html"
     },
     {
       "src": "/(.*)",
       "dest": "/__spa-fallback.html"
     }
   ]
-} 
+}

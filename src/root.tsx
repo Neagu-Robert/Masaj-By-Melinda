@@ -12,13 +12,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { ErrorBoundary } from "./components/ErrorBoundary";
-import type { MetaFunction } from "react-router";
 
-export const meta: MetaFunction = () => {
-  return [
-    { name: "robots", content: "noindex, nofollow" }
-  ];
-};
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { ServicesProvider } from "./contexts/ServicesContext";
 import { PhoneVerificationProvider } from "./contexts/PhoneVerificationContext";
@@ -129,50 +123,49 @@ function AppContent() {
   );
 }
 
-export default function Root() {
+/**
+ * Single stable document shell used by React Router v7 to wrap both
+ * the default Root component and HydrateFallback, ensuring identical
+ * server/client markup and preventing hydration mismatches.
+ */
+export function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ro">
-      <head>
+    <html lang="ro" suppressHydrationWarning>
+      <head suppressHydrationWarning>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <Meta />
         <Links />
       </head>
       <body>
-        <React.StrictMode>
-          <AuthProvider>
-            <ServicesProvider>
-              <PhoneVerificationProvider>
-                <AppContent />
-              </PhoneVerificationProvider>
-            </ServicesProvider>
-          </AuthProvider>
-          <ScrollRestoration />
-          <Scripts />
-        </React.StrictMode>
+        {children}
+        <ScrollRestoration />
+        <Scripts />
       </body>
     </html>
   );
 }
 
+export default function Root() {
+  return (
+    <React.StrictMode>
+      <AuthProvider>
+        <ServicesProvider>
+          <PhoneVerificationProvider>
+            <AppContent />
+          </PhoneVerificationProvider>
+        </ServicesProvider>
+      </AuthProvider>
+    </React.StrictMode>
+  );
+}
+
 export function HydrateFallback() {
   return (
-    <html lang="ro">
-      <head>
-        <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>Loading...</title>
-        <Meta />
-        <Links />
-      </head>
-      <body>
-        <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-violet-600" role="status">
-            <span className="sr-only">Se încarcă...</span>
-          </div>
-        </div>
-        <Scripts />
-      </body>
-    </html>
+    <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+      <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-violet-600" role="status">
+        <span className="sr-only">Se încarcă...</span>
+      </div>
+    </div>
   );
 }

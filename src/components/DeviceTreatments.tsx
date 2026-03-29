@@ -50,7 +50,7 @@ const DeviceTreatments = () => {
   if (loading) {
     return (
       <div className="container mx-auto px-4">
-        <h3 className="text-2xl font-semibold text-center text-white mb-8">Tehnologie Modernă pentru Remodelare Corporală</h3>
+        <h3 className="text-xl md:text-2xl font-semibold text-center text-white mb-8">Tehnologie Modernă pentru Remodelare Corporală</h3>
         <div className="grid md:grid-cols-2 gap-8">
           {[...Array(4)].map((_, index) => (
             <Card 
@@ -82,7 +82,7 @@ const DeviceTreatments = () => {
   if (error) {
     return (
       <div className="container mx-auto px-4">
-        <h3 className="text-2xl font-semibold text-center text-white mb-8">Tehnologie Modernă pentru Remodelare Corporală</h3>
+        <h3 className="text-xl md:text-2xl font-semibold text-center text-white mb-8">Tehnologie Modernă pentru Remodelare Corporală</h3>
         <div className="text-center text-red-400">
           Eroare la încărcarea serviciilor: {error}
         </div>
@@ -92,7 +92,7 @@ const DeviceTreatments = () => {
 
   return (
     <div className="container mx-auto px-4">
-      <h3 className="text-2xl font-semibold text-center text-white mb-8">Tehnologie Modernă pentru Remodelare Corporală</h3>
+      <h3 className="text-xl md:text-2xl font-semibold text-center text-white mb-8">Tehnologie Modernă pentru Remodelare Corporală</h3>
       <div className="grid md:grid-cols-2 gap-8">
         {deviceServices.map((service, index) => {
           const image = deviceTreatmentImages[service.name as keyof typeof deviceTreatmentImages];
@@ -108,12 +108,12 @@ const DeviceTreatments = () => {
               }`}
             >
               <CardHeader>
-                <CardTitle className="text-violet-400">{service.name}</CardTitle>
+                <CardTitle className="text-violet-400 text-base md:text-xl">{service.name}</CardTitle>
               </CardHeader>
               <CardContent className="flex flex-col md:flex-row gap-6">
                 <div className="md:w-1/3">
                   {image && (
-                    <img src={image} alt={service.name} className="w-full h-auto rounded-lg" />
+                    <img src={image} alt={service.name} className="w-full h-auto aspect-video md:aspect-auto object-cover rounded-lg" />
                   )}
                 </div>
                 <div className="md:w-2/3">
@@ -123,10 +123,10 @@ const DeviceTreatments = () => {
                     ))}
                   </ul>
                   <div className="mt-4 pt-4 border-t border-gray-600">
-                    <p className="text-lg text-gray-300">
+                    <p className="text-base md:text-lg text-gray-300">
                       <strong>Durată:</strong> {service.duration} min
                     </p>
-                    <p className="text-2xl font-semibold text-violet-400">
+                    <p className="text-xl md:text-2xl font-semibold text-violet-400">
                       {service.price} RON
                     </p>
                     <div className="mt-3 flex justify-end">

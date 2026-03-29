@@ -12,7 +12,7 @@ const PachetePage = () => {
       
       <div className="pt-24 pb-20">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-semibold text-center text-white">Pachete Speciale</h2>
+          <h2 className="text-2xl md:text-3xl font-semibold text-center text-white">Pachete Speciale</h2>
           
           {/* Contact message */}
           <div className="my-12 max-w-3xl mx-auto text-center p-6 bg-gray-800 rounded-lg border border-[#9b87f5]/30 shadow-sm">
@@ -31,8 +31,8 @@ const PachetePage = () => {
               
               <a href="mailto:melindaneagu22@gmail.com" className="cursor-pointer hover:shadow-lg hover:scale-105 transition-all">
                 <div className="flex items-center gap-3 bg-gray-700 px-6 py-3 rounded-full shadow-sm border border-[#9b87f5]/20 hover:shadow-md transition-shadow">
-                  <Mail className="text-[#9b87f5] w-5 h-5" />
-                  <span className="text-white font-medium">melindaneagu22@gmail.com</span>
+                  <Mail className="text-[#9b87f5] w-5 h-5 flex-shrink-0" />
+                  <span className="text-white font-medium break-all">melindaneagu22@gmail.com</span>
                 </div>
               </a>
             </div>
@@ -52,7 +52,7 @@ const PachetePage = () => {
                 <CardContent className="p-6">
                   <div className="flex items-center mb-4">
                     <Package className="w-6 h-6 text-[#9b87f5] mr-2" />
-                    <h3 className="text-xl font-semibold text-white">Pachet loialitate</h3>
+                    <h3 className="text-lg md:text-xl font-semibold text-white">Pachet loialitate</h3>
                   </div>
                   <p className="text-gray-300">
                     10 masaje + 1 gratis (pot fi folosite de mai multe persoane /prieteni/ membrii ai familiei)
@@ -74,7 +74,7 @@ const PachetePage = () => {
                 <CardContent className="p-6">
                   <div className="flex items-center mb-4">
                     <Package className="w-6 h-6 text-[#9b87f5] mr-2" />
-                    <h3 className="text-xl font-semibold text-white">Remodelare corporala</h3>
+                    <h3 className="text-lg md:text-xl font-semibold text-white">Remodelare corporala</h3>
                   </div>
                   <p className="text-gray-300">
                     30 de minute cu un aparat in functie de nevoi + un masaj fie de fermitate/anticelulitic (10 sedinte -950 lei) dupa 2 abonamente primiti un tratament facial antiimbatranire gratuit.
@@ -96,7 +96,7 @@ const PachetePage = () => {
                 <CardContent className="p-6">
                   <div className="flex items-center mb-4">
                     <Package className="w-6 h-6 text-[#9b87f5] mr-2" />
-                    <h3 className="text-xl font-semibold text-white">Impachetari pentru detox/remodelare</h3>
+                    <h3 className="text-lg md:text-xl font-semibold text-white">Impachetari pentru detox/remodelare</h3>
                   </div>
                   <p className="text-gray-300">
                     Impachetari pentru detox/remodelare cu termocuvertura (10 sedinte - 900 de lei) dupa un abonament primiti un masaj facial/reflexo/masaj la spate.
@@ -118,7 +118,7 @@ const PachetePage = () => {
                 <CardContent className="p-6">
                   <div className="flex items-center mb-4">
                     <Gift className="w-6 h-6 text-[#9b87f5] mr-2" />
-                    <h3 className="text-xl font-semibold text-white">Vouchere cadou</h3>
+                    <h3 className="text-lg md:text-xl font-semibold text-white">Vouchere cadou</h3>
                   </div>
                   <p className="text-gray-300">
                     Vouchere valorice ce se pot oferi cadou persoanelor dragi. Cu suma valorica de pe voucher se poate achizitiona orice serviciu din gama noastra. Se plateste la salon cash/card.

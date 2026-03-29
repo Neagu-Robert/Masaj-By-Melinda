@@ -23,24 +23,24 @@ import { FormErrorBoundary } from '@/components/FormErrorBoundary';
 
 const AuthPromptMessage = () => {
   const navigate = useNavigate();
-  
+
   return (
     <Card className="bg-violet-600 border-violet-500 mb-6">
       <CardContent className="p-6 text-center">
         <h2 className="text-xl font-bold text-white mb-4">
-          Pentru a face o rezervare, vă rugăm să vă autentificați
+          Pentru a face o rezervare, vă rugăm să vă creați un cont sau să vă autentificați
         </h2>
-        <div className="flex gap-4 justify-center">
-          <Button 
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
+          <Button
             onClick={() => navigate('/auth?mode=signup')}
-            className="bg-violet-700 hover:bg-violet-800 text-white"
+            className="w-full sm:w-auto bg-violet-700 hover:bg-violet-800 text-white"
           >
-            Înregistrare
+            Creează un cont
           </Button>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={() => navigate('/auth?mode=login')}
-            className="bg-white text-violet-700 border-white hover:bg-gray-100"
+            className="w-full sm:w-auto bg-white text-violet-700 border-white hover:bg-gray-100"
           >
             Autentificare
           </Button>
@@ -184,7 +184,7 @@ const BookingPageContent = () => {
       isMounted = false;
     };
   }, [phoneNumberValue, user, profileInfo, isVerified]);
-  
+
   const handleVerifyPhone = async () => {
     const phoneNumber = form.getValues('phoneNumber');
     const success = await startVerification(phoneNumber, user?.id);
@@ -366,14 +366,14 @@ const BookingPageContent = () => {
                   isVerifyPending={verificationStatus === 'pending'}
                   isVerifyThrottled={isVerifyThrottled}
                 />
-                
+
                 {/* 2. Service Selection */}
-                <ServiceSelection 
-                  form={form} 
+                <ServiceSelection
+                  form={form}
                   setSelectedService={setSelectedService}
                   disabled={!user}
                 />
-                
+
                 {/* 3. Date and Time Selection */}
                 <DateTimeSelection
                   requestedDate={requestedDate}
@@ -382,12 +382,12 @@ const BookingPageContent = () => {
                   setRequestedTime={setRequestedTime}
                   disabled={!user}
                 />
-                
+
                 <div className="flex justify-center">
                   <Button
                     type="submit"
                     disabled={isSubmitting || !requestedDate.trim() || !selectedService || !user}
-                    className="bg-violet-600 hover:bg-violet-700 text-white px-8 py-3 text-lg font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full sm:w-auto bg-violet-600 hover:bg-violet-700 text-white px-8 py-3 text-lg font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isSubmitting ? 'Se procesează...' : 'Trimite cererea'}
                   </Button>

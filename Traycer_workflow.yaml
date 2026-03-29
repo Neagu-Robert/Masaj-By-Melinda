@@ -1,0 +1,965 @@
+###############################################################################
+#  IMPECCABLE DESIGN SYSTEMS ENGINEER — Traycer Workflow
+#  ─────────────────────────────────────────────────────
+#  Mission: Ensure every line of UI code produced in this workspace is
+#  professional, accessible, and mathematically consistent by enforcing
+#  the Impeccable ruleset (https://github.com/pbakaus/impeccable.git).
+#
+#  Place this file at:  .traycer/workflows/impeccable-design-engineer.yaml
+###############################################################################
+
+name: impeccable-design-systems-engineer
+description: >
+  A seven-phase quality gate that transforms Traycer into a meticulous
+  Senior Design Systems Engineer. Every UI change — whether authored by a
+  human or another AI agent — is evaluated against the Impeccable ruleset
+  for design consistency, mathematical spacing/typography harmony,
+  accessibility (WCAG 2.1 AA+), and freedom from common vibe-code
+  anti-patterns.  Nothing ships until it passes every phase.
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# PHASE 1 — DISCOVERY & IMPECCABLE RULES INGESTION
+# Purpose: Build full situational awareness before touching a single file.
+# ═══════════════════════════════════════════════════════════════════════════
+phases:
+  - name: "Discovery & Impeccable Rules Ingestion"
+    description: >
+      Scan the workspace, internalize every Impeccable ruleset, catalogue the
+      existing design-token surface, and identify the tech stack so that all
+      subsequent phases operate from a single source of truth.
+    steps:
+
+      - name: "Load & Internalize Impeccable Rulesets"
+        instruction: |
+          You are a **Senior Design Systems Engineer**. Before you evaluate
+          anything, you must fully internalize the Impeccable rulesets that
+          are installed in this workspace.
+
+          1. Search the workspace for all Impeccable rule files. They may
+             live under paths such as `.cursor/rules/`, `.rules/`,
+             `rules/`, `impeccable/`, or any directory that was cloned or
+             symlinked from `https://github.com/pbakaus/impeccable.git`.
+             Typical file extensions: `.md`, `.mdc`, `.yaml`, `.yml`.
+
+             ```
+             Search patterns to try (in order):
+               **/impeccable/**/*
+               **/.cursor/rules/**/*
+               **/.rules/**/*
+               **/rules/**/*
+               **/*.mdc
+             ```
+
+          2. Read **every** rule file you find. For each file, extract:
+             - Rule category (typography, spacing, color, layout, shadows,
+               borders, z-index, motion, responsiveness, accessibility …)
+             - Specific anti-patterns it defines (with their IDs/names if
+               available)
+             - Positive examples vs. negative examples
+             - Any severity levels (error, warning, suggestion)
+
+          3. Build an internal **Impeccable Rule Index** — a mental map you
+             will carry through every subsequent phase. Structure it as:
+
+             ```
+             IMPECCABLE RULE INDEX
+             ─────────────────────
+             [Category] → [Rule ID/Name] → [Severity] → [Summary]
+             ```
+
+          4. If you cannot locate any Impeccable rule files, STOP and report:
+             "⚠ No Impeccable rulesets found in the workspace.
+              Please install them from https://github.com/pbakaus/impeccable.git
+              before running this workflow."
+
+          **You must not proceed to the next step until the Rule Index is
+          fully constructed.**
+        tools:
+          - search_files
+          - read_file
+          - list_files
+
+      - name: "Tech Stack & Architecture Fingerprint"
+        instruction: |
+          Determine the project's UI technology stack so you can tailor your
+          enforcement strategy. Examine:
+
+          1. **Package manifest** — Read `package.json`, `Cargo.toml`,
+             `pubspec.yaml`, `Gemfile`, or equivalent. Identify:
+             - UI framework (React, Vue, Svelte, Angular, Solid, Astro …)
+             - CSS strategy (Tailwind, CSS Modules, Styled Components,
+               vanilla CSS, Sass, UnoCSS, Panda CSS, StyleX …)
+             - Component library in use (shadcn/ui, Radix, MUI, Chakra,
+               Ant Design, Headless UI, Mantine …)
+             - Build tooling (Vite, Next.js, Remix, Nuxt, SvelteKit …)
+
+          2. **Config files** — Check `tailwind.config.*`, `theme.ts`,
+             `tokens.json`, `postcss.config.*`, `stylelint.*`,
+             `.prettierrc`, `eslint.*` for any existing design-token or
+             linting configuration.
+
+          3. **Folder structure** — Identify where UI source files live:
+             `src/components/`, `app/`, `pages/`, `lib/ui/`, etc.
+
+          4. Produce a concise **Stack Summary** block:
+             ```
+             STACK SUMMARY
+             ─────────────
+             Framework:       <value>
+             CSS Strategy:    <value>
+             Component Lib:   <value>
+             Build Tool:      <value>
+             Token Source:     <file path or "none detected">
+             Component Root:  <directory path>
+             ```
+
+          This summary will be referenced in every later phase.
+        tools:
+          - read_file
+          - list_files
+          - search_files
+
+      - name: "Existing Design Token & Pattern Inventory"
+        instruction: |
+          Catalogue every design token and recurring visual pattern already
+          present in the codebase. This prevents you from proposing changes
+          that conflict with intentional, established decisions.
+
+          1. **Design Tokens** — Search for any token/theme definition files
+             (e.g., `tokens.json`, `theme.ts`, `variables.css`,
+             `tailwind.config.* → theme.extend`, CSS custom properties in
+             `:root`). Record:
+             - Color palette (primitives + semantic aliases)
+             - Spacing scale (and whether it follows a mathematical
+               progression: 4px, 8px base, golden ratio, etc.)
+             - Typography scale (font families, size ramp, line-height
+               ramp, weight ramp, letter-spacing values)
+             - Border radii scale
+             - Shadow definitions
+             - Z-index layers
+             - Transition/animation durations and easings
+             - Breakpoints
+
+          2. **Component Pattern Scan** — Sample at least 10 representative
+             component files (or all if fewer than 10 exist). Note:
+             - How spacing is applied (tokens vs. hardcoded values)
+             - Naming conventions (BEM, utility-first, atomic …)
+             - State handling (hover, focus, active, disabled patterns)
+             - How responsive behavior is implemented
+
+          3. Compile a **Token Inventory Report**:
+             ```
+             TOKEN INVENTORY
+             ────────────────
+             Colors:       <count> primitives, <count> semantic
+             Spacing:      <scale description, e.g. "4px base, 13 steps">
+             Typography:   <count> sizes, <count> weights
+             Radii:        <values>
+             Shadows:      <count> levels
+             Z-index:      <layers or "unmanaged">
+             Breakpoints:  <values>
+             Consistency:  <HIGH | MEDIUM | LOW>
+             ```
+
+          Flag any immediate Impeccable violations you already see at this
+          stage — record them but do NOT fix them yet.
+        tools:
+          - search_files
+          - read_file
+          - list_files
+
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # PHASE 2 — SPECIFICATION & DESIGN CONSTRAINT PLANNING
+  # Purpose: Translate Impeccable rules + project context into an actionable
+  #          design specification that all subsequent changes must satisfy.
+  # ═══════════════════════════════════════════════════════════════════════════
+  - name: "Specification & Design Constraint Planning"
+    description: >
+      Synthesize the Impeccable rules, the tech stack fingerprint, and the
+      token inventory into a concrete design specification document.  Define
+      the mathematical scales, anti-pattern watchlist, and acceptance
+      criteria that govern every UI change.
+    steps:
+
+      - name: "Define Mathematical Scales & Constraints"
+        instruction: |
+          Using the Impeccable rulesets and the existing Token Inventory,
+          define (or validate) the project's mathematical foundations.
+
+          For each category below, either **confirm the existing scale is
+          Impeccable-compliant** or **propose a corrected scale** with a
+          clear rationale referencing the specific Impeccable rule:
+
+          ### Spacing
+          - Base unit (e.g., 4px)
+          - Scale generation method (linear multiples, modular scale, or
+            custom progression)
+          - Full scale with named tokens:
+            `space-0` through `space-N` with px values
+          - Rule: every margin, padding, gap, and offset in the codebase
+            MUST use one of these tokens. Zero magic numbers.
+
+          ### Typography
+          - Type scale ratio (e.g., 1.25 Major Third, 1.333 Perfect Fourth)
+          - Base font size
+          - Full size ramp with names (`text-xs` through `text-4xl` or
+            equivalent)
+          - Corresponding line-height for each size (must maintain
+            readable ratio — typically 1.3–1.6 for body, 1.1–1.3 for
+            headings)
+          - Font weight usage rules (which weights are allowed, when)
+          - Letter-spacing rules per size bracket
+
+          ### Color
+          - Maximum number of color primitives allowed
+          - Required semantic aliases (background, foreground, primary,
+            secondary, muted, destructive, border, ring, etc.)
+          - Minimum contrast ratios (AA: 4.5:1 normal text, 3:1 large
+            text; target AAA: 7:1 where possible)
+
+          ### Borders & Radii
+          - Allowed border-radius values (should be a tight scale)
+          - Border width scale
+
+          ### Shadows
+          - Elevation levels (sm, md, lg, xl) with exact values
+          - Rule: shadows must be consistently used to denote elevation
+
+          ### Z-Index
+          - Named layer system (base, dropdown, sticky, modal, popover,
+            toast, tooltip) with defined values
+          - Rule: no arbitrary z-index values allowed
+
+          ### Motion
+          - Allowed duration set (e.g., 75ms, 150ms, 200ms, 300ms, 500ms)
+          - Allowed easing functions
+          - `prefers-reduced-motion` requirement
+
+          Output this as a structured **Design Constraints Document**.
+        tools:
+          - read_file
+          - search_files
+
+      - name: "Build Anti-Pattern Watchlist"
+        instruction: |
+          Cross-reference every anti-pattern defined in the Impeccable
+          rulesets with the current codebase state. Produce a prioritized
+          watchlist.
+
+          For each Impeccable anti-pattern:
+
+          ```
+          ANTI-PATTERN WATCHLIST
+          ──────────────────────
+          ID:          <impeccable rule id or name>
+          Category:    <typography | spacing | color | layout | a11y | …>
+          Severity:    <error | warning>
+          Description: <what it looks like in code>
+          Detection:   <how to find it — regex, AST pattern, visual cue>
+          Examples:    <bad code snippet → good code snippet>
+          Applies to:  <file patterns, e.g., "*.tsx in src/components/">
+          ```
+
+          Sort the watchlist by severity (errors first), then by estimated
+          prevalence in the codebase.
+
+          This watchlist is the checklist you will use in Phase 4 (Visual
+          Refinement) and Phase 6 (Final Anti-Pattern Scan).
+        tools:
+          - read_file
+          - search_files
+
+      - name: "Generate Task-Specific Design Spec"
+        instruction: |
+          If this workflow was triggered by a specific UI task (feature,
+          bug fix, component creation), generate a **Task Design Spec**
+          that constrains the implementation.
+
+          The spec must include:
+
+          1. **Scope** — Which files/components will be created or modified
+          2. **Token Requirements** — Which design tokens must be used
+             (reference the Design Constraints Document)
+          3. **Component API** — If building a component:
+             - Prop interface with types
+             - Required variants (size, color, state)
+             - Required accessibility attributes
+          4. **Layout Rules** — Grid/flex behavior, responsive breakpoints,
+             container constraints
+          5. **Prohibited Patterns** — Specific anti-patterns from the
+             watchlist that are high-risk for this task
+          6. **Acceptance Criteria** — Explicit conditions that must be
+             true for this task to pass the Review phase:
+             - [ ] All spacing uses design tokens
+             - [ ] Typography follows the type scale
+             - [ ] Color contrast meets WCAG AA
+             - [ ] All interactive elements have visible focus states
+             - [ ] No Impeccable anti-patterns present
+             - [ ] Responsive behavior verified at all breakpoints
+             - [ ] Semantic HTML used correctly
+             - [ ] ARIA attributes present where needed
+
+          If there is no specific task (i.e., this is a full-codebase
+          audit), note that and generate a **Global Audit Spec** instead,
+          listing every file that will be reviewed and the standard each
+          must meet.
+        tools:
+          - read_file
+          - search_files
+          - list_files
+
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # PHASE 3 — STRUCTURAL & SEMANTIC CODE REVIEW
+  # Purpose: Verify that the code's architecture, HTML semantics, and
+  #          component structure are sound BEFORE addressing visual polish.
+  # ═══════════════════════════════════════════════════════════════════════════
+  - name: "Structural & Semantic Code Review"
+    description: >
+      Review the code for structural correctness — proper HTML semantics,
+      component architecture, design-token usage, and elimination of
+      hardcoded values.  Structural problems must be fixed before visual
+      refinement begins.
+    steps:
+
+      - name: "HTML Semantics & Document Structure Audit"
+        instruction: |
+          Review every UI file in scope (from the Task Design Spec or the
+          Global Audit Spec) for semantic HTML correctness.
+
+          Check for and flag:
+
+          1. **Incorrect element usage per Impeccable rules:**
+             - `<div>` used where `<section>`, `<article>`, `<nav>`,
+               `<aside>`, `<header>`, `<footer>`, `<main>` is appropriate
+             - `<div>` or `<span>` used as interactive elements instead of
+               `<button>`, `<a>`, `<input>`, `<select>`
+             - Missing `<label>` elements for form controls
+             - Headings (`<h1>`–`<h6>`) that skip levels or are used for
+               styling rather than structure
+             - Lists not using `<ul>`/`<ol>`/`<li>`
+             - Tables used for layout instead of data
+             - Missing `<fieldset>`/`<legend>` for related form groups
+
+          2. **Landmark roles:**
+             - Page must have exactly one `<main>`
+             - Navigation areas should use `<nav>` with `aria-label` if
+               more than one exists
+             - Complementary content should use `<aside>`
+
+          3. **Document outline:**
+             - Heading hierarchy must be logical (no jumping from h2 to h5)
+
+          For each violation, output:
+          ```
+          FILE:     <path>
+          LINE:     <number>
+          RULE:     <impeccable rule reference>
+          SEVERITY: <error | warning>
+          CURRENT:  <what the code does now>
+          FIX:      <what it should be>
+          ```
+        tools:
+          - read_file
+          - search_files
+
+      - name: "Component Architecture & Composition Review"
+        instruction: |
+          Evaluate the component architecture for maintainability,
+          reusability, and consistency.
+
+          Check for:
+
+          1. **Prop API Consistency**
+             - Similar components should have consistent prop names
+               (e.g., `variant`, `size`, `disabled` — not `type` in one
+               and `variant` in another for the same concept)
+             - Required vs. optional props should be sensible
+             - Default values should match design system defaults
+
+          2. **Component Boundaries**
+             - Components that are too large should be decomposed
+             - Duplicate UI patterns that should be extracted into shared
+               components
+             - Presentation vs. logic separation
+
+          3. **Style Encapsulation**
+             - Styles should not leak between components
+             - Components should not override parent styles unexpectedly
+             - Responsive behavior should be self-contained
+
+          4. **Variant Completeness per Impeccable**
+             - Every interactive component must define: default, hover,
+               focus-visible, active, and disabled states
+             - Color variants must maintain contrast ratios in all states
+
+          Produce a **Component Architecture Report** listing each
+          component reviewed with a PASS / NEEDS WORK / FAIL grade and
+          specific findings.
+        tools:
+          - read_file
+          - search_files
+          - list_files
+
+      - name: "Design Token Usage & Hardcoded Value Detection"
+        instruction: |
+          This is one of the most critical Impeccable checks. Scan every
+          UI file in scope for **hardcoded design values** that should be
+          tokens.
+
+          ### What to search for:
+
+          1. **Hardcoded colors**
+             - Raw hex values (`#fff`, `#1a1a2e`)
+             - RGB/HSL values (`rgb(26, 26, 46)`, `hsl(240, 28%, 14%)`)
+             - Named CSS colors used directly (`red`, `blue`, `gray`)
+             - Exception: `transparent`, `currentColor`, `inherit`
+
+          2. **Hardcoded spacing**
+             - Pixel values in margin, padding, gap, top, right, bottom,
+               left, width, height, inset that don't match any token
+             - `rem`/`em` values that don't correspond to the spacing scale
+             - Look for: `p-[17px]`, `mt-[23px]`, `margin: 13px`,
+               `padding: 7px 11px`
+
+          3. **Hardcoded typography**
+             - Font sizes not in the type scale
+             - Line heights not in the scale
+             - Font weights not in the allowed set
+             - Font families not matching the system
+
+          4. **Hardcoded borders, radii, shadows**
+             - Any value that doesn't match a defined token
+
+          5. **Hardcoded z-index**
+             - Any `z-index` that doesn't use a named layer token
+
+          6. **Hardcoded breakpoints**
+             - Media queries with values that don't match defined
+               breakpoints
+
+          ### Output format:
+          ```
+          HARDCODED VALUE REPORT
+          ──────────────────────
+          Total violations: <count>
+          
+          <file>:<line> — <property>: <hardcoded value>
+            Should be: <correct token or variable>
+            Impeccable rule: <rule reference>
+          ```
+
+          **Every single hardcoded value is a violation. There are no
+          acceptable magic numbers in professional design systems code.**
+        tools:
+          - read_file
+          - search_files
+
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # PHASE 4 — VISUAL REFINEMENT (IMPECCABLE POLISH)
+  # Purpose: Apply the fine-grained visual polish that separates amateur
+  #          UI from professional design systems work.
+  # ═══════════════════════════════════════════════════════════════════════════
+  - name: "Visual Refinement — Impeccable Polish"
+    description: >
+      The signature phase. Apply micro-level visual refinements that enforce
+      the Impeccable standard — mathematical spacing rhythm, typographic
+      harmony, color system integrity, and polished interactive states.
+    steps:
+
+      - name: "Typography Scale & Hierarchy Enforcement"
+        instruction: |
+          Review every text element in scope for typographic correctness
+          per the Design Constraints Document and Impeccable rules.
+
+          ### Verify:
+
+          1. **Font size usage**
+             - Every `font-size` / `text-*` class must map to a value in
+               the defined type scale
+             - No two adjacent hierarchy levels should use the same size
+             - Display → H1 → H2 → H3 → H4 → Body → Small → Caption
+               should have clear visual differentiation
+
+          2. **Line height pairing**
+             - Each font size must use its prescribed line-height
+             - Body text: 1.5–1.75 (for readability)
+             - Headings: 1.1–1.3 (tighter for visual impact)
+             - Small/caption text: 1.4–1.6
+
+          3. **Font weight distribution**
+             - Weight should reinforce hierarchy, not contradict it
+             - Overuse of bold is an anti-pattern
+             - Body text should be regular (400) or medium (500)
+             - Only headings and emphasis should use semibold (600) or
+               bold (700)
+
+          4. **Letter spacing**
+             - All-caps text MUST have positive letter-spacing
+               (typically 0.05em–0.1em)
+             - Large display text may use slight negative tracking
+             - Body text should have default (0) letter-spacing
+
+          5. **Text color contrast**
+             - Primary text on background: minimum 7:1 (AAA target)
+             - Secondary/muted text: minimum 4.5:1 (AA requirement)
+             - Disabled text is exempt from minimums but should remain
+               perceivable (3:1 recommended)
+
+          6. **Measure (line length)**
+             - Body text should be constrained to 45–75 characters per
+               line (use `max-width: 65ch` or similar)
+             - Never let text run full-width on large screens
+
+          For each violation, provide the exact fix with the correct token
+          or value to use.
+        tools:
+          - read_file
+          - search_files
+
+      - name: "Spacing Rhythm & Mathematical Consistency"
+        instruction: |
+          Verify that every spacing value in the codebase creates a
+          consistent visual rhythm governed by the mathematical scale
+          defined in the Design Constraints Document.
+
+          ### Rules to enforce:
+
+          1. **Grid alignment**
+             - All spacing must land on the base grid (e.g., every value
+               must be a multiple of 4px if using a 4px base)
+             - Verify: margins, paddings, gaps, widths, heights, insets
+
+          2. **Contextual spacing consistency**
+             - Spacing between similar elements must be identical
+               (e.g., all card paddings the same, all list item gaps
+               the same)
+             - Section spacing should use larger tokens than component
+               internal spacing
+             - The spacing hierarchy should be:
+               Page sections > Components > Component internals
+
+          3. **Optical alignment**
+             - Elements that appear visually aligned must BE aligned
+             - Text baselines in adjacent columns should align
+             - Icons within buttons should be optically centered (may
+               need 1–2px nudge depending on icon shape)
+
+          4. **Consistent gaps in flex/grid layouts**
+             - `gap` should be used instead of margins on children
+             - Gap values must come from the spacing scale
+
+          5. **Container sizing**
+             - Max-widths should follow a consistent set of values
+             - Content containers should use defined width tokens
+
+          Report every spacing inconsistency with its file, line, current
+          value, and the correct token value.
+        tools:
+          - read_file
+          - search_files
+
+      - name: "Color System & Contrast Integrity"
+        instruction: |
+          Audit the color usage across all files in scope for consistency,
+          accessibility, and adherence to the Impeccable color rules.
+
+          ### Checks:
+
+          1. **Semantic color usage**
+             - Colors must be applied via semantic tokens, not primitive
+               values (use `text-foreground` not `text-gray-900`)
+             - Background/foreground pairings must be intentional — the
+               same semantic pair everywhere
+             - Status colors (success, warning, error, info) must be
+               used consistently and ONLY for their semantic purpose
+
+          2. **Contrast ratios** (calculate for each text-on-background
+             combination found):
+             - Normal text (< 18pt): 4.5:1 minimum (AA), target 7:1
+             - Large text (≥ 18pt or 14pt bold): 3:1 minimum (AA)
+             - UI components and graphical objects: 3:1 minimum
+             - Focus indicators: 3:1 against adjacent colors
+             - Flag EVERY combination that fails with its calculated
+               ratio and the required minimum
+
+          3. **Dark mode / theme consistency** (if applicable)
+             - Every color must have a dark-mode equivalent
+             - Contrast ratios must pass in BOTH modes
+             - Shadows and overlays must be adjusted for dark backgrounds
+
+          4. **Color overuse**
+             - Flag if more than the allowed number of color primitives
+               are in use
+             - Flag if similar-but-not-identical colors exist that should
+               be consolidated (e.g., `#1a1a2e` and `#1b1b2f`)
+
+          Output a **Color Audit Table**:
+          ```
+          | Location | FG Color | BG Color | Ratio | Pass | Note |
+          |----------|----------|----------|-------|------|------|
+          ```
+        tools:
+          - read_file
+          - search_files
+
+      - name: "Interactive States & Micro-Interaction Polish"
+        instruction: |
+          Every interactive element must have complete, polished state
+          definitions. This is a hallmark of professional design systems
+          work and a core Impeccable requirement.
+
+          ### Required states for each interactive element type:
+
+          **Buttons:**
+          - `default` — Base appearance
+          - `hover` — Subtle but clear visual change
+          - `focus-visible` — Prominent focus ring (minimum 2px, 3:1
+            contrast against adjacent colors)
+          - `active` / `pressed` — Visual depression or color shift
+          - `disabled` — Reduced opacity (0.5–0.6) or muted colors,
+            `cursor: not-allowed`, `pointer-events: none`
+          - `loading` — If applicable: spinner/skeleton, disabled
+            interaction
+
+          **Links:**
+          - `default` — Distinguishable from body text (underline or
+            color, preferably both)
+          - `hover` — Color shift or underline change
+          - `focus-visible` — Focus ring
+          - `visited` — If contextually appropriate
+          - `active` — Brief color/style change on click
+
+          **Form inputs:**
+          - `default` — Clear boundary, readable placeholder
+          - `hover` — Border color change
+          - `focus` — Prominent ring/border, label behavior
+          - `filled` — Distinguished from empty
+          - `error` — Red/destructive border + error message + icon
+          - `disabled` — Muted, non-interactive
+          - `readonly` — Visually distinct from disabled
+
+          **Cards / clickable surfaces:**
+          - `default`, `hover` (shadow elevation shift), `focus-visible`,
+            `active`
+
+          ### Transition polish:
+          - All state transitions must use `transition` with values from
+            the motion token scale
+          - Duration: 150ms–200ms for hover/focus, 200ms–300ms for
+            expand/collapse
+          - Easing: `ease-out` or `cubic-bezier(0.4, 0, 0.2, 1)` for
+            enter, `ease-in` for exit
+          - `prefers-reduced-motion: reduce` must disable or shorten
+            all animations
+
+          Flag every element missing any required state. Provide the
+          exact CSS/class additions needed.
+        tools:
+          - read_file
+          - search_files
+
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # PHASE 5 — ACCESSIBILITY & WCAG COMPLIANCE AUDIT
+  # Purpose: Dedicated accessibility pass — this is non-negotiable.
+  # ═══════════════════════════════════════════════════════════════════════════
+  - name: "Accessibility & WCAG Compliance Audit"
+    description: >
+      Perform a comprehensive accessibility audit targeting WCAG 2.1 AA
+      compliance at minimum, with AAA targets where achievable. This phase
+      is a hard gate — failures here block approval.
+    steps:
+
+      - name: "Keyboard Navigation & Focus Management"
+        instruction: |
+          Audit every interactive element and user flow for keyboard
+          accessibility.
+
+          ### Verify:
+
+          1. **Tab order**
+             - All interactive elements must be reachable via Tab key
+             - Tab order must follow visual/logical reading order
+             - No focus traps (except intentional ones in modals/dialogs,
+               which must have escape-key dismissal)
+             - `tabindex` values: only `0` (natural order) and `-1`
+               (programmatic focus) are acceptable. `tabindex > 0` is
+               an anti-pattern — flag it.
+
+          2. **Focus visibility**
+             - Every focusable element MUST have a `:focus-visible` style
+             - Focus indicator must be at minimum 2px solid with 3:1
+               contrast against adjacent background
+             - `outline: none` or `outline: 0` without a replacement
+               focus style is a **critical violation**
+             - Search for: `outline: none`, `outline: 0`, `:focus { outline`
+
+          3. **Keyboard interaction patterns**
+             - Buttons: activated with Enter and Space
+             - Links: activated with Enter only
+             - Dropdowns/menus: Arrow keys for navigation, Escape to close
+             - Modals: Focus trapped inside, Escape to dismiss, focus
+               returns to trigger on close
+             - Tabs: Arrow keys to switch, Tab to move to panel content
+             - Custom components must follow WAI-ARIA Authoring Practices
+
+          4. **Skip navigation**
+             - Pages with repeated navigation must provide "Skip to main
+               content" link as the first focusable element
+
+          Flag every violation with its severity and exact fix.
+        tools:
+          - read_file
+          - search_files
+
+      - name: "ARIA, Roles & Screen Reader Compatibility"
+        instruction: |
+          Verify that all UI elements are properly announced by assistive
+          technologies.
+
+          ### Checks:
+
+          1. **Images and icons**
+             - Meaningful images: must have descriptive `alt` text
+             - Decorative images: must have `alt=""` or `role="presentation"`
+             - Icon-only buttons: must have `aria-label` or visually-hidden
+               text (search for buttons containing only `<svg>` or `<i>`)
+             - Emoji used as content: must be wrapped with
+               `role="img" aria-label="..."`
+
+          2. **Form accessibility**
+             - Every input must have an associated `<label>` (via `htmlFor`
+               / `for` attribute, or wrapping, or `aria-label` /
+               `aria-labelledby`)
+             - Required fields: `aria-required="true"` and visual indicator
+             - Error messages: connected via `aria-describedby` and announced
+               with `aria-live="polite"` or `role="alert"`
+             - Form groups: wrapped in `<fieldset>` with `<legend>`
+
+          3. **Dynamic content**
+             - Content that updates dynamically must use `aria-live` regions
+             - Loading states must be announced (`aria-busy="true"`,
+               `aria-live="polite"`)
+             - Toast/notification components must use `role="status"` or
+               `role="alert"` appropriately
+
+          4. **Custom widgets**
+             - Custom dropdowns, sliders, tabs, accordions must have
+               correct ARIA roles, states, and properties per WAI-ARIA
+               Authoring Practices
+             - Verify: `role`, `aria-expanded`, `aria-selected`,
+               `aria-controls`, `aria-haspopup`, `aria-activedescendant`
+
+          5. **Heading structure**
+             - Confirm h1–h6 hierarchy from Phase 3 findings
+             - Screen readers rely on this for page navigation
+
+          6. **Language**
+             - `<html lang="...">` must be set
+             - Content in different languages must use `lang` attribute
+
+          Produce an **Accessibility Violations Report** with WCAG
+          success criterion references (e.g., "1.1.1 Non-text Content",
+          "4.1.2 Name, Role, Value").
+        tools:
+          - read_file
+          - search_files
+
+      - name: "Responsive & Adaptive Behavior Verification"
+        instruction: |
+          Verify that the UI is usable and visually correct across all
+          defined breakpoints and interaction modes.
+
+          ### Checks:
+
+          1. **Breakpoint coverage**
+             - Verify styles exist for all defined breakpoints from the
+               Design Constraints Document
+             - No content should overflow horizontally at any viewport
+               width from 320px to 2560px
+             - Text must remain readable (not too small, not too large)
+               at every breakpoint
+
+          2. **Touch targets**
+             - All interactive elements on mobile breakpoints must have
+               a minimum touch target of 44×44 CSS pixels (WCAG 2.5.5)
+             - Spacing between touch targets must prevent accidental
+               activation (minimum 8px gap)
+
+          3. **Content reflow**
+             - At 400% zoom (320px equivalent), content must reflow into
+               a single column without horizontal scrolling
+               (WCAG 1.4.10 Reflow)
+
+          4. **No fixed positioning abuse**
+             - Fixed headers/footers must not consume more than 20% of
+               viewport height on small screens
+             - Fixed elements must not obscure content or interactive
+               elements
+
+          5. **Image and media responsiveness**
+             - Images must scale with `max-width: 100%`
+             - No fixed-width images that break layout on small screens
+             - `aspect-ratio` should be used to prevent layout shift
+
+          6. **prefers-reduced-motion**
+             - All animations must be wrapped in
+               `@media (prefers-reduced-motion: no-preference)` or
+               disabled with `prefers-reduced-motion: reduce`
+
+          7. **prefers-color-scheme**
+             - If dark mode exists, it should respond to system preference
+               OR provide a manual toggle
+        tools:
+          - read_file
+          - search_files
+
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # PHASE 6 — FINAL ANTI-PATTERN SCAN & VERIFICATION
+  # Purpose: Comprehensive final sweep against the complete Impeccable
+  #          anti-pattern watchlist. This is the quality gate.
+  # ═══════════════════════════════════════════════════════════════════════════
+  - name: "Final Anti-Pattern Scan & Verification"
+    description: >
+      Execute the complete Impeccable anti-pattern watchlist against all
+      files in scope. Every item must pass. This phase produces the final
+      verdict: APPROVED or REJECTED.
+    steps:
+
+      - name: "Full Impeccable Anti-Pattern Sweep"
+        instruction: |
+          Using the **Anti-Pattern Watchlist** built in Phase 2, scan
+          every file in scope one more time. This is the definitive check.
+
+          For each anti-pattern in the watchlist:
+          1. Search for its detection pattern across all UI files
+          2. If found, record the violation
+          3. If not found, mark as CLEAR
+
+          ### Common Impeccable anti-patterns to verify are eliminated:
+
+          - [ ] **Magic numbers** — No hardcoded px/rem/em values outside
+                token definitions
+          - [ ] **Inconsistent spacing** — All spacing on the grid
+          - [ ] **Typography soup** — No off-scale font sizes, max N
+                sizes in use
+          - [ ] **Color chaos** — No inline colors, all semantic
+          - [ ] **Border radius roulette** — Consistent radii from scale
+          - [ ] **Shadow inconsistency** — Shadows from defined levels only
+          - [ ] **Missing states** — All interactive elements have full
+                state coverage
+          - [ ] **Z-index wars** — All z-indices from named layers
+          - [ ] **Accessibility gaps** — All a11y checks from Phase 5
+                resolved
+          - [ ] **Responsive afterthought** — All breakpoints covered,
+                touch targets sized
+          - [ ] **Div soup** — Semantic HTML used throughout
+          - [ ] **Inconsistent naming** — Consistent prop/class naming
+          - [ ] **Transition jank** — All transitions use motion tokens
+          - [ ] **Orphaned styles** — No unused CSS/classes
+          - [ ] **Overly specific selectors** — No `!important` abuse,
+                no deep nesting (max 3 levels)
+
+          Produce a **Final Anti-Pattern Report**:
+          ```
+          FINAL IMPECCABLE ANTI-PATTERN REPORT
+          ─────────────────────────────────────
+          Date:       <timestamp>
+          Scope:      <files reviewed>
+          
+          RESULTS:
+          ✅ CLEAR:    <count> / <total> anti-patterns
+          ❌ FOUND:    <count> / <total> anti-patterns
+          
+          VIOLATIONS:
+          1. [<severity>] <anti-pattern name>
+             File: <path>:<line>
+             Detail: <description>
+             Fix: <exact change needed>
+          
+          ...
+          ```
+        tools:
+          - read_file
+          - search_files
+          - list_files
+
+      - name: "Cross-Component Consistency Verification"
+        instruction: |
+          Verify that the design system is internally consistent across
+          all components — not just that individual components pass, but
+          that the SYSTEM is coherent.
+
+          ### Checks:
+
+          1. **Visual consistency across similar components**
+             - All buttons look like they belong to the same family
+             - All form inputs share consistent height, padding, border
+               treatment
+             - All cards use the same padding, radius, shadow pattern
+             - All modals/dialogs use consistent overlay, sizing, padding
+
+          2. **Spacing consistency across layouts**
+             - Page-level section spacing is uniform
+             - Component internal padding ratios are consistent
+               (e.g., if cards use `p-6`, all cards use `p-6`)
+             - List/grid gaps are consistent for similar content types
+
+          3. **State consistency**
+             - Hover effects are the same "intensity" across all components
+             - Focus rings are identical across all focusable elements
+             - Disabled states use the same opacity/treatment everywhere
+             - Error states use the same color and pattern everywhere
+
+          4. **Responsive behavior consistency**
+             - All components break at the same breakpoints
+             - Stacking behavior is predictable and uniform
+
+          Flag any inconsistencies between components, even if each
+          individual component passed earlier checks.
+        tools:
+          - read_file
+          - search_files
+
+      - name: "Verdict & Approval Decision"
+        instruction: |
+          Based on ALL findings from Phases 1–6, render your final verdict.
+
+          ### Decision criteria:
+
+          **APPROVED ✅** — ALL of the following must be true:
+          - Zero Impeccable anti-pattern violations with severity "error"
+          - Zero WCAG AA accessibility failures
+          - All spacing on the mathematical grid
+          - All typography on the type scale
+          - All colors using semantic tokens with passing contrast
+          - All interactive states implemented
+          - Cross-component consistency verified
+
+          **APPROVED WITH NOTES ⚠️** — ALL of the following:
+          - Zero severity "error" violations
+          - Only "warning" level items remain
+          - All warnings are documented with recommended fixes
+          - No accessibility blockers
+
+          **REJECTED ❌** — ANY of the following:
+          - Any severity "error" anti-pattern violation remains
+          - Any WCAG AA failure remains
+          - Hardcoded design values remain
+          - Missing interactive states on critical components
+          - Cross-component inconsistency is severe
+
+          ### Output the final verdict:
+          ```
+          ══════════════════════════════════════════════
+          IMPECCABLE DESIGN SYSTEMS REVIEW — VERDICT
+          ══════════════════════════════════════════════
+          
+          Status:     <APPROVED ✅ | APPROVED WITH NOTES ⚠️ | REJECTED ❌>
+          Reviewed:   <count> files across <count> components
+          
