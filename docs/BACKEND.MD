@@ -261,6 +261,24 @@ stateDiagram-v2
 | `20250814_create_test_email_state.sql` | Creates `test_email_state` table |
 | `20251110_handle_booking_response.sql` | Creates `handle_booking_response` PL/pgSQL function (atomic status update + token deletion) |
 | `20260216_124123_tighten_bookings_rls.sql` | Removes client INSERT policies on `bookings`; only `service_role` and admin users can insert |
+| `20260328_fix_handle_new_user.sql` | Fixes `handle_new_user` trigger for profile creation on signup |
+| `20260329_enable_pg_net.sql` | Enables `pg_net` extension for async HTTP calls from DB triggers |
+| `20260329_booking_sms_trigger.sql` | Creates `notify_admin_on_booking_change()` trigger function + `notify_admin_sms_trigger` on bookings UPDATE/DELETE |
+
+---
+
+## Vault Secrets
+
+The following secrets are stored in **Supabase Vault** (Dashboard → Settings → Vault) and read by database triggers at runtime via `vault.decrypted_secrets`:
+
+| Secret Name | Purpose |
+|---|---|
+| `INTERNAL_SMS_SHARED_SECRET` | Shared secret for authenticating DB trigger → `send-sms` edge function calls (via `x-internal-secret` header) |
+| `SUPABASE_URL` | Project API URL used by DB triggers to construct edge function endpoints |
+| `SUPABASE_ANON_KEY` | Anon key used by DB triggers in `Authorization: Bearer` header for edge function calls |
+| `ADMIN_PHONE_NUMBERS` | Comma-separated list of admin phone numbers (E.164 format: `+40XXXXXXXXX`) for SMS notifications |
+
+> **Note:** `INTERNAL_SMS_SHARED_SECRET` must also be added as an **Edge Function secret** (Dashboard → Edge Functions → Secrets) so `send-sms` can validate it at runtime via `Deno.env.get()`.
 
 ---
 
@@ -585,17 +603,23 @@ sequenceDiagram
 ---
 
 ### `send-sms`
-**Auth Required:** None  
+**Auth Required:** None (protected by `x-internal-secret` header)  
 **Rate Limits:** 5/hr per phone + 20/hr per IP
 
 **Purpose:** Sends SMS via Twilio Messages API.
 
 **Flow:**
-1. Validate phone number + message body
-2. Call Twilio Messages API (`/Messages`)
-3. Return send result
+1. Validate `x-internal-secret` header against `INTERNAL_SMS_SHARED_SECRET` env var
+   - If secret is configured and header doesn't match → 401 Unauthorized
+   - If secret is not configured (partial deploy) → warn and allow (fail-open)
+2. Validate phone number + message body (Zod schema)
+3. Call Twilio Messages API (`/Messages`)
+4. Return send result
 
-**Used by:** Admin SMS alerts, customer SMS notifications
+**Headers:**
+- `x-internal-secret` — Required. Must match the `INTERNAL_SMS_SHARED_SECRET` secret value.
+
+**Used by:** DB trigger `notify_admin_sms_trigger` (booking update/cancel/suggestion events), admin SMS alerts
 
 ---
 
@@ -845,7 +869,7 @@ sequenceDiagram
 
 ## Notification Flow (Backend)
 
-**When `create-booking` succeeds:**
+### New Booking (via `create-booking`)
 
 ```mermaid
 sequenceDiagram
@@ -868,11 +892,43 @@ sequenceDiagram
   create-booking-->>Client: 201 Created {booking_id}
 ```
 
+### Booking Update / Cancel / Suggestion Response (via DB trigger)
+
+```mermaid
+sequenceDiagram
+  participant Customer
+  participant Frontend
+  participant Database
+  participant notify_trigger
+  participant Vault
+  participant send-sms EF
+  participant Twilio
+  participant Admin
+
+  Customer->>Frontend: Cancel / Update / Accept / Decline
+  Frontend->>Database: UPDATE bookings
+  Database->>notify_trigger: AFTER UPDATE fired
+  notify_trigger->>Database: SELECT role FROM profiles WHERE id = auth.uid()
+  Database-->>notify_trigger: role = 'customer'
+  notify_trigger->>Vault: SELECT decrypted_secret (INTERNAL_SMS_SHARED_SECRET)
+  Vault-->>notify_trigger: secret value
+  notify_trigger->>Vault: SELECT decrypted_secret (ADMIN_PHONE_NUMBERS)
+  Vault-->>notify_trigger: phone list
+  notify_trigger->>send-sms EF: net.http_post (async, x-internal-secret header)
+  Note over notify_trigger: EXCEPTION block — fail-open, RAISE WARNING only
+  Database-->>Frontend: UPDATE confirmed (independent of SMS)
+  send-sms EF->>send-sms EF: Validate x-internal-secret
+  send-sms EF->>Twilio: POST /Messages
+  Twilio-->>Admin: SMS delivered
+```
+
 **Notes:**
 - All notification failures are logged silently (non-blocking)
-- Customer email sent via `send-email` edge function
-- Admin SMS sent directly to Twilio Messages API (not via `send-sms` edge function)
-- `ADMIN_PHONE_NUMBERS` secret contains comma-separated list of admin phones
+- **New bookings:** Customer email via `send-email` EF; admin SMS directly to Twilio Messages API
+- **Updates/cancels/suggestions:** Admin SMS via DB trigger → `send-sms` EF (async `pg_net`)
+- DB trigger suppresses notifications for admin-initiated actions (`profiles.role = 'admin'`)
+- `ADMIN_PHONE_NUMBERS` secret contains comma-separated list of admin phones (E.164 format)
+- SMS messages are in Romanian, ≤160 characters
 
 ---
 
@@ -885,4 +941,4 @@ sequenceDiagram
 
 ---
 
-**Last Updated:** Saturday Feb 21, 2026
+**Last Updated:** Sunday Mar 29, 2026

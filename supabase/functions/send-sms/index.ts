@@ -9,6 +9,20 @@ const TWILIO_PHONE_NUMBER = Deno.env.get('TWILIO_PHONE_NUMBER');
 const handler = async (req: Request, context: any) => {
   const { to, message } = context.validatedData;
 
+  // Validate internal shared secret (DB trigger → send-sms authentication)
+  // Fail-closed: if the secret is not configured, reject the request entirely.
+  const expectedSecret = Deno.env.get('INTERNAL_SMS_SHARED_SECRET');
+  const providedSecret = req.headers.get('x-internal-secret');
+
+  if (!expectedSecret) {
+    console.error('[send-sms] INTERNAL_SMS_SHARED_SECRET not configured — rejecting request (fail-closed)');
+    return createErrorResponse('SMS service is not properly configured.', 500, 'SERVICE_UNAVAILABLE', context.rateLimitInfo);
+  }
+
+  if (providedSecret !== expectedSecret) {
+    return createErrorResponse('Unauthorized', 401, 'UNAUTHORIZED', context.rateLimitInfo);
+  }
+
   // Check Twilio configuration
   if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN) {
     return createErrorResponse('SMS service credentials are not configured.', 500, 'SERVICE_UNAVAILABLE', context.rateLimitInfo);
