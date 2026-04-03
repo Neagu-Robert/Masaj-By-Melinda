@@ -10,7 +10,7 @@ export function ProtectedRoute({ children, allowedRoles = ['admin'] }) {
   }
 
   if (!user) {
-    return <Navigate to="/auth" replace />;
+    return <Navigate to="/home" replace />;
   }
   
   if (!allowedRoles.includes(role)) {

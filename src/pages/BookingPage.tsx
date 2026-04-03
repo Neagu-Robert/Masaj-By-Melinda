@@ -41,7 +41,7 @@ const AuthPromptMessage = () => {
             onClick={() => navigate('/auth?mode=login')}
             className="w-full sm:w-auto bg-white text-violet-700 border-white hover:bg-gray-100"
           >
-            Autentificare
+            Intră în cont
           </Button>
         </div>
       </CardContent>

@@ -9,6 +9,11 @@
       "name": "cleanup-old-data",
       "schedule": "0 3 * * *",
       "timeZone": "Europe/Bucharest"
+    },
+    {
+      "name": "cleanup-logs",
+      "schedule": "0 4 * * 0",
+      "timeZone": "Europe/Bucharest"
     }
   ]
 } 
