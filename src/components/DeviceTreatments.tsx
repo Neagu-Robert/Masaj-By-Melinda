@@ -1,9 +1,10 @@
 
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import React, { useState } from 'react';
+import { Card, CardHeader, CardTitle } from './ui/card';
 import { useServices } from '@/contexts/ServicesContext';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 // Device treatment images mapping
 const deviceTreatmentImages = {
@@ -16,24 +17,24 @@ const deviceTreatmentImages = {
 // Device treatment benefits mapping
 const deviceTreatmentBenefits = {
   'Tratament cu Termocuvertă': [
-    "Detoxifierea corpului", "Pierdere în greutate și centimetri", "Reducerea retenției de apă", 
-    "Restabilirea elasticității pielii", "Reducerea țesutului adipos", "Elimină aspectul de coajă de portocală", 
-    "Îmbunătățește vergeturile", "Îmbunătățește sistemul limfatic", "Îmbunătățește aspectul pielii", 
+    "Detoxifierea corpului", "Pierdere în greutate și centimetri", "Reducerea retenției de apă",
+    "Restabilirea elasticității pielii", "Reducerea țesutului adipos", "Elimină aspectul de coajă de portocală",
+    "Îmbunătățește vergeturile", "Îmbunătățește sistemul limfatic", "Îmbunătățește aspectul pielii",
     "Dilată porii pentru permeabilitate maximă a principiilor active"
   ],
   'Remodelare Corporală cu Cavitație 40Khz': [
-    "Remodelarea corpului prin arderea grăsimilor", "Detoxifierea limfatică", 
+    "Remodelarea corpului prin arderea grăsimilor", "Detoxifierea limfatică",
     "Tonifierea pielii corpului", "Reducerea celulitei"
   ],
   'Tratament cu Electrostimulare': [
-    "Accelerarea circulației sanguine", "Eliminarea celulitei și a aspectului de coajă de portocală", 
-    "Creșterea colagenului și elastinei", "Tonifierea musculară", "Pierdere în greutate", 
+    "Accelerarea circulației sanguine", "Eliminarea celulitei și a aspectului de coajă de portocală",
+    "Creșterea colagenului și elastinei", "Tonifierea musculară", "Pierdere în greutate",
     "Creșterea forței și a masei musculare", "Remodelarea corpului și reducerea circumferinței"
   ],
   'Radiofrecvență TECAR': [
-    "Efecte spectaculoase în conturarea corpului", "Remodelarea siluetei prin reducerea grăsimii", 
-    "Tratamentul tuturor stadiilor de celulită", "Îmbunătățirea vergeturilor", 
-    "Tratamentul pielii lăsate", "Transfer de energie electromagnetică de înaltă frecvență", 
+    "Efecte spectaculoase în conturarea corpului", "Remodelarea siluetei prin reducerea grăsimii",
+    "Tratamentul tuturor stadiilor de celulită", "Îmbunătățirea vergeturilor",
+    "Tratamentul pielii lăsate", "Transfer de energie electromagnetică de înaltă frecvență",
     "Hipertermie selectivă a țesuturilor pentru pierderea în greutate"
   ]
 };
@@ -41,11 +42,20 @@ const deviceTreatmentBenefits = {
 const DeviceTreatments = () => {
   const { services, loading, error } = useServices();
   const navigate = useNavigate();
+  const [selectedService, setSelectedService] = useState<typeof services[number] | null>(null);
 
   // Filter for device treatments (services that don't contain "Masaj" in the name)
-  const deviceServices = services.filter(service => 
+  const deviceServices = services.filter(service =>
     !service.name.toLowerCase().includes('masaj') && service.is_active
   );
+
+  // Get image and benefits for the selected service
+  const selectedImage = selectedService
+    ? deviceTreatmentImages[selectedService.name as keyof typeof deviceTreatmentImages]
+    : null;
+  const selectedBenefits = selectedService
+    ? deviceTreatmentBenefits[selectedService.name as keyof typeof deviceTreatmentBenefits] || []
+    : [];
 
   if (loading) {
     return (
@@ -53,25 +63,13 @@ const DeviceTreatments = () => {
         <h3 className="text-xl md:text-2xl font-semibold text-center text-white mb-8">Tehnologie Modernă pentru Remodelare Corporală</h3>
         <div className="grid md:grid-cols-2 gap-8">
           {[...Array(4)].map((_, index) => (
-            <Card 
-              key={index} 
-              className="transition-all duration-300 bg-black/60 backdrop-blur-sm text-white border-none animate-pulse"
+            <Card
+              key={index}
+              className="transition-all duration-300 py-3 md:py-4 px-4 md:px-6 bg-black/60 backdrop-blur-sm text-white border-none animate-pulse"
             >
-              <CardHeader>
-                <div className="h-6 bg-gray-600 rounded"></div>
+              <CardHeader className="p-0 flex items-center justify-center">
+                <div className="h-6 md:h-8 bg-gray-600 rounded w-3/4"></div>
               </CardHeader>
-              <CardContent className="flex flex-col md:flex-row gap-6">
-                <div className="md:w-1/3">
-                  <div className="w-full h-32 bg-gray-600 rounded-lg"></div>
-                </div>
-                <div className="md:w-2/3">
-                  <div className="space-y-2">
-                    {[...Array(5)].map((_, i) => (
-                      <div key={i} className="h-4 bg-gray-600 rounded"></div>
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
             </Card>
           ))}
         </div>
@@ -94,57 +92,86 @@ const DeviceTreatments = () => {
     <div className="container mx-auto px-4">
       <h3 className="text-xl md:text-2xl font-semibold text-center text-white mb-8">Tehnologie Modernă pentru Remodelare Corporală</h3>
       <div className="grid md:grid-cols-2 gap-8">
-        {deviceServices.map((service, index) => {
-          const image = deviceTreatmentImages[service.name as keyof typeof deviceTreatmentImages];
-          const benefits = deviceTreatmentBenefits[service.name as keyof typeof deviceTreatmentBenefits] || [];
-          
-          return (
-            <Card 
-              key={service.id} 
-              className={`transition-all duration-300 hover:scale-[1.03] hover:shadow-xl hover:shadow-violet-400/20 bg-black/60 backdrop-blur-sm text-white border-none ${
-                index === deviceServices.length - 1 && deviceServices.length % 2 === 1 
-                  ? "md:col-span-2 md:max-w-2xl md:mx-auto" 
-                  : ""
-              }`}
-            >
-              <CardHeader>
-                <CardTitle className="text-violet-400 text-base md:text-xl">{service.name}</CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-col md:flex-row gap-6">
-                <div className="md:w-1/3">
-                  {image && (
-                    <img src={image} alt={service.name} className="w-full h-auto aspect-video md:aspect-auto object-cover rounded-lg" />
-                  )}
-                </div>
-                <div className="md:w-2/3">
-                  <ul className="list-disc list-inside space-y-2 text-gray-200">
-                    {benefits.map((benefit, index) => (
-                      <li key={index}>{benefit}</li>
-                    ))}
-                  </ul>
-                  <div className="mt-4 pt-4 border-t border-gray-600">
-                    <p className="text-base md:text-lg text-gray-300">
-                      <strong>Durată:</strong> {service.duration} min
-                    </p>
-                    <p className="text-xl md:text-2xl font-semibold text-violet-400">
-                      {service.price} RON
-                    </p>
-                    <div className="mt-3 flex justify-end">
-                      <Button
-                        className="bg-violet-600 hover:bg-violet-700 text-white"
-                        // Qwiet SAST warning-sink-redirect: false positive — React Router client-side SPA routing; path is the internal '/book' route with a URL-encoded service name sourced from the ServicesContext/DB, not an arbitrary external URL.
-                        onClick={() => navigate(`/book?service=${encodeURIComponent(service.name)}`, { state: { service: service.name } })}
-                      >
-                        Rezervă acum
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+        {deviceServices.map((service, index) => (
+          <Card
+            key={service.id}
+            className={`transition-all duration-300 hover:scale-[1.03] hover:shadow-xl hover:shadow-violet-400/20 py-3 md:py-4 px-4 md:px-6 bg-black/60 backdrop-blur-sm text-white border-none cursor-pointer ${
+              index === deviceServices.length - 1 && deviceServices.length % 2 === 1
+                ? "md:col-span-2 md:max-w-2xl md:mx-auto"
+                : ""
+            }`}
+            onClick={() => setSelectedService(service)}
+          >
+            <CardHeader className="p-0 flex items-center justify-center">
+              <CardTitle className="text-violet-400 text-xl md:text-2xl text-center">
+                {service.name}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+        ))}
       </div>
+
+      {/* Service detail modal */}
+      <Dialog open={!!selectedService} onOpenChange={() => setSelectedService(null)}>
+        <DialogContent showCloseButton className="max-w-lg max-h-[90vh] overflow-y-auto bg-gray-900 border-gray-700">
+          <DialogHeader>
+            <DialogTitle className="text-2xl md:text-3xl font-bold text-violet-300">
+              {selectedService?.name}
+            </DialogTitle>
+            <DialogDescription className="text-gray-400 sr-only">
+              Detalii tratament {selectedService?.name}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            {/* Price and duration */}
+            <div className="flex items-center gap-4">
+              <span className="text-2xl md:text-3xl font-semibold text-violet-400">
+                {selectedService?.price} RON
+              </span>
+              <span className="text-base md:text-lg text-gray-400">
+                {selectedService?.duration} min
+              </span>
+            </div>
+
+            {/* Image */}
+            {selectedImage && (
+              <img
+                src={selectedImage}
+                alt={selectedService?.name}
+                className="w-full aspect-video object-cover rounded-lg"
+              />
+            )}
+
+            {/* Benefits */}
+            {selectedBenefits.length > 0 && (
+              <div>
+                <p className="text-sm font-semibold text-violet-400 uppercase tracking-wider mb-2">Beneficii</p>
+                <ul className="list-disc list-inside space-y-1.5 text-gray-200">
+                  {selectedBenefits.map((benefit, i) => (
+                    <li key={i}>{benefit}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* CTA */}
+            <div className="flex justify-start pt-2">
+              <Button
+                className="bg-violet-600 hover:bg-violet-700 text-white"
+                // Qwiet SAST warning-sink-redirect: false positive — React Router client-side SPA routing; path is the internal '/book' route with a URL-encoded service name sourced from the ServicesContext/DB, not an arbitrary external URL.
+                onClick={() => {
+                  if (selectedService) {
+                    navigate(`/book?service=${encodeURIComponent(selectedService.name)}`, { state: { service: selectedService.name } });
+                  }
+                }}
+              >
+                Rezervă acum
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
