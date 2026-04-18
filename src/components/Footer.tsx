@@ -4,13 +4,13 @@ const Footer = () => {
   return (
     <footer className="py-12 md:py-16">
       <div className="container mx-auto px-4">
-        <div className="grid md:grid-cols-2 gap-8 text-center md:text-left">
-          <div>
+        <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-8 text-center md:text-left">
+          <div className="text-center md:text-left">
             <h3 className="text-2xl font-semibold text-white mb-4">Masaj by Melinda</h3>
             <p className="text-gray-400">
               Relaxare, remodelare și răsfăț pentru trup și suflet.
             </p>
-            <ul className="mt-4 flex flex-col gap-2">
+            <ul className="mt-4 flex flex-col gap-2 items-center md:items-start text-center md:text-left">
               <li className="flex items-center gap-2 text-sm text-violet-400">
                 <Star size={16} />
                 <span>10 ani de experiență</span>

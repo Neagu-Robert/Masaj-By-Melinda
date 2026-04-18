@@ -91,13 +91,13 @@ const DeviceTreatments = () => {
         Tehnologie Modernă pentru Remodelare Corporală
       </h3>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+      <div className="flex flex-wrap justify-center gap-6 md:gap-8">
         {deviceServices.map((service) => {
           const bgImage = deviceTreatmentImages[service.name] || defaultDeviceImage;
           return (
             <Card
               key={service.id}
-              className="group relative overflow-hidden rounded-xl border-none cursor-pointer bg-[#1E1B24] h-[350px] md:h-[400px] transition-shadow duration-500 transform-gpu will-change-transform md:hover:shadow-[0_0_20px_rgba(124,58,237,0.2)]"
+              className="group relative overflow-hidden rounded-xl border-none cursor-pointer bg-[#1E1B24] h-[350px] md:h-[400px] w-full md:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.4rem)] transition-shadow duration-500 transform-gpu will-change-transform md:hover:shadow-[0_0_20px_rgba(124,58,237,0.2)]"
               onClick={() => setSelectedService(service)}
             >
               {/* Background Image with hover scale */}
@@ -160,11 +160,11 @@ const DeviceTreatments = () => {
 
       {/* Service detail modal */}
       <Dialog open={!!selectedService} onOpenChange={(open) => !open && setSelectedService(null)}>
-        <DialogContent showCloseButton className="max-w-4xl p-0 overflow-hidden bg-[#1E1B24] border-gray-800/50 rounded-xl gap-0">
+        <DialogContent showCloseButton className="max-w-6xl p-0 overflow-hidden bg-[#1E1B24] border-gray-800/50 rounded-xl gap-0">
           <DialogTitle className="sr-only">{selectedService?.name}</DialogTitle>
           <DialogDescription className="sr-only">Detalii tratament {selectedService?.name}</DialogDescription>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 max-h-[90vh] overflow-y-auto md:overflow-y-visible">
+          <div className="grid grid-cols-1 md:grid-cols-[3fr_2fr] max-h-[90vh] overflow-y-auto md:overflow-y-visible">
             {/* Left Image */}
             <div className="relative h-64 md:h-auto md:min-h-[500px]">
               {selectedImage && (

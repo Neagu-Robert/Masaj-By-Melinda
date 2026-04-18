@@ -26,10 +26,14 @@ const MassageServices = () => {
   const navigate = useNavigate();
   const [selectedService, setSelectedService] = useState<typeof services[number] | null>(null);
 
-  // Filter for massage services (services that contain "Masaj" in the name)
-  const massageServices = services.filter(service =>
-    service.name.toLowerCase().includes('masaj') && service.is_active
-  );
+  // Filter for massage services and sort "Masaj de relaxare" first
+  const massageServices = services
+    .filter(service => service.name.toLowerCase().includes('masaj') && service.is_active)
+    .sort((a, b) => {
+      if (a.name === 'Masaj de relaxare') return -1;
+      if (b.name === 'Masaj de relaxare') return 1;
+      return 0;
+    });
 
   if (loading) {
     return (
@@ -37,7 +41,7 @@ const MassageServices = () => {
         <h3 className="text-xl md:text-2xl font-semibold text-center text-white mb-6 md:mb-8">
           Masaje Terapeutice și de Relaxare
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 justify-center">
           {[...Array(6)].map((_, index) => (
             <Card
               key={index}
@@ -68,13 +72,13 @@ const MassageServices = () => {
         Masaje Terapeutice și de Relaxare
       </h3>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+      <div className="flex flex-wrap justify-center gap-6 md:gap-8">
         {massageServices.map((service) => {
           const bgImage = getMassageImage(service.name);
           return (
             <Card
               key={service.id}
-              className="group relative overflow-hidden rounded-xl border-none cursor-pointer bg-[#1E1B24] h-[350px] md:h-[400px] transition-shadow duration-500 transform-gpu will-change-transform md:hover:shadow-[0_0_20px_rgba(124,58,237,0.2)]"
+              className="group relative overflow-hidden rounded-xl border-none cursor-pointer bg-[#1E1B24] h-[350px] md:h-[400px] w-full md:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.4rem)] transition-shadow duration-500 transform-gpu will-change-transform md:hover:shadow-[0_0_20px_rgba(124,58,237,0.2)]"
               onClick={() => setSelectedService(service)}
             >
               {/* Background Image with hover scale */}
