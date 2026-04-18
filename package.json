@@ -42,7 +42,6 @@
     "@radix-ui/react-toggle-group": "^1.1.0",
     "@radix-ui/react-tooltip": "^1.1.4",
     "@react-router/node": "^7.13.1",
-    "@sendgrid/mail": "^8.1.1",
     "@sentry/react": "^10.38.0",
     "@supabase/supabase-js": "^2.49.4",
     "@tanstack/react-query": "^5.56.2",
@@ -57,6 +56,7 @@
     "embla-carousel-react": "^8.3.0",
     "express": "^4.18.2",
     "input-otp": "^1.2.4",
+    "isbot": "^5",
     "lucide-react": "^0.462.0",
     "next-themes": "^0.4.6",
     "react": "^18.3.1",
@@ -70,8 +70,7 @@
     "tailwind-merge": "^2.5.2",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^0.9.3",
-    "zod": "^3.23.8",
-    "isbot": "^5"
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.0",

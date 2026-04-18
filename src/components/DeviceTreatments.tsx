@@ -1,21 +1,22 @@
-
 import React, { useState } from 'react';
-import { Card, CardHeader, CardTitle } from './ui/card';
+import { Card } from './ui/card';
 import { useServices } from '@/contexts/ServicesContext';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 // Device treatment images mapping
-const deviceTreatmentImages = {
-  'Tratament cu Termocuvertă': '/lovable-uploads/8799995d-a401-4d09-96d3-2e8cb400d2c0.png',
-  'Remodelare Corporală cu Cavitație 40Khz': '/lovable-uploads/16817603-5ec2-4bff-a5aa-9ac7174c302d.png',
-  'Tratament cu Electrostimulare': '/lovable-uploads/6edd442e-9894-4629-b380-e171365a1a6c.png',
-  'Radiofrecvență TECAR': '/lovable-uploads/08b53e34-d1fb-4fab-bbda-087bc55f6d1e.png'
+const deviceTreatmentImages: Record<string, string> = {
+  'Tratament cu Termocuvertă': '/new_images/Tratament_cu_Termocuvertă.webp',
+  'Remodelare Corporală cu Cavitație 40Khz': '/new_images/Cavitatie40kHz.webp',
+  'Tratament cu Electrostimulare': '/new_images/Tratament_cu_electrostimulare.webp',
+  'Radiofrecvență TECAR': '/new_images/Radiofrecventa_TECAR.webp'
 };
 
+const defaultDeviceImage = '/new_images/Masaj_de_relaxare.webp';
+
 // Device treatment benefits mapping
-const deviceTreatmentBenefits = {
+const deviceTreatmentBenefits: Record<string, string[]> = {
   'Tratament cu Termocuvertă': [
     "Detoxifierea corpului", "Pierdere în greutate și centimetri", "Reducerea retenției de apă",
     "Restabilirea elasticității pielii", "Reducerea țesutului adipos", "Elimină aspectul de coajă de portocală",
@@ -51,26 +52,22 @@ const DeviceTreatments = () => {
 
   // Get image and benefits for the selected service
   const selectedImage = selectedService
-    ? deviceTreatmentImages[selectedService.name as keyof typeof deviceTreatmentImages]
+    ? (deviceTreatmentImages[selectedService.name] || defaultDeviceImage)
     : null;
   const selectedBenefits = selectedService
-    ? deviceTreatmentBenefits[selectedService.name as keyof typeof deviceTreatmentBenefits] || []
+    ? deviceTreatmentBenefits[selectedService.name] || []
     : [];
 
   if (loading) {
     return (
       <div className="container mx-auto px-4">
         <h3 className="text-xl md:text-2xl font-semibold text-center text-white mb-8">Tehnologie Modernă pentru Remodelare Corporală</h3>
-        <div className="grid md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
           {[...Array(4)].map((_, index) => (
             <Card
               key={index}
-              className="transition-all duration-300 py-3 md:py-4 px-4 md:px-6 bg-black/60 backdrop-blur-sm text-white border-none animate-pulse"
-            >
-              <CardHeader className="p-0 flex items-center justify-center">
-                <div className="h-6 md:h-8 bg-gray-600 rounded w-3/4"></div>
-              </CardHeader>
-            </Card>
+              className="h-[320px] md:h-[400px] rounded-xl bg-[#1E1B24] border-none animate-pulse"
+            />
           ))}
         </div>
       </div>
@@ -89,85 +86,148 @@ const DeviceTreatments = () => {
   }
 
   return (
-    <div className="container mx-auto px-4">
-      <h3 className="text-xl md:text-2xl font-semibold text-center text-white mb-8">Tehnologie Modernă pentru Remodelare Corporală</h3>
-      <div className="grid md:grid-cols-2 gap-8">
-        {deviceServices.map((service, index) => (
-          <Card
-            key={service.id}
-            className={`transition-all duration-300 hover:scale-[1.03] hover:shadow-xl hover:shadow-violet-400/20 py-3 md:py-4 px-4 md:px-6 bg-black/60 backdrop-blur-sm text-white border-none cursor-pointer ${
-              index === deviceServices.length - 1 && deviceServices.length % 2 === 1
-                ? "md:col-span-2 md:max-w-2xl md:mx-auto"
-                : ""
-            }`}
-            onClick={() => setSelectedService(service)}
-          >
-            <CardHeader className="p-0 flex items-center justify-center">
-              <CardTitle className="text-violet-400 text-xl md:text-2xl text-center">
-                {service.name}
-              </CardTitle>
-            </CardHeader>
-          </Card>
-        ))}
+    <div className="container mx-auto px-4" id="device-treatments">
+      <h3 className="text-2xl md:text-3xl font-semibold text-center text-[#F3EDF7] mb-8 md:mb-12">
+        Tehnologie Modernă pentru Remodelare Corporală
+      </h3>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+        {deviceServices.map((service) => {
+          const bgImage = deviceTreatmentImages[service.name] || defaultDeviceImage;
+          return (
+            <Card
+              key={service.id}
+              className="group relative overflow-hidden rounded-xl border-none cursor-pointer bg-[#1E1B24] h-[350px] md:h-[400px] transition-shadow duration-500 transform-gpu will-change-transform md:hover:shadow-[0_0_20px_rgba(124,58,237,0.2)]"
+              onClick={() => setSelectedService(service)}
+            >
+              {/* Background Image with hover scale */}
+              <div 
+                className="absolute inset-0 bg-cover bg-center transition-transform duration-700 ease-out transform-gpu will-change-transform md:group-hover:scale-105"
+                style={{ backgroundImage: `url('${bgImage}')` }}
+              />
+              
+              {/* Gradient Overlay */}
+              <div className="absolute inset-0 bg-gradient-to-t from-[rgba(18,16,22,0.95)] via-[rgba(18,16,22,0.5)] to-[rgba(18,16,22,0.1)] transition-colors duration-500 md:group-hover:from-[rgba(18,16,22,0.85)] md:group-hover:via-[rgba(18,16,22,0.4)]" />
+
+              {/* Content */}
+              <div className="absolute inset-0 p-5 md:p-6 flex flex-col justify-end text-left">
+                {/* Title */}
+                <h4 className="text-xl md:text-2xl font-bold text-[#F3EDF7] transition-transform duration-500 ease-out transform-gpu will-change-transform md:translate-y-4 md:group-hover:translate-y-0">
+                  {service.name}
+                </h4>
+
+                {/* Progressive Disclosure Section */}
+                <div className="grid grid-rows-[1fr] md:grid-rows-[0fr] transition-[grid-template-rows,opacity,margin] duration-500 ease-out md:group-hover:grid-rows-[1fr] md:opacity-0 md:group-hover:opacity-100 mt-3 md:mt-0 md:group-hover:mt-3">
+                  <div className="overflow-hidden">
+                    <div className="flex items-center gap-3 text-[#A59EAD] mb-4 text-sm md:text-base">
+                      <span className="font-medium tracking-wide">
+                        {service.duration} MIN
+                      </span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#A59EAD]/50"></span>
+                      <span className="font-medium tracking-wide">
+                        {service.price} RON
+                      </span>
+                    </div>
+
+                    <div className="flex gap-3">
+                      <Button
+                        variant="secondary"
+                        className="flex-1 bg-white/10 text-[#F3EDF7] hover:bg-white/20 border-0 h-11"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedService(service);
+                        }}
+                      >
+                        Detalii
+                      </Button>
+                      <Button
+                        className="flex-1 bg-[#7C3AED] hover:bg-[#6D28D9] text-white h-11"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/book?service=${encodeURIComponent(service.name)}`, { state: { service: service.name } });
+                        }}
+                      >
+                        Rezervă
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          );
+        })}
       </div>
 
       {/* Service detail modal */}
-      <Dialog open={!!selectedService} onOpenChange={() => setSelectedService(null)}>
-        <DialogContent showCloseButton className="max-w-lg max-h-[90vh] overflow-y-auto bg-gray-900 border-gray-700">
-          <DialogHeader>
-            <DialogTitle className="text-2xl md:text-3xl font-bold text-violet-300">
-              {selectedService?.name}
-            </DialogTitle>
-            <DialogDescription className="text-gray-400 sr-only">
-              Detalii tratament {selectedService?.name}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 py-2">
-            {/* Price and duration */}
-            <div className="flex items-center gap-4">
-              <span className="text-2xl md:text-3xl font-semibold text-violet-400">
-                {selectedService?.price} RON
-              </span>
-              <span className="text-base md:text-lg text-gray-400">
-                {selectedService?.duration} min
-              </span>
+      <Dialog open={!!selectedService} onOpenChange={(open) => !open && setSelectedService(null)}>
+        <DialogContent showCloseButton className="max-w-4xl p-0 overflow-hidden bg-[#1E1B24] border-gray-800/50 rounded-xl gap-0">
+          <DialogTitle className="sr-only">{selectedService?.name}</DialogTitle>
+          <DialogDescription className="sr-only">Detalii tratament {selectedService?.name}</DialogDescription>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 max-h-[90vh] overflow-y-auto md:overflow-y-visible">
+            {/* Left Image */}
+            <div className="relative h-64 md:h-auto md:min-h-[500px]">
+              {selectedImage && (
+                <div 
+                  className="absolute inset-0 bg-cover bg-center"
+                  style={{ backgroundImage: `url('${selectedImage}')` }}
+                />
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-[#1E1B24] via-transparent to-transparent md:bg-gradient-to-r" />
             </div>
 
-            {/* Image */}
-            {selectedImage && (
-              <img
-                src={selectedImage}
-                alt={selectedService?.name}
-                className="w-full aspect-video object-cover rounded-lg"
-              />
-            )}
-
-            {/* Benefits */}
-            {selectedBenefits.length > 0 && (
-              <div>
-                <p className="text-sm font-semibold text-violet-400 uppercase tracking-wider mb-2">Beneficii</p>
-                <ul className="list-disc list-inside space-y-1.5 text-gray-200">
-                  {selectedBenefits.map((benefit, i) => (
-                    <li key={i}>{benefit}</li>
-                  ))}
-                </ul>
+            {/* Right Content */}
+            <div className="p-6 md:p-8 lg:p-10 flex flex-col h-full bg-[#1E1B24] relative">
+              <h2 className="text-2xl md:text-3xl font-bold text-[#F3EDF7] mb-4">
+                {selectedService?.name}
+              </h2>
+              
+              <div className="flex items-center gap-4 mb-6">
+                <span className="text-2xl font-semibold text-[#7C3AED]">
+                  {selectedService?.price} RON
+                </span>
+                <span className="w-1.5 h-1.5 rounded-full bg-[#A59EAD]/50"></span>
+                <span className="text-lg font-medium text-[#A59EAD]">
+                  {selectedService?.duration} min
+                </span>
               </div>
-            )}
 
-            {/* CTA */}
-            <div className="flex justify-start pt-2">
-              <Button
-                className="bg-violet-600 hover:bg-violet-700 text-white"
-                // Qwiet SAST warning-sink-redirect: false positive — React Router client-side SPA routing; path is the internal '/book' route with a URL-encoded service name sourced from the ServicesContext/DB, not an arbitrary external URL.
-                onClick={() => {
-                  if (selectedService) {
-                    navigate(`/book?service=${encodeURIComponent(selectedService.name)}`, { state: { service: selectedService.name } });
-                  }
-                }}
-              >
-                Rezervă acum
-              </Button>
+              <div className="flex-grow space-y-6">
+                <div className="prose prose-invert max-w-none text-[#A59EAD]">
+                  <p className="leading-relaxed">
+                    {selectedService?.description}
+                  </p>
+                </div>
+
+                {selectedBenefits.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-semibold text-[#7C3AED] uppercase tracking-wider mb-3">
+                      Beneficii
+                    </h4>
+                    <ul className="space-y-2">
+                      {selectedBenefits.map((benefit, i) => (
+                        <li key={i} className="flex items-start gap-2.5 text-[#F3EDF7]">
+                          <span className="text-[#7C3AED] mt-1 shrink-0">•</span>
+                          <span className="leading-snug">{benefit}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+
+              <div className="pt-8 mt-auto sticky bottom-0 bg-[#1E1B24] pb-2 md:pb-0">
+                <Button
+                  className="w-full bg-[#7C3AED] hover:bg-[#6D28D9] text-white h-12 text-lg font-medium"
+                  onClick={() => {
+                    if (selectedService) {
+                      navigate(`/book?service=${encodeURIComponent(selectedService.name)}`, { state: { service: selectedService.name } });
+                    }
+                  }}
+                >
+                  Rezervă acum
+                </Button>
+              </div>
             </div>
           </div>
         </DialogContent>
