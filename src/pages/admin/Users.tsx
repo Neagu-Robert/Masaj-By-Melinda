@@ -75,7 +75,7 @@ export default function Users() {
       setUsers(data || []);
     } catch (err) {
       console.error('Error fetching users:', err);
-      setError('Failed to load users. Please try again.');
+      setError('Eroare la încărcarea utilizatorilor. Vă rugăm să încercați din nou.');
     } finally {
       setLoading(false);
     }

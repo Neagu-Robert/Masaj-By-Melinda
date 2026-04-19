@@ -137,7 +137,7 @@ export default function AuthPage() {
           }
 
           // Handle other errors
-          setError('Something went wrong, try again');
+          setError('A apărut o eroare. Vă rugăm să încercați din nou.');
           setLoading(false);
           return;
         }
@@ -152,7 +152,7 @@ export default function AuthPage() {
         const { data: { user: verifiedUser }, error: verifyErr } = await supabase.auth.getUser();
         //console.log('Verified user:', verifiedUser, verifyErr);  // Log!
         if (verifyErr || !verifiedUser) {
-          setError('Session verification failed');
+          setError('Verificarea sesiunii a eșuat.');
           setLoading(false);
           return;
         }
@@ -165,12 +165,12 @@ export default function AuthPage() {
         //console.log('Manual profile:', profile, profileErr);  // CRITICAL log!
         if (profileErr || !profile) {
           console.error('Profile error:', profileErr);
-          setError(profileErr?.message || 'No profile found');
+          setError(profileErr?.message || 'Profilul nu a fost găsit.');
           setLoading(false);
           return;
         }
         if (profile.status === 'banned') {
-          setError('Account banned');
+          setError('Cont blocat.');
           await supabase.auth.signOut();
           setLoading(false);
           return;
@@ -241,7 +241,7 @@ return (
     <FormErrorBoundary feature="auth">
       <form onSubmit={handleAuth} className="bg-gray-800/90 backdrop-blur-md p-8 rounded shadow-md w-full max-w-sm mx-4 sm:mx-auto">
         <div className="text-center mb-4">
-          <div className="text-2xl md:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-400 to-pink-500 mb-2">Masaj by Melinda</div>
+          <div className="text-2xl md:text-3xl font-bold text-violet-400 mb-2">Masaj by Melinda</div>
         </div>
           <h2 className="text-2xl font-bold mb-6 text-center text-violet-400">
             {isLogin ? 'Autentificare' : 'Înregistrare'}

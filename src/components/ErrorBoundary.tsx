@@ -24,15 +24,15 @@ const ErrorFallback: React.FC = () => {
             />
           </svg>
         </div>
-        <h1 className="text-2xl font-bold text-white mb-4">Something went wrong</h1>
+        <h1 className="text-2xl font-bold text-white mb-4">A apărut o eroare</h1>
         <p className="text-gray-400 mb-6">
-          We're sorry, but something unexpected happened. Please try reloading the page.
+          Ne pare rău, a apărut o eroare neașteptată. Vă rugăm să reîncărcați pagina.
         </p>
         <button
           onClick={() => window.location.reload()}
           className="w-full bg-violet-600 hover:bg-violet-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
         >
-          Reload Page
+          Reîncarcă pagina
         </button>
       </div>
     </div>

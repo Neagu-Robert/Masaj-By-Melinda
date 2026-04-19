@@ -35,10 +35,10 @@ export default function ResetPasswordPage() {
     const hasTokens = urlParams.get('access_token') || hash.includes('access_token');
     
     if (hasTokens) {
-      console.log('Password reset link with tokens detected');
+      // Supabase will handle the authentication automatically
       // Supabase will handle the authentication automatically
     } else {
-      console.log('No tokens found in URL - this might be a direct visit');
+      // No tokens found in URL - this might be a direct visit
     }
   }, [searchParams]);
 

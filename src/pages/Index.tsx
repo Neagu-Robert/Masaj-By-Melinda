@@ -21,7 +21,7 @@ const Index = () => {
     }
   }, [location.state]);
 
-  console.log("Index page rendering");
+
 
   return (
     <div 

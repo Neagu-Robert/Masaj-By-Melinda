@@ -6,7 +6,16 @@ export function ProtectedRoute({ children, allowedRoles = ['admin'] }) {
   const { user, role, loading } = useAuth();
 
   if (loading) {
-    return <div>Loading...</div>; // Or a spinner component
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div
+          className="animate-spin rounded-full h-32 w-32 border-b-2 border-violet-600"
+          role="status"
+        >
+          <span className="sr-only">Se încarcă...</span>
+        </div>
+      </div>
+    );
   }
 
   if (!user) {

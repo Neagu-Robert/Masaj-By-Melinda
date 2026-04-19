@@ -88,7 +88,7 @@ function AppContent() {
           className="animate-spin rounded-full h-32 w-32 border-b-2 border-violet-600"
           role="status"
         >
-          <span className="sr-only">Loading...</span>
+          <span className="sr-only">Se încarcă...</span>
         </div>
       </div>
     );
@@ -99,11 +99,10 @@ function AppContent() {
       <div className="min-h-screen flex items-center justify-center bg-gray-900">
         <div className="bg-gray-800 p-8 rounded shadow-md w-full max-w-sm text-center">
           <h2 className="text-2xl font-bold mb-4 text-red-400">
-            Account Banned
+            Cont Blocat
           </h2>
           <p className="text-white mb-4">
-            Your account has been banned. Please contact support if you believe
-            this is a mistake.
+            Contul dumneavoastră a fost blocat. Vă rugăm să contactați suportul dacă credeți că este o eroare.
           </p>
         </div>
       </div>

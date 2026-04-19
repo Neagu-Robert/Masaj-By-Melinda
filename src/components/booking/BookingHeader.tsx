@@ -62,7 +62,7 @@ const BookingHeader = () => {
       <div className="container mx-auto px-4 py-4">
         <div className="flex justify-between items-center">
           <div 
-            className="text-xl md:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-400 to-pink-500 cursor-pointer"
+            className="text-xl md:text-2xl font-bold text-violet-400 cursor-pointer"
             onClick={handleLogoClick}
           >
             Masaj by Melinda

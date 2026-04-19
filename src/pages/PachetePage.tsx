@@ -145,14 +145,14 @@ const PachetePage = () => {
                       <div className="flex gap-3 pt-4">
                         <a
                           href="tel:0771761649"
-                          className="flex-1 inline-flex items-center justify-center gap-2 bg-[#7C3AED] hover:bg-[#6D28D9] active:bg-[#5B21B6] text-white h-11 rounded-lg text-sm font-medium transition-colors duration-200"
+                          className="flex-1 inline-flex items-center justify-center gap-2 bg-[#7C3AED] hover:bg-[#6D28D9] hover:-translate-y-0.5 active:bg-[#5B21B6] text-white h-11 rounded-lg text-sm font-medium transition-all duration-200"
                         >
                           <Phone className="w-4 h-4 shrink-0" />
                           <span>0771 761 649</span>
                         </a>
                         <a
                           href="mailto:melindaneagu22@gmail.com"
-                          className="flex-1 inline-flex items-center justify-center gap-2 bg-white/10 hover:bg-white/[0.17] active:bg-white/[0.22] text-[#F3EDF7] h-11 rounded-lg text-sm font-medium transition-colors duration-200 border border-white/[0.06]"
+                          className="flex-1 inline-flex items-center justify-center gap-2 bg-white/10 hover:bg-white/[0.17] hover:-translate-y-0.5 active:bg-white/[0.22] text-[#F3EDF7] h-11 rounded-lg text-sm font-medium transition-all duration-200 border border-white/[0.06]"
                         >
                           <Mail className="w-4 h-4 shrink-0" />
                           <span>Email</span>

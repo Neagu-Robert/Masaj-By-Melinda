@@ -63,7 +63,7 @@ const Confirmari = () => {
           table: 'bookings',
         },
         (payload) => {
-          console.log('Change received!', payload);
+
           fetchBookings();
         },
       )

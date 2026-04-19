@@ -24,15 +24,15 @@ const FormErrorFallback: React.FC<{ resetError: () => void }> = ({ resetError })
           />
         </svg>
         <div className="flex-1">
-          <h3 className="text-lg font-semibold text-red-400 mb-2">An error occurred</h3>
+          <h3 className="text-lg font-semibold text-red-400 mb-2">A apărut o eroare</h3>
           <p className="text-gray-300 mb-4">
-            Something went wrong while processing this form. Please try again.
+            A apărut o eroare la procesarea formularului. Vă rugăm să încercați din nou.
           </p>
           <button
             onClick={resetError}
             className="bg-violet-600 hover:bg-violet-700 text-white font-semibold py-2 px-4 rounded transition-colors"
           >
-            Try Again
+            Încearcă din nou
           </button>
         </div>
       </div>

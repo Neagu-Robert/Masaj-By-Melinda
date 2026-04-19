@@ -47,7 +47,7 @@ export const ServicesProvider = ({ children }: { children: ReactNode }) => {
       setServices(data || []);
     } catch (err) {
       console.error('Error fetching services:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch services');
+      setError(err instanceof Error ? err.message : 'Eroare la încărcarea serviciilor');
     } finally {
       setLoading(false);
     }

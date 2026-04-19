@@ -86,7 +86,7 @@ const ServiceSelection = ({ form, setSelectedService, disabled }: ServiceSelecti
                       disabled={disabled}
                     >
                       {massageServices.map((service) => (
-                        <label htmlFor={service.name} key={service.id} className={`flex items-center space-x-2 rounded-md border border-gray-600 bg-gray-700 p-3 hover:bg-gray-600 ${disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}>
+                        <label htmlFor={service.name} key={service.id} className={`flex items-center space-x-2 rounded-md border border-gray-600 bg-gray-700 p-3 min-h-[44px] hover:bg-gray-600 ${disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}>
                           <RadioGroupItem value={service.name} id={service.name} className="border-gray-500 text-[#7E69AB]" disabled={disabled} />
                           <span className="flex-1 text-sm font-medium text-white">
                             {service.name}
@@ -109,7 +109,7 @@ const ServiceSelection = ({ form, setSelectedService, disabled }: ServiceSelecti
                       disabled={disabled}
                     >
                       {deviceServices.map((service) => (
-                        <label htmlFor={service.name} key={service.id} className={`flex items-center space-x-2 rounded-md border border-gray-600 bg-gray-700 p-3 hover:bg-gray-600 ${disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}>
+                        <label htmlFor={service.name} key={service.id} className={`flex items-center space-x-2 rounded-md border border-gray-600 bg-gray-700 p-3 min-h-[44px] hover:bg-gray-600 ${disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}>
                           <RadioGroupItem value={service.name} id={service.name} className="border-gray-500 text-[#7E69AB]" disabled={disabled} />
                           <span className="flex-1 text-sm font-medium text-white">
                             {service.name}
