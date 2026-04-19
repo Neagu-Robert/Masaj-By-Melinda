@@ -193,12 +193,6 @@ const DeviceTreatments = () => {
               </div>
 
               <div className="flex-grow space-y-6">
-                <div className="prose prose-invert max-w-none text-[#A59EAD]">
-                  <p className="leading-relaxed">
-                    {selectedService?.description}
-                  </p>
-                </div>
-
                 {selectedBenefits.length > 0 && (
                   <div>
                     <h4 className="text-sm font-semibold text-[#7C3AED] uppercase tracking-wider mb-3">

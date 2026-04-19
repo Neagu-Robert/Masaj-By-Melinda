@@ -2,133 +2,170 @@
 import React from 'react';
 import type { MetaFunction } from 'react-router';
 import Navbar from '../components/Navbar';
-import { Card, CardContent } from '@/components/ui/card';
 import { Package, Gift, Phone, Mail } from 'lucide-react';
+
+const packages = [
+  {
+    id: 'loialitate',
+    title: 'Pachet loialitate',
+    icon: Package,
+    image: '/new_images/Loialitate.webp',
+    features: [
+      '10 ședințe de masaj',
+      '1 ședință GRATUITĂ',
+      'Transmisibil (familie / prieteni)',
+    ],
+    price: null,
+  },
+  {
+    id: 'remodelare',
+    title: 'Remodelare corporală',
+    icon: Package,
+    image: '/new_images/Remodelare.webp',
+    features: [
+      '30 de minute cu un aparat în funcție de nevoi',
+      '+ un masaj de fermitate / anticelulitic',
+      'După 2 abonamente primiți un tratament facial anti-îmbătrânire gratuit',
+    ],
+    price: '950 RON / 10 ședințe',
+  },
+  {
+    id: 'impachetari',
+    title: 'Împachetări pentru detox / remodelare',
+    icon: Package,
+    image: '/new_images/Impachetari.webp',
+    features: [
+      'Împachetări cu termocuvertură',
+      'După un abonament primiți un masaj facial / reflexo / masaj la spate',
+    ],
+    price: '900 RON / 10 ședințe',
+  },
+  {
+    id: 'voucher',
+    title: 'Vouchere cadou',
+    icon: Gift,
+    image: '/new_images/Voucher.webp',
+    features: [
+      'Vouchere valorice ce se pot oferi cadou persoanelor dragi',
+      'Cu suma valorică se poate achiziționa orice serviciu din gama noastră',
+      'Se plătește la salon cash / card',
+    ],
+    price: null,
+  },
+];
 
 const PachetePage = () => {
   return (
-    <div className="min-h-screen bg-gray-900">
+    <div
+      className="min-h-screen bg-gray-900 bg-scroll md:bg-fixed bg-cover bg-center relative"
+      style={{ backgroundImage: "url('/lovable-uploads/8659eb40-96fc-4579-9af8-1b649574c3ff.png')" }}
+    >
+      {/* Dark overlay matching home page treatment */}
+      <div className="absolute inset-0 bg-black/60 pointer-events-none" />
+      <div className="relative z-10">
       <Navbar />
-      
+
       <div className="pt-24 pb-20">
         <div className="container mx-auto px-4">
-          <h2 className="text-2xl md:text-3xl font-semibold text-center text-white">Pachete Speciale</h2>
-          
-          {/* Contact message */}
-          <div className="my-12 max-w-3xl mx-auto text-center p-6 bg-gray-800 rounded-lg border border-[#9b87f5]/30 shadow-sm">
-            <p className="text-lg text-white mb-4">
-              Pentru achiziționarea unui pachet special vă rugăm să ne contactați printr-un apel sau mesaj și vă vom face o rezervare
-            </p>
-            
-            {/* Contact details */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mt-6">
-              <a href="tel:0771761649" className="cursor-pointer hover:shadow-lg hover:scale-105 transition-all">
-                <div className="flex items-center gap-3 bg-gray-700 px-6 py-3 rounded-full shadow-sm border border-[#9b87f5]/20 hover:shadow-md transition-shadow">
-                  <Phone className="text-[#9b87f5] w-5 h-5" />
-                  <span className="text-white font-medium">0771 761 649</span>
-                </div>
-              </a>
-              
-              <a href="mailto:melindaneagu22@gmail.com" className="cursor-pointer hover:shadow-lg hover:scale-105 transition-all">
-                <div className="flex items-center gap-3 bg-gray-700 px-6 py-3 rounded-full shadow-sm border border-[#9b87f5]/20 hover:shadow-md transition-shadow">
-                  <Mail className="text-[#9b87f5] w-5 h-5 flex-shrink-0" />
-                  <span className="text-white font-medium break-all">melindaneagu22@gmail.com</span>
-                </div>
-              </a>
-            </div>
+          {/* Page Title */}
+          <h1 className="text-3xl md:text-4xl font-bold text-center text-white mb-4">
+            Pachete Speciale
+          </h1>
+
+          {/* Simplified Banner */}
+          <p className="text-center text-gray-300 max-w-2xl mx-auto mb-12 md:mb-16 text-base md:text-lg leading-relaxed">
+            Pentru achiziționarea unui pachet special vă rugăm să ne contactați
+            printr-un apel sau mesaj și vă vom face o rezervare
+          </p>
+
+          {/* 2×2 Desktop Grid / 1-col Mobile Stack */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 max-w-6xl mx-auto">
+            {packages.map((pkg) => {
+              const Icon = pkg.icon;
+              return (
+                <article
+                  key={pkg.id}
+                  className="rounded-xl overflow-hidden bg-[#1E1B24] border border-white/[0.06] shadow-lg h-full transition-all duration-500 ease-out hover:scale-[1.02] hover:border-[#7C3AED]/30 hover:shadow-[0_0_30px_rgba(124,58,237,0.15)] transform-gpu will-change-transform"
+                >
+                  <div className="grid grid-cols-1 md:grid-cols-[5fr_6fr] h-full">
+                    {/* Image Side */}
+                    <div className="relative h-64 md:h-full md:min-h-[320px]">
+                      <img
+                        src={pkg.image}
+                        alt={pkg.title}
+                        className="absolute inset-0 w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                      {/* Subtle gradient to blend image into dark card */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#1E1B24]/80 via-transparent to-transparent md:bg-gradient-to-r md:from-transparent md:via-transparent md:to-[#1E1B24]" />
+                    </div>
+
+                    {/* Content Side */}
+                    <div className="p-5 md:p-6 flex flex-col justify-between">
+                      {/* Title Row */}
+                      <div className="flex items-center gap-2.5 mb-5">
+                        <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-[#7C3AED]/15 shrink-0">
+                          <Icon className="w-[18px] h-[18px] text-[#7C3AED]" />
+                        </div>
+                        <h2 className="text-lg md:text-xl font-bold text-[#F3EDF7] leading-tight">
+                          {pkg.title}
+                        </h2>
+                      </div>
+
+                      {/* Feature List + Price grouped — buttons pushed to bottom */}
+                      <div>
+                        <div className="mb-5">
+                          <p className="text-xs font-semibold text-[#7C3AED] uppercase tracking-widest mb-3">
+                            Ce include:
+                          </p>
+                          <ul className="space-y-2">
+                            {pkg.features.map((feature, i) => (
+                              <li
+                                key={i}
+                                className="flex items-start gap-2.5 text-sm text-[#F3EDF7]/85"
+                              >
+                                <span className="text-[#7C3AED] mt-0.5 shrink-0 text-base leading-none">
+                                  •
+                                </span>
+                                <span className="leading-snug">{feature}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+
+                        {/* Price (when applicable) */}
+                        {pkg.price && (
+                          <p className="text-base font-bold text-[#7C3AED] tracking-wide">
+                            Preț: {pkg.price}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* CTA Button Row — always anchored to card bottom via justify-between */}
+                      <div className="flex gap-3 pt-4">
+                        <a
+                          href="tel:0771761649"
+                          className="flex-1 inline-flex items-center justify-center gap-2 bg-[#7C3AED] hover:bg-[#6D28D9] active:bg-[#5B21B6] text-white h-11 rounded-lg text-sm font-medium transition-colors duration-200"
+                        >
+                          <Phone className="w-4 h-4 shrink-0" />
+                          <span>0771 761 649</span>
+                        </a>
+                        <a
+                          href="mailto:melindaneagu22@gmail.com"
+                          className="flex-1 inline-flex items-center justify-center gap-2 bg-white/10 hover:bg-white/[0.17] active:bg-white/[0.22] text-[#F3EDF7] h-11 rounded-lg text-sm font-medium transition-colors duration-200 border border-white/[0.06]"
+                        >
+                          <Mail className="w-4 h-4 shrink-0" />
+                          <span>Email</span>
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto">
-            {/* Pachet 1 */}
-            <Card className="overflow-hidden border-[#9b87f5]/30 shadow-lg hover:shadow-xl transition-shadow bg-gray-800">
-              <div className="grid md:grid-cols-2">
-                <div className="h-64 md:h-auto">
-                  <img 
-                    src="/lovable-uploads/d1638de6-ca53-4e9b-96fd-bd385a3f988f.png" 
-                    alt="Masaj loialitate" 
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <CardContent className="p-6">
-                  <div className="flex items-center mb-4">
-                    <Package className="w-6 h-6 text-[#9b87f5] mr-2" />
-                    <h3 className="text-lg md:text-xl font-semibold text-white">Pachet loialitate</h3>
-                  </div>
-                  <p className="text-gray-300">
-                    10 masaje + 1 gratis (pot fi folosite de mai multe persoane /prieteni/ membrii ai familiei)
-                  </p>
-                </CardContent>
-              </div>
-            </Card>
-
-            {/* Pachet 2 */}
-            <Card className="overflow-hidden border-[#9b87f5]/30 shadow-lg hover:shadow-xl transition-shadow bg-gray-800">
-              <div className="grid md:grid-cols-2">
-                <div className="h-64 md:h-auto">
-                  <img 
-                    src="/lovable-uploads/1b73aee3-1d55-465f-b371-bfb2a17cc0e3.png" 
-                    alt="Remodelare corporala" 
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <CardContent className="p-6">
-                  <div className="flex items-center mb-4">
-                    <Package className="w-6 h-6 text-[#9b87f5] mr-2" />
-                    <h3 className="text-lg md:text-xl font-semibold text-white">Remodelare corporala</h3>
-                  </div>
-                  <p className="text-gray-300">
-                    30 de minute cu un aparat in functie de nevoi + un masaj fie de fermitate/anticelulitic (10 sedinte -950 lei) dupa 2 abonamente primiti un tratament facial antiimbatranire gratuit.
-                  </p>
-                </CardContent>
-              </div>
-            </Card>
-
-            {/* Pachet 3 */}
-            <Card className="overflow-hidden border-[#9b87f5]/30 shadow-lg hover:shadow-xl transition-shadow bg-gray-800">
-              <div className="grid md:grid-cols-2">
-                <div className="h-64 md:h-auto">
-                  <img 
-                    src="/lovable-uploads/918d4504-6b81-4311-b421-c0e2df19ed59.png" 
-                    alt="Impachetari pentru detox" 
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <CardContent className="p-6">
-                  <div className="flex items-center mb-4">
-                    <Package className="w-6 h-6 text-[#9b87f5] mr-2" />
-                    <h3 className="text-lg md:text-xl font-semibold text-white">Impachetari pentru detox/remodelare</h3>
-                  </div>
-                  <p className="text-gray-300">
-                    Impachetari pentru detox/remodelare cu termocuvertura (10 sedinte - 900 de lei) dupa un abonament primiti un masaj facial/reflexo/masaj la spate.
-                  </p>
-                </CardContent>
-              </div>
-            </Card>
-
-            {/* Pachet 4 */}
-            <Card className="overflow-hidden border-[#9b87f5]/30 shadow-lg hover:shadow-xl transition-shadow bg-gray-800">
-              <div className="grid md:grid-cols-2">
-                <div className="h-64 md:h-auto">
-                  <img 
-                    src="/lovable-uploads/c94579d3-e2b1-4851-892c-79044c3ca995.png" 
-                    alt="Voucher cadou" 
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <CardContent className="p-6">
-                  <div className="flex items-center mb-4">
-                    <Gift className="w-6 h-6 text-[#9b87f5] mr-2" />
-                    <h3 className="text-lg md:text-xl font-semibold text-white">Vouchere cadou</h3>
-                  </div>
-                  <p className="text-gray-300">
-                    Vouchere valorice ce se pot oferi cadou persoanelor dragi. Cu suma valorica de pe voucher se poate achizitiona orice serviciu din gama noastra. Se plateste la salon cash/card.
-                  </p>
-                </CardContent>
-              </div>
-            </Card>
-          </div>
-          
         </div>
+      </div>
       </div>
     </div>
   );
