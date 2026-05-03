@@ -7,6 +7,7 @@ import {
   ScrollRestoration,
 } from "react-router";
 import * as Sentry from "@sentry/react";
+import { Analytics } from "@vercel/analytics/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/toaster";
@@ -138,6 +139,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         {children}
+        <Analytics />
         <ScrollRestoration />
         <Scripts />
       </body>

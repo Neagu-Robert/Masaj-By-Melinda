@@ -24,7 +24,7 @@ const Index = () => {
 
 
   return (
-    <div 
+    <div
       className="min-h-screen bg-scroll md:bg-fixed bg-cover bg-center relative"
       style={{
         backgroundImage: "url('/lovable-uploads/8659eb40-96fc-4579-9af8-1b649574c3ff.png')"
@@ -51,11 +51,11 @@ export const meta: MetaFunction = () => {
   return [
     { title: "Masaj și Remodelare Corporală în Oradea | Masaj by Melinda" },
     { name: "description", content: "Bucură-te de servicii profesionale de masaj și remodelare corporală în Oradea. Programează online pentru o experiență de relaxare de neuitat." },
-    { tagName: "link", rel: "canonical", href: "[DOMAIN_TBD]/" },
+    { tagName: "link", rel: "canonical", href: "https://masajbymelinda.ro/" },
     { property: "og:type", content: "website" },
     { property: "og:title", content: "Masaj și Remodelare Corporală în Oradea | Masaj by Melinda" },
     { property: "og:description", content: "Bucură-te de servicii profesionale de masaj și remodelare corporală în Oradea. Programează online pentru o experiență de relaxare de neuitat." },
-    { property: "og:url", content: "[DOMAIN_TBD]/" },
+    { property: "og:url", content: "https://masajbymelinda.ro/" },
     { property: "og:image", content: "/lovable-uploads/8659eb40-96fc-4579-9af8-1b649574c3ff.png" },
     { name: "twitter:card", content: "summary_large_image" },
     { name: "twitter:title", content: "Masaj și Remodelare Corporală în Oradea | Masaj by Melinda" },
@@ -69,7 +69,7 @@ export const meta: MetaFunction = () => {
         "telephone": "+40771761649",
         "address": {
           "@type": "PostalAddress",
-          "streetAddress": "str. Aluminei",
+          "streetAddress": "str. Aluminei nr.6",
           "addressLocality": "Oradea",
           "addressRegion": "Bihor",
           "addressCountry": "RO"
@@ -85,18 +85,17 @@ export const meta: MetaFunction = () => {
             "@type": "OpeningHoursSpecification",
             "dayOfWeek": "Saturday",
             "opens": "09:00",
-            "closes": "14:00"
+            "closes": "12:00"
           }
         ],
-        "hasMap": "https://www.google.com/maps/search/?api=1&query=str.+Aluminei,+Oradea",
+        "hasMap": "https://www.google.com/maps/search/?api=1&query=str.+Aluminei+nr.6,+Oradea",
         "image": "/lovable-uploads/8659eb40-96fc-4579-9af8-1b649574c3ff.png",
-        "url": "// TODO: [DOMAIN_TBD]",
         "geo": {
           "@type": "GeoCoordinates",
           "latitude": "// TODO: [LAT_TBD]",
           "longitude": "// TODO: [LNG_TBD]"
         },
-        "priceRange": "// TODO: [PRICE_RANGE_TBD]"
+        "priceRange": "150"
       }
     }
   ];

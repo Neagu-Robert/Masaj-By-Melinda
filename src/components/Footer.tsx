@@ -27,9 +27,9 @@ const Footer = () => {
           </div>
           <div className="space-y-4">
             <h3 className="text-xl font-semibold text-white mb-4">Contactează-ne</h3>
-            <a href="https://www.google.com/maps/search/?api=1&query=str.+Aluminei,+Oradea" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center md:justify-start gap-3 text-gray-300 hover:text-violet-400 transition-colors">
+            <a href="https://www.google.com/maps/search/?api=1&query=str.+Aluminei+nr.6,+Oradea" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center md:justify-start gap-3 text-gray-300 hover:text-violet-400 transition-colors">
               <MapPin size={20} />
-              <span>str. Aluminei, Oradea, Bihor, Romania</span>
+              <span>str. Aluminei nr.6, Oradea, Bihor, Romania</span>
             </a>
             <a href="tel:0771761649" className="flex items-center justify-center md:justify-start gap-3 text-violet-400 hover:text-violet-300 transition-colors font-medium">
               <Phone size={20} />
