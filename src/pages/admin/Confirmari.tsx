@@ -7,6 +7,17 @@ import { useServices } from '../../contexts/ServicesContext';
 import { useAvailabilities } from '../../contexts/AvailabilitiesContext';
 import { formatDateForDB, checkForDoubleBooking, checkForHourBookingConflict, validateBookingData, getAvailableTimeSlotsForDate, getTomorrow, fetchBookedTimeSlots, combineHourAndMinute, normalizeHourSlot, getMinutePart, isHourSlotBooked, isHourSlotUnavailable, MINUTE_OPTIONS, parseRequestedDateText, parseRequestedTimeText } from '../../lib/booking-utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -345,6 +356,16 @@ const Confirmari = () => {
     }
   };
 
+  const getDisplayDate = (booking: Booking) =>
+    booking.requested_date_text ||
+    (booking.booking_date
+      ? new Date(booking.booking_date).toLocaleDateString()
+      : null) ||
+    'Nu a specificat';
+
+  const getDisplayTime = (booking: Booking) =>
+    booking.requested_time_text || booking.booking_time || 'Nu a specificat';
+
   if (loading) {
     return (
       <div className="text-white p-4">Se încarcă rezervările pentru confirmare...</div>
@@ -372,28 +393,18 @@ const Confirmari = () => {
                     <p>{booking.profiles?.email}</p>
                     <p>{booking.profiles?.phone}</p>
                   </div>
-                  <div className="bg-gray-800 p-4 rounded-lg border-l-4 border-yellow-500 mb-4">
+                  <div className="bg-gray-800 p-4 rounded-lg border-l-4 border-yellow-500">
                     <h3 className="font-semibold text-yellow-400 mb-2">Cererea Clientului</h3>
                     <p className="text-gray-300">Serviciu: {booking.service_type}</p>
-                    <p className="text-gray-300">Data dorită: {booking.requested_date_text || 'Nu a specificat'}</p>
-                    <p className="text-gray-300">Ora preferată: {booking.requested_time_text || 'Nu a specificat'}</p>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold">Detalii Rezervare</h3>
-                    <p>Serviciu: {booking.service_type}</p>
-                    <p>
-                      Data: {booking.booking_date
-                        ? new Date(booking.booking_date).toLocaleDateString()
-                        : (booking.requested_date_text || '—')}
-                    </p>
-                    <p>Ora: {booking.booking_time || booking.requested_time_text || '—'}</p>
-                    <p>
+                    <p className="text-gray-300">Data dorită: {getDisplayDate(booking)}</p>
+                    <p className="text-gray-300">Ora preferată: {getDisplayTime(booking)}</p>
+                    <p className="text-gray-300 mt-2">
                       Status:{' '}
                       <span
                         className={`px-2 py-1 rounded-full text-xs ${
                           booking.status === 'unconfirmed'
-                            ? 'bg-yellow-500'
-                            : 'bg-blue-500'
+                            ? 'bg-yellow-500 text-gray-900'
+                            : 'bg-blue-500 text-white'
                         }`}
                       >
                         {booking.status}
@@ -408,12 +419,35 @@ const Confirmari = () => {
                       >
                         Confirmă
                       </button>
-                      <button
-                        onClick={() => handleReject(booking)}
-                        className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
-                      >
-                        Respinge
-                      </button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <button
+                            type="button"
+                            className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
+                          >
+                            Respinge
+                          </button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent className="bg-gray-800/90 text-white border-gray-700">
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Respinge rezervarea?</AlertDialogTitle>
+                            <AlertDialogDescription className="text-gray-300">
+                              Sigur doriți să respingeți această rezervare? Această acțiune nu poate fi anulată.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel className="border-gray-600 text-gray-800 hover:bg-gray-700">
+                              Anulează
+                            </AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleReject(booking)}
+                              className="bg-red-600 hover:bg-red-700"
+                            >
+                              Respinge
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                       <a
                         href={`tel:${booking.profiles?.phone}`}
                         className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded inline-block"

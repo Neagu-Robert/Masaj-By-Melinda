@@ -265,6 +265,8 @@ stateDiagram-v2
 | `20260328_fix_handle_new_user.sql` | Fixes `handle_new_user` trigger for profile creation on signup |
 | `20260329_enable_pg_net.sql` | Enables `pg_net` extension for async HTTP calls from DB triggers |
 | `20260329_booking_sms_trigger.sql` | Creates `notify_admin_on_booking_change()` trigger function + `notify_admin_sms_trigger` on bookings UPDATE/DELETE |
+| `20260401_booking_confirmation_needed_sms.sql` | Adds `confirmation_needed` event (`confirmed` → `unconfirmed`) with `Rezervare noua:` admin SMS; skips SMS for service-only profile edits |
+| `20260402_fix_booking_sms_cancelled_enum.sql` | Fixes trigger crash on every UPDATE: compare `NEW.status::text = 'cancelled'` (enum has no `cancelled` value) |
 | `20260329200000_booking_admin_audit_trigger.sql` | Creates `log_admin_action_on_booking()` + `booking_admin_audit_trigger` on `bookings` |
 | `20260329200001_profile_admin_audit_trigger.sql` | Creates `log_admin_action_on_profile()` + `profile_admin_audit_trigger` on `profiles` |
 | `20260330_profile_create_audit_trigger.sql` | Extends `log_admin_action_on_profile()` to log `user.create` on profile INSERT |
@@ -275,7 +277,7 @@ stateDiagram-v2
 
 | Trigger Function | Table | Events | Behaviour |
 |---|---|---|---|
-| `notify_admin_on_booking_change()` | `bookings` | `AFTER UPDATE OR DELETE` | Reads `INTERNAL_SMS_SHARED_SECRET` + `ADMIN_PHONE_NUMBERS` from Vault; calls `send-sms` EF via `pg_net.http_post` (async, fail-open). Suppressed for admin-initiated actions. |
+| `notify_admin_on_booking_change()` | `bookings` | `AFTER UPDATE OR DELETE` | Reads `INTERNAL_SMS_SHARED_SECRET` + `ADMIN_PHONE_NUMBERS` from Vault; calls `send-sms` EF via `pg_net.http_post` (async, fail-open). Events include `confirmation_needed` (profile re-request), `cancellation`, `suggestion_accepted`/`declined`, `booking_updated`. Suppressed for admin-initiated actions and service-only profile edits while status stays `confirmed`. |
 | `log_admin_action_on_booking()` | `bookings` | `AFTER INSERT OR UPDATE OR DELETE` | Inserts a row into `admin_audit_logs` when the acting user has role `admin` (or on any DELETE). Actions: `booking.create.admin`, `booking.update.admin`, `booking.delete`. |
 | `log_admin_action_on_profile()` | `profiles` | `AFTER INSERT OR UPDATE OR DELETE` | Logs `user.create` on profile INSERT (email + full_name in details; `user_id` = new user). Admin-initiated ban/unban/delete: `user.ban`, `user.unban`, `user.delete`. |
 
@@ -940,7 +942,7 @@ sequenceDiagram
 **Notes:**
 - All notification failures are logged silently (non-blocking)
 - **New bookings:** Customer email via `send-email` EF; admin SMS directly to Twilio Messages API
-- **Updates/cancels/suggestions:** Admin SMS via DB trigger → `send-sms` EF (async `pg_net`)
+- **Updates/cancels/suggestions/profile re-requests:** Admin SMS via DB trigger → `send-sms` EF (async `pg_net`). Profile date/time changes send `Rezervare noua:` via `confirmation_needed` event.
 - DB trigger suppresses notifications for admin-initiated actions (`profiles.role = 'admin'`)
 - `ADMIN_PHONE_NUMBERS` secret contains comma-separated list of admin phones (E.164 format)
 - SMS messages are in Romanian, ≤160 characters

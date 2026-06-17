@@ -1,7 +1,6 @@
--- Booking SMS trigger: notifies admin phones via send-sms edge function
--- when a booking is updated or deleted (cancel, accept, decline, etc.).
--- Depends on: pg_net extension, Vault secrets (INTERNAL_SMS_SHARED_SECRET,
--- SUPABASE_URL, SUPABASE_ANON_KEY, ADMIN_PHONE_NUMBERS).
+-- Extend booking SMS trigger with confirmation_needed event for profile re-requests
+-- (confirmed → unconfirmed when customer changes date/time on profile page).
+-- Also skip SMS for service-only profile edits while status stays confirmed.
 
 CREATE OR REPLACE FUNCTION notify_admin_on_booking_change()
 RETURNS TRIGGER
@@ -70,9 +69,24 @@ BEGIN
   ELSIF NEW.status = 'unconfirmed' AND OLD.status = 'suggested' THEN
     v_event := 'suggestion_declined';
     v_row := NEW;
+  ELSIF NEW.status = 'unconfirmed' AND OLD.status = 'confirmed' THEN
+    v_event := 'confirmation_needed';
+    v_row := NEW;
   ELSE
     v_event := 'booking_updated';
     v_row := NEW;
+  END IF;
+
+  -- Skip SMS for service-only profile edits (status stays confirmed, no date/time change)
+  IF TG_OP = 'UPDATE'
+     AND v_event = 'booking_updated'
+     AND NEW.status = 'confirmed'
+     AND OLD.status = 'confirmed'
+     AND NEW.booking_date IS NOT DISTINCT FROM OLD.booking_date
+     AND NEW.booking_time IS NOT DISTINCT FROM OLD.booking_time
+     AND NEW.requested_date_text IS NOT DISTINCT FROM OLD.requested_date_text
+     AND NEW.requested_time_text IS NOT DISTINCT FROM OLD.requested_time_text THEN
+    RETURN NEW;
   END IF;
 
   -- SMS notification block — wrapped in exception handler to never block the operation
@@ -127,6 +141,10 @@ BEGIN
         v_sms_message := 'Sugestie acceptata: ' || v_service || ' - ' || v_datetime_part || '. Client: ' || v_customer_name || '. ID: ' || v_booking_id_short;
       WHEN 'suggestion_declined' THEN
         v_sms_message := 'Sugestie refuzata: ' || v_service || ' - ' || v_datetime_part || '. Client: ' || v_customer_name || '. ID: ' || v_booking_id_short;
+      WHEN 'confirmation_needed' THEN
+        v_sms_message := 'Rezervare noua: ' || v_service || ' - ' || v_datetime_part
+          || '. Client: ' || v_customer_name || ' ' || COALESCE(v_row.phone_number, '')
+          || '. ID: ' || v_booking_id_short;
       ELSE
         v_sms_message := 'Actualizare: ' || v_service || ' - ' || v_datetime_part || '. Client: ' || v_customer_name || '. ID: ' || v_booking_id_short;
     END CASE;
@@ -169,13 +187,3 @@ BEGIN
   END IF;
 END;
 $$;
-
-
--- Drop the trigger first so the migration can be run multiple times
-DROP TRIGGER IF EXISTS notify_admin_sms_trigger ON public.bookings;
-
-
--- Attach the trigger (UPDATE and DELETE only — INSERT is handled by create-booking directly)
-CREATE TRIGGER notify_admin_sms_trigger
-AFTER UPDATE OR DELETE ON public.bookings
-FOR EACH ROW EXECUTE FUNCTION notify_admin_on_booking_change();

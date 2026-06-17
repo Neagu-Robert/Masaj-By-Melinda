@@ -61,7 +61,10 @@ The Supabase Edge Function is located at `supabase/functions/send-email/index.ts
 
 ### SMS Implementation
 
-The SMS functionality is implemented via Supabase Edge Functions that use the Twilio API. This approach keeps your Twilio credentials secure on the backend while allowing SMS notifications from the frontend.
+Admin SMS is fully server-side (not called from the browser). Two paths exist:
+
+1. **New bookings** — `create-booking` edge function sends admin SMS directly via Twilio.
+2. **Booking updates/cancels** — `notify_admin_on_booking_change()` DB trigger calls the `send-sms` edge function via `pg_net`. Profile date/time re-requests (`confirmed` → `unconfirmed`) use the `confirmation_needed` event with the same `Rezervare noua:` message as new bookings.
 
 The Supabase Edge Function is located at `supabase/functions/send-sms/index.ts` and handles:
 - SMS message sending via Twilio API
@@ -173,7 +176,6 @@ The reminder system is implemented via a Supabase Edge Function (`supabase/funct
 - `config.ts` - Configuration settings and environment variables
 - `types.ts` - TypeScript interfaces and types
 - `emailService.ts` - Supabase Edge Function integration for email notifications
-- `smsService.ts` - Supabase Edge Function integration for SMS notifications
 - `loggingService.ts` - Notification logging functionality
 - `notificationService.ts` - Core notification service with queue
 - `hooks.ts` - React hooks for using notifications in components
@@ -184,7 +186,7 @@ The reminder system is implemented via a Supabase Edge Function (`supabase/funct
 
 ## Notification implementations
 - `booking_created_customer` - When booked from the customer's booking page, will send and email to the logged in customers and an sms to the admin numbers responsible with booking handleing (booking responsible admins to be implemented)
-- `booking_updated_profile` - When a user updates a booking, from his profile page, an email is sent to the user and a sms to the admins responsible (just like previously)
+- `booking_updated_profile` - When a user updates a booking from the profile page, an email is sent to the customer. If date/time changed (`confirmed` → `unconfirmed`), admin SMS is sent by the `confirmation_needed` DB trigger event (not from the frontend notification service).
 - `booking_cancelled_profile` - When a user cancells a booking, from his profile page, an email is sent to the user and a sms to the admins responsible (just like previously)
 - `booking_created_admin` - when a admin creates a booking using the admin form, only an sms is sent to the responsible admins
 - `booking_updated_admin` - if an admin updates a booking using the admin page, an email is sent to the customer of which the booking belonged to and an sms to the responsible admins.

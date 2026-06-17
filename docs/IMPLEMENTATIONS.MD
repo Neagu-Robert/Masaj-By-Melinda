@@ -130,42 +130,32 @@ sequenceDiagram
 
 ### Admin SMS (Twilio Messages)
 
-**Purpose:** Instant SMS alerts to admin(s) when new booking is created.
+**Purpose:** Instant SMS alerts to admin(s) for booking events that need attention.
 
-**Integration:** `create-booking` edge function calls Twilio Messages API directly.
+**Two server-side paths (no frontend SMS):**
 
-**Flow:**
-1. `create-booking` succeeds
-2. Read `ADMIN_PHONE_NUMBERS` secret (comma-separated list)
-3. For each admin phone:
-   - Call Twilio Messages API (`/Messages`)
-   - Send Romanian SMS with booking details
-4. All SMS failures logged silently (non-blocking)
+| Event | Path | Message prefix |
+|---|---|---|
+| New booking (main booking page) | `create-booking` EF → direct Twilio | `Rezervare noua:` |
+| Profile re-request (date/time change, `confirmed` → `unconfirmed`) | DB trigger `notify_admin_on_booking_change()` → `send-sms` EF | `Rezervare noua:` (`confirmation_needed` event) |
+| Cancel / suggestion response / other updates | Same DB trigger → `send-sms` EF | `Anulare:`, `Sugestie acceptata:`, `Actualizare:`, etc. |
 
-**Why direct API call:** Faster than calling `send-sms` edge function (avoids extra hop).
+**New booking flow (`create-booking`):**
+1. Booking insert succeeds
+2. Read `ADMIN_PHONE_NUMBERS` from Edge Function secrets
+3. For each admin phone, call Twilio Messages API directly
+4. Failures logged silently (non-blocking)
 
----
+**Update/cancel flow (DB trigger):**
+1. Customer updates or cancels a booking (e.g. profile page)
+2. `notify_admin_sms_trigger` fires on `bookings` UPDATE/DELETE
+3. Trigger reads Vault secrets (`ADMIN_PHONE_NUMBERS`, `INTERNAL_SMS_SHARED_SECRET`, etc.)
+4. Calls `send-sms` EF via `pg_net.http_post` for each admin phone
+5. Suppressed for admin-initiated actions and service-role operations
 
-### Frontend SMS Service
+**Why direct Twilio in `create-booking`:** Faster than an extra edge-function hop for INSERT-only events.
 
-**File:** `src/services/notifications/smsService.ts`
-
-**Purpose:** 11 SMS templates (Romanian) for various notifications.
-
-**Templates:**
-1. Booking created (customer)
-2. Booking updated (customer)
-3. Booking cancelled (customer)
-4. Booking created (admin)
-5. Booking updated (admin)
-6. Booking cancelled (admin)
-7. Recurring enabled (customer)
-8. Recurring cancelled (customer)
-9. Admin confirmed (customer)
-10. Admin rejected (customer)
-11. Admin suggested alternative (customer)
-
-**Usage:** Calls `send-sms` edge function via `invokeRateLimited`.
+**Frontend:** `notificationService.ts` sends email only. Admin SMS is never invoked from the browser.
 
 ---
 
