@@ -39,3 +39,4 @@ supabase/.temp
 # Task files
 # tasks.json
 # tasks/ 
+build\client

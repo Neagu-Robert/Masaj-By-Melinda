@@ -16,12 +16,18 @@ import { Input } from "@/components/ui/input";
 import { CalendarIcon, Clock } from "lucide-react";
 import { 
   formatDateForDB, 
-  checkForDoubleBooking, 
+  checkForDoubleBooking,
+  checkForHourBookingConflict,
   validateBookingData,
-  TIME_SLOTS,
   getTomorrow,
   fetchBookedTimeSlots,
-  getAvailableTimeSlotsForDate
+  getAvailableTimeSlotsForDate,
+  combineHourAndMinute,
+  normalizeHourSlot,
+  getMinutePart,
+  isHourSlotBooked,
+  isHourSlotUnavailable,
+  MINUTE_OPTIONS,
 } from "@/lib/booking-utils";
 
 interface BookingFormModalProps {
@@ -57,10 +63,15 @@ export default function BookingFormModal({ open, onClose, booking }: BookingForm
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { sendBookingConfirmationAdmin, sendBookingUpdateAdmin } = useBookingNotifications();
 
-  // State for date/time selection - initialize with empty string to avoid controlled/uncontrolled issues
+  // State for date/time selection
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
-  const [selectedTime, setSelectedTime] = useState<string>("");
+  const [selectedHour, setSelectedHour] = useState<string>("");
+  const [selectedMinute, setSelectedMinute] = useState<string>("00");
   const [bookedTimeSlots, setBookedTimeSlots] = useState<string[]>([]);
+
+  const selectedTime = selectedHour && selectedMinute
+    ? combineHourAndMinute(selectedHour, selectedMinute)
+    : "";
 
   useEffect(() => {
     if (booking) {
@@ -77,9 +88,11 @@ export default function BookingFormModal({ open, onClose, booking }: BookingForm
         setSelectedDate(new Date(booking.booking_date));
       }
       if (booking.booking_time) {
-        setSelectedTime(booking.booking_time);
+        setSelectedHour(normalizeHourSlot(booking.booking_time));
+        setSelectedMinute(getMinutePart(booking.booking_time));
       } else {
-        setSelectedTime("");
+        setSelectedHour("");
+        setSelectedMinute("00");
       }
     } else {
       form.reset({
@@ -91,7 +104,8 @@ export default function BookingFormModal({ open, onClose, booking }: BookingForm
         booking_time: "",
       });
       setSelectedDate(undefined);
-      setSelectedTime("");
+      setSelectedHour("");
+      setSelectedMinute("00");
     }
   }, [booking, open, form]);
 
@@ -126,6 +140,17 @@ export default function BookingFormModal({ open, onClose, booking }: BookingForm
       // Validate booking data
       const bookingDate = selectedDate || new Date(values.booking_date);
       const bookingTime = selectedTime || values.booking_time;
+
+      if (!selectedHour) {
+        toast({
+          title: "Eroare de Validare",
+          description: "Vă rugăm să selectați o oră",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
       const validation = validateBookingData(bookingDate, bookingTime, values.service_type);
       if (!validation.isValid) {
         toast({
@@ -150,6 +175,22 @@ export default function BookingFormModal({ open, onClose, booking }: BookingForm
           toast({
             title: "Eroare Rezervare Dublă",
             description: doubleBookingCheck.error || "Acest interval orar este deja rezervat",
+            variant: "destructive",
+          });
+          setIsSubmitting(false);
+          return;
+        }
+
+        const hourConflictCheck = await checkForHourBookingConflict(
+          bookingDate,
+          bookingTime,
+          booking.id
+        );
+
+        if (hourConflictCheck.hasConflict) {
+          toast({
+            title: "Eroare Rezervare Dublă",
+            description: hourConflictCheck.error || "Acest interval orar este deja rezervat",
             variant: "destructive",
           });
           setIsSubmitting(false);
@@ -206,6 +247,18 @@ export default function BookingFormModal({ open, onClose, booking }: BookingForm
           return;
         }
 
+        const hourConflictCheck = await checkForHourBookingConflict(bookingDate, bookingTime);
+
+        if (hourConflictCheck.hasConflict) {
+          toast({
+            title: "Eroare Rezervare Dublă",
+            description: hourConflictCheck.error || "Acest interval orar este deja rezervat",
+            variant: "destructive",
+          });
+          setIsSubmitting(false);
+          return;
+        }
+
         const newBooking = {
           ...values,
           service_id: serviceId,
@@ -256,38 +309,30 @@ export default function BookingFormModal({ open, onClose, booking }: BookingForm
     }
   };
 
-  // Get available hours for the selected date
+  // Get available hours for the selected date (hour-level blocking)
   const getAvailableHoursForSelectedDate = () => {
     if (!selectedDate) return [];
-    
+
     const formattedDate = formatDateForDB(selectedDate);
-    
-    // Get unavailable hours from availabilities context
+
     const unavailableHours = availabilities
       .filter(a => a.date === formattedDate && !a.is_available)
-      .map(a => a.hour.slice(0, 5)); // Convert HH:MM:SS to HH:MM
-    
-    // Get base time slots based on business rules
+      .map(a => a.hour.slice(0, 5));
+
     const baseTimeSlots = getAvailableTimeSlotsForDate(selectedDate);
-    
-    // Filter out both booked and unavailable hours using proper normalization
-    const availableHours = baseTimeSlots.filter(hour => {
-      // Check if hour is booked
-      const isBooked = bookedTimeSlots.some(
-        (b) => b === hour || b.padStart(5, "0") === hour.padStart(5, "0") || 
-               b.replace(/^0/, "") === hour.replace(/^0/, "")
-      );
-      
-      // Check if hour is unavailable (blocked)
-      const isUnavailable = unavailableHours.some(
-        (u) => u === hour || u.padStart(5, "0") === hour.padStart(5, "0") || 
-               u.replace(/^0/, "") === hour.replace(/^0/, "")
-      );
-      
+
+    // When editing, don't block the hour by this booking's own time
+    const slotsForBlocking = booking?.booking_time
+      ? bookedTimeSlots.filter(
+          (t) => t.toString().slice(0, 5) !== booking.booking_time.toString().slice(0, 5)
+        )
+      : bookedTimeSlots;
+
+    return baseTimeSlots.filter(hour => {
+      const isBooked = isHourSlotBooked(hour, slotsForBlocking);
+      const isUnavailable = isHourSlotUnavailable(hour, unavailableHours);
       return !isBooked && !isUnavailable;
     });
-    
-    return availableHours;
   };
 
   // Check if a date should be disabled in the calendar
@@ -401,18 +446,36 @@ export default function BookingFormModal({ open, onClose, booking }: BookingForm
                     Ora originală: <span className="font-semibold">{booking.booking_time}</span>
                   </p>
                 )}
-                <Select value={selectedTime} onValueChange={setSelectedTime}>
-                  <SelectTrigger className="bg-gray-800 text-white border-gray-600">
-                    <SelectValue placeholder="Selectați o oră" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-gray-800 text-white border-gray-600">
-                    {selectedDate && getAvailableHoursForSelectedDate().map((hour) => (
-                      <SelectItem key={hour} value={hour}>
-                        {hour}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="flex gap-3">
+                  <Select value={selectedHour} onValueChange={setSelectedHour}>
+                    <SelectTrigger className="bg-gray-800 text-white border-gray-600 flex-1">
+                      <SelectValue placeholder="Oră" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-800 text-white border-gray-600">
+                      {selectedDate && getAvailableHoursForSelectedDate().map((hour) => (
+                        <SelectItem key={hour} value={hour}>
+                          {hour}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select
+                    value={selectedMinute}
+                    onValueChange={setSelectedMinute}
+                    disabled={!selectedHour}
+                  >
+                    <SelectTrigger className="bg-gray-800 text-white border-gray-600 w-28">
+                      <SelectValue placeholder="Min" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-800 text-white border-gray-600 max-h-60">
+                      {MINUTE_OPTIONS.map((minute) => (
+                        <SelectItem key={minute} value={minute}>
+                          :{minute}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 {selectedDate && getAvailableHoursForSelectedDate().length === 0 && (
                   <p className="text-violet-300 text-sm mt-2">
                     Nu există intervale orare disponibile pentru această dată.

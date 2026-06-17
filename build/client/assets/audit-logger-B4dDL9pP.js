@@ -1,1 +1,0 @@
-import{s as n}from"./client-CUx4-LUr.js";async function c(o,t,a,e,i){try{const{error:r}=await n.from("admin_audit_logs").insert({user_id:o,action:t,target_type:a,target_id:e,details:i,created_at:new Date().toISOString()});r&&console.error("Error logging admin action:",r)}catch(r){console.error("Failed to log admin action:",r)}}export{c as l};

@@ -267,6 +267,7 @@ stateDiagram-v2
 | `20260329_booking_sms_trigger.sql` | Creates `notify_admin_on_booking_change()` trigger function + `notify_admin_sms_trigger` on bookings UPDATE/DELETE |
 | `20260329200000_booking_admin_audit_trigger.sql` | Creates `log_admin_action_on_booking()` + `booking_admin_audit_trigger` on `bookings` |
 | `20260329200001_profile_admin_audit_trigger.sql` | Creates `log_admin_action_on_profile()` + `profile_admin_audit_trigger` on `profiles` |
+| `20260330_profile_create_audit_trigger.sql` | Extends `log_admin_action_on_profile()` to log `user.create` on profile INSERT |
 
 ---
 
@@ -276,7 +277,7 @@ stateDiagram-v2
 |---|---|---|---|
 | `notify_admin_on_booking_change()` | `bookings` | `AFTER UPDATE OR DELETE` | Reads `INTERNAL_SMS_SHARED_SECRET` + `ADMIN_PHONE_NUMBERS` from Vault; calls `send-sms` EF via `pg_net.http_post` (async, fail-open). Suppressed for admin-initiated actions. |
 | `log_admin_action_on_booking()` | `bookings` | `AFTER INSERT OR UPDATE OR DELETE` | Inserts a row into `admin_audit_logs` when the acting user has role `admin` (or on any DELETE). Actions: `booking.create.admin`, `booking.update.admin`, `booking.delete`. |
-| `log_admin_action_on_profile()` | `profiles` | `AFTER UPDATE OR DELETE` | Inserts a row into `admin_audit_logs` for admin-initiated ban/unban/delete actions. Actions: `user.ban`, `user.unban`, `user.delete`. |
+| `log_admin_action_on_profile()` | `profiles` | `AFTER INSERT OR UPDATE OR DELETE` | Logs `user.create` on profile INSERT (email + full_name in details; `user_id` = new user). Admin-initiated ban/unban/delete: `user.ban`, `user.unban`, `user.delete`. |
 
 ---
 

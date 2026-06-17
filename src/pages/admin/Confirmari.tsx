@@ -5,7 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useBookingNotifications } from '../../services/notifications/hooks';
 import { useServices } from '../../contexts/ServicesContext';
 import { useAvailabilities } from '../../contexts/AvailabilitiesContext';
-import { formatDateForDB, checkForDoubleBooking, validateBookingData, getAvailableTimeSlotsForDate, getTomorrow, fetchBookedTimeSlots } from '../../lib/booking-utils';
+import { formatDateForDB, checkForDoubleBooking, checkForHourBookingConflict, validateBookingData, getAvailableTimeSlotsForDate, getTomorrow, fetchBookedTimeSlots, combineHourAndMinute, normalizeHourSlot, getMinutePart, isHourSlotBooked, isHourSlotUnavailable, MINUTE_OPTIONS, parseRequestedDateText, parseRequestedTimeText } from '../../lib/booking-utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -14,8 +14,8 @@ import { CalendarIcon, Clock } from 'lucide-react';
 
 type Booking = {
   id: string;
-  booking_date: string;
-  booking_time: string;
+  booking_date: string | null;
+  booking_time: string | null;
   service_type: string;
   service_id: number | null;
   requested_date_text: string | null;
@@ -46,9 +46,14 @@ const Confirmari = () => {
   
   // Date/Time selection states
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
-  const [selectedTime, setSelectedTime] = useState<string>('');
+  const [selectedHour, setSelectedHour] = useState<string>('');
+  const [selectedMinute, setSelectedMinute] = useState<string>('00');
   const [bookedTimeSlots, setBookedTimeSlots] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+
+  const selectedTime = selectedHour && selectedMinute
+    ? combineHourAndMinute(selectedHour, selectedMinute)
+    : '';
 
   useEffect(() => {
     fetchBookings();
@@ -195,16 +200,10 @@ const Confirmari = () => {
     // Get base time slots based on business rules
     const baseTimeSlots = getAvailableTimeSlotsForDate(selectedDate);
     
-    // Filter out both booked and unavailable hours
+    // Filter out both booked and unavailable hours (hour-level blocking)
     const availableHours = baseTimeSlots.filter(hour => {
-      const isBooked = bookedTimeSlots.some(
-        (b) => b === hour || b.padStart(5, "0") === hour.padStart(5, "0") || 
-               b.replace(/^0/, "") === hour.replace(/^0/, "")
-      );
-      const isUnavailable = unavailableHours.some(
-        (u) => u === hour || u.padStart(5, "0") === hour.padStart(5, "0") || 
-               u.replace(/^0/, "") === hour.replace(/^0/, "")
-      );
+      const isBooked = isHourSlotBooked(hour, bookedTimeSlots);
+      const isUnavailable = isHourSlotUnavailable(hour, unavailableHours);
       return !isBooked && !isUnavailable;
     });
     
@@ -224,8 +223,26 @@ const Confirmari = () => {
 
   const handleOpenConfirmModal = (booking: Booking) => {
     setSelectedBookingForAction(booking);
-    setSelectedDate(booking.booking_date ? new Date(booking.booking_date) : undefined);
-    setSelectedTime(booking.booking_time || '');
+
+    const parsedDate = booking.booking_date
+      ? new Date(booking.booking_date)
+      : parseRequestedDateText(booking.requested_date_text);
+    setSelectedDate(parsedDate);
+
+    if (booking.booking_time) {
+      setSelectedHour(normalizeHourSlot(booking.booking_time));
+      setSelectedMinute(getMinutePart(booking.booking_time));
+    } else {
+      const parsedTime = parseRequestedTimeText(booking.requested_time_text);
+      if (parsedTime) {
+        setSelectedHour(parsedTime.hour);
+        setSelectedMinute(parsedTime.minute);
+      } else {
+        setSelectedHour('');
+        setSelectedMinute('00');
+      }
+    }
+
     setConfirmModalOpen(true);
   };
 
@@ -233,11 +250,12 @@ const Confirmari = () => {
     setConfirmModalOpen(false);
     setSelectedBookingForAction(null);
     setSelectedDate(undefined);
-    setSelectedTime('');
+    setSelectedHour('');
+    setSelectedMinute('00');
   };
 
   const handleSaveConfirm = async () => {
-    if (!selectedBookingForAction || !selectedDate || !selectedTime) {
+    if (!selectedBookingForAction || !selectedDate || !selectedHour) {
       toast.error('Vă rugăm să selectați data și ora');
       return;
     }
@@ -258,6 +276,17 @@ const Confirmari = () => {
 
     if (doubleBookingCheck.isDoubleBooked) {
       toast.error(doubleBookingCheck.error || 'Acest interval orar este deja rezervat');
+      return;
+    }
+
+    const hourConflictCheck = await checkForHourBookingConflict(
+      selectedDate,
+      selectedTime,
+      selectedBookingForAction.id
+    );
+
+    if (hourConflictCheck.hasConflict) {
+      toast.error(hourConflictCheck.error || 'Acest interval orar este deja rezervat');
       return;
     }
 
@@ -353,9 +382,11 @@ const Confirmari = () => {
                     <h3 className="font-semibold">Detalii Rezervare</h3>
                     <p>Serviciu: {booking.service_type}</p>
                     <p>
-                      Data: {new Date(booking.booking_date).toLocaleDateString()}
+                      Data: {booking.booking_date
+                        ? new Date(booking.booking_date).toLocaleDateString()
+                        : (booking.requested_date_text || '—')}
                     </p>
-                    <p>Ora: {booking.booking_time}</p>
+                    <p>Ora: {booking.booking_time || booking.requested_time_text || '—'}</p>
                     <p>
                       Status:{' '}
                       <span
@@ -445,18 +476,36 @@ const Confirmari = () => {
                         <Clock className="mr-2 h-5 w-5 text-violet-400" />
                         <span className="font-medium text-violet-200">Selectați Ora</span>
                       </div>
-                      <Select value={selectedTime} onValueChange={setSelectedTime}>
-                        <SelectTrigger className="bg-gray-800 text-white border-gray-600">
-                          <SelectValue placeholder="Selectați o oră" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-gray-800 text-white border-gray-600">
-                          {getAvailableHoursForSelectedDate().map((hour) => (
-                            <SelectItem key={hour} value={hour}>
-                              {hour}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <div className="flex gap-3">
+                        <Select value={selectedHour} onValueChange={setSelectedHour}>
+                          <SelectTrigger className="bg-gray-800 text-white border-gray-600 flex-1">
+                            <SelectValue placeholder="Oră" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-gray-800 text-white border-gray-600">
+                            {getAvailableHoursForSelectedDate().map((hour) => (
+                              <SelectItem key={hour} value={hour}>
+                                {hour}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Select
+                          value={selectedMinute}
+                          onValueChange={setSelectedMinute}
+                          disabled={!selectedHour}
+                        >
+                          <SelectTrigger className="bg-gray-800 text-white border-gray-600 w-28">
+                            <SelectValue placeholder="Min" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-gray-800 text-white border-gray-600 max-h-60">
+                            {MINUTE_OPTIONS.map((minute) => (
+                              <SelectItem key={minute} value={minute}>
+                                :{minute}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                       {selectedDate && getAvailableHoursForSelectedDate().length === 0 && (
                         <p className="text-violet-300 text-sm mt-2">
                           Nu există intervale orare disponibile pentru această dată.
@@ -481,7 +530,7 @@ const Confirmari = () => {
             </Button>
             <Button
               onClick={handleSaveConfirm}
-              disabled={isSaving || !selectedDate || !selectedTime}
+              disabled={isSaving || !selectedDate || !selectedHour}
               className="bg-violet-600 hover:bg-violet-700 text-white"
             >
               {isSaving ? 'Se confirmă...' : 'Confirmă'}

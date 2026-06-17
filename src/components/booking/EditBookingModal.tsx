@@ -16,16 +16,21 @@ import { useServices } from "@/contexts/ServicesContext";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from 'date-fns';
 import { useBookingNotifications } from "@/services/notifications/hooks";
-import { 
-  TIME_SLOTS, 
-  formatDateForDB, 
-  fetchBookedTimeSlots, 
-  isTimeSlotUnavailable,
-  getAvailableHoursForDate,
+import {
+  formatDateForDB,
+  formatRequestedDateText,
+  fetchBookedTimeSlots,
   getTomorrow,
   checkForDoubleBooking,
+  checkForHourBookingConflict,
   validateBookingData,
-  getAvailableTimeSlotsForDate
+  getAvailableTimeSlotsForDate,
+  combineHourAndMinute,
+  normalizeHourSlot,
+  getMinutePart,
+  isHourSlotBooked,
+  isHourSlotUnavailable,
+  MINUTE_OPTIONS,
 } from "@/lib/booking-utils";
 import { Input } from "@/components/ui/input";
 import { Calendar as CalendarIcon, Clock } from "lucide-react";
@@ -35,7 +40,8 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
   const { toast } = useToast();
   const [serviceType, setServiceType] = useState("");
   const [bookingDate, setBookingDate] = useState<Date | undefined>();
-  const [bookingTime, setBookingTime] = useState("");
+  const [selectedHour, setSelectedHour] = useState("");
+  const [selectedMinute, setSelectedMinute] = useState("00");
   const [isSaving, setIsSaving] = useState(false);
   const [bookedTimeSlots, setBookedTimeSlots] = useState<string[]>([]);
   const [userDetails, setUserDetails] = useState<{ email: string; phone: string; fullName: string } | null>(null);
@@ -43,21 +49,30 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
   const [originalDate, setOriginalDate] = useState<string>('');
   const [originalTime, setOriginalTime] = useState<string>('');
 
-  // Function to reset form to original booking values
+  const bookingTime = selectedHour && selectedMinute
+    ? combineHourAndMinute(selectedHour, selectedMinute)
+    : '';
+
   const resetForm = () => {
     if (booking) {
       setServiceType(booking.service_type || "");
       setBookingDate(booking.booking_date ? new Date(booking.booking_date) : undefined);
-      setBookingTime(booking.booking_time || "");
+      if (booking.booking_time) {
+        setSelectedHour(normalizeHourSlot(booking.booking_time));
+        setSelectedMinute(getMinutePart(booking.booking_time));
+      } else {
+        setSelectedHour("");
+        setSelectedMinute("00");
+      }
     } else {
       setServiceType("");
       setBookingDate(undefined);
-      setBookingTime("");
+      setSelectedHour("");
+      setSelectedMinute("00");
     }
     setError("");
   };
 
-  // Handle modal close with reset
   const handleClose = () => {
     resetForm();
     onClose();
@@ -70,16 +85,15 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
   useEffect(() => {
     const from = format(new Date(), 'yyyy-MM-dd');
     const to = format(new Date(new Date().setMonth(new Date().getMonth() + 1)), 'yyyy-MM-dd');
-    
+
     const fetchUserDetails = async () => {
       if (booking?.user_id) {
-        // Get user profile
         const { data: profile } = await supabase
           .from('profiles')
           .select('full_name, phone, email')
           .eq('id', booking.user_id)
           .single();
-        
+
         if (profile) {
           setUserDetails({
             email: profile.email || '',
@@ -88,7 +102,6 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
           });
         }
       } else {
-        // For bookings without user_id, use booking data
         setUserDetails({
           email: '',
           phone: booking?.phone_number || '',
@@ -104,12 +117,11 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
   useEffect(() => {
     if (open && booking) {
       resetForm();
-      setOriginalDate(booking.booking_date);
-      setOriginalTime(booking.booking_time);
+      setOriginalDate(booking.booking_date || '');
+      setOriginalTime(booking.booking_time ? booking.booking_time.toString().slice(0, 5) : '');
     }
   }, [open, booking]);
 
-  // Fetch booked slots each time bookingDate changes
   useEffect(() => {
     const fetchBookedSlots = async () => {
       if (!bookingDate) {
@@ -119,84 +131,78 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
       try {
         const booked = await fetchBookedTimeSlots(bookingDate);
         setBookedTimeSlots(booked);
-        // If current booking time is now booked by someone else, clear it
-        if (bookingTime && booked.includes(bookingTime) && booking?.booking_time !== bookingTime) {
-          setBookingTime('');
-        }
-      } catch (error) {
-        console.error('Error fetching booked time slots:', error);
+      } catch (err) {
+        console.error('Error fetching booked time slots:', err);
         setBookedTimeSlots([]);
       }
     };
     fetchBookedSlots();
-  }, [bookingDate, bookingTime, booking?.booking_time]);
-
-  // Compute unavailable slots from availabilities context
-  useEffect(() => {
-    if (!bookingDate) return;
-    
-    const formattedDate = formatDateForDB(bookingDate);
-    const slots: string[] = [];
-    availabilities
-      .filter(a => a.date === formattedDate)
-      .forEach(a => {
-        if (!a.is_available) {
-          slots.push(a.hour.slice(0, 5));
-        }
-      });
-    
-    // If current booking time is now unavailable, clear it
-    if (bookingTime && slots.includes(bookingTime) && booking?.booking_time !== bookingTime) {
-      setBookingTime('');
-    }
-  }, [availabilities, bookingDate, bookingTime, booking?.booking_time]);
+  }, [bookingDate]);
 
   const handleSave = async () => {
     setError("");
-    
-    // Validate booking data
+
+    if (!selectedHour) {
+      setError('Vă rugăm să selectați o oră');
+      return;
+    }
+
     const validation = validateBookingData(bookingDate, bookingTime, serviceType);
     if (!validation.isValid) {
       setError(validation.error || 'Date de rezervare invalide');
       return;
     }
 
-    // Check for double booking
     const doubleBookingCheck = await checkForDoubleBooking(
-      bookingDate!, 
-      bookingTime, 
+      bookingDate!,
+      bookingTime,
       booking?.id
     );
-    
+
     if (doubleBookingCheck.isDoubleBooked) {
       setError(doubleBookingCheck.error || 'Acest interval orar este deja rezervat');
       return;
     }
 
+    const hourConflictCheck = await checkForHourBookingConflict(
+      bookingDate!,
+      bookingTime,
+      booking?.id
+    );
+
+    if (hourConflictCheck.hasConflict) {
+      setError(hourConflictCheck.error || 'Acest interval orar este deja rezervat');
+      return;
+    }
+
     setIsSaving(true);
     try {
-      // Get service details from the database
       const serviceDetails = getServiceByName(serviceType);
       const serviceId = serviceDetails?.id || null;
-      
-      // Check if date or time changed
+
       const dateChanged = formatDateForDB(bookingDate!) !== originalDate;
       const timeChanged = bookingTime !== originalTime;
       const dateOrTimeChanged = dateChanged || timeChanged;
-      
-      // Determine new status
-      const newStatus = dateOrTimeChanged ? 'unconfirmed' : 'confirmed';
 
-      // Update the booking
+      const updatePayload = dateOrTimeChanged
+        ? {
+            service_type: serviceType,
+            service_id: serviceId,
+            status: 'unconfirmed' as const,
+            requested_date_text: formatRequestedDateText(bookingDate!),
+            requested_time_text: bookingTime,
+            booking_date: null,
+            booking_time: null,
+          }
+        : {
+            service_type: serviceType,
+            service_id: serviceId,
+            status: 'confirmed' as const,
+          };
+
       const { error: updateError } = await supabase
         .from('bookings')
-        .update({
-          service_type: serviceType,
-          booking_date: formatDateForDB(bookingDate!),
-          booking_time: bookingTime,
-          service_id: serviceId,
-          status: newStatus  // Set status based on changes
-        })
+        .update(updatePayload)
         .eq('id', booking.id);
 
       if (updateError) {
@@ -204,11 +210,9 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
         return;
       }
 
-      // Send appropriate notification
       if (booking.user_id && userDetails) {
         try {
           if (dateOrTimeChanged) {
-            // Date/time changed - send approval needed notification
             await sendBookingUpdateProfile({
               bookingId: booking.id,
               userId: booking.user_id,
@@ -222,16 +226,14 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
               bookingTime: bookingTime,
               duration: serviceDetails?.duration || 60,
               price: serviceDetails?.price || 140.00,
-              status: 'unconfirmed'  // Important: use unconfirmed status
+              status: 'unconfirmed'
             });
-            
-            // Show message about approval
+
             toast({
               title: "Modificări Salvate",
               description: "Modificările de dată/oră necesită aprobare. Veți fi notificat când rezervarea este confirmată.",
             });
           } else {
-            // Only service changed - normal update
             await sendBookingUpdateProfile({
               bookingId: booking.id,
               userId: booking.user_id,
@@ -247,7 +249,7 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
               price: serviceDetails?.price || 140.00,
               status: 'confirmed'
             });
-            
+
             toast({
               title: "Rezervare Actualizată",
               description: "Rezervarea a fost actualizată cu succes.",
@@ -260,70 +262,51 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
 
       onBookingUpdated();
       handleClose();
-    } catch (error) {
-      console.error('Error updating booking:', error);
+    } catch (err) {
+      console.error('Error updating booking:', err);
       setError('A apărut o eroare neașteptată la actualizarea rezervării.');
     } finally {
       setIsSaving(false);
     }
   };
 
-  // Get available hours for the selected date
   const getAvailableHoursForSelectedDate = () => {
     if (!bookingDate) return [];
-    
+
     const formattedDate = formatDateForDB(bookingDate);
-    
-    // Get unavailable hours from availabilities context
+
     const unavailableHours = availabilities
       .filter(a => a.date === formattedDate && !a.is_available)
-      .map(a => a.hour.slice(0, 5)); // Convert HH:MM:SS to HH:MM
-    
-    // Get base time slots based on business rules
+      .map(a => a.hour.slice(0, 5));
+
     const baseTimeSlots = getAvailableTimeSlotsForDate(bookingDate);
-    
-    // Filter out both booked and unavailable hours using proper normalization
-    const availableHours = baseTimeSlots.filter(hour => {
-      // Check if hour is booked
-      const isBooked = bookedTimeSlots.some(
-        (b) => b === hour || b.padStart(5, "0") === hour.padStart(5, "0") || 
-               b.replace(/^0/, "") === hour.replace(/^0/, "")
-      );
-      
-      // Check if hour is unavailable (blocked)
-      const isUnavailable = unavailableHours.some(
-        (u) => u === hour || u.padStart(5, "0") === hour.padStart(5, "0") || 
-               u.replace(/^0/, "") === hour.replace(/^0/, "")
-      );
-      
+
+    const slotsForBlocking = booking?.booking_time
+      ? bookedTimeSlots.filter(
+          (t) => t.toString().slice(0, 5) !== booking.booking_time.toString().slice(0, 5)
+        )
+      : bookedTimeSlots;
+
+    return baseTimeSlots.filter(hour => {
+      const isBooked = isHourSlotBooked(hour, slotsForBlocking);
+      const isUnavailable = isHourSlotUnavailable(hour, unavailableHours);
       return !isBooked && !isUnavailable;
     });
-    
-    return availableHours;
   };
 
-  // Check if a date should be disabled in the calendar
   const isDateDisabled = (date: Date) => {
     const tomorrow = getTomorrow();
     const dayOfWeek = date.getDay();
-    
-    // Disable dates before tomorrow
-    if (date < tomorrow) {
-      return true;
-    }
-    
-    // Disable Sundays
-    if (dayOfWeek === 0) {
-      return true;
-    }
-    
+
+    if (date < tomorrow) return true;
+    if (dayOfWeek === 0) return true;
+
     return false;
   };
 
-  // Get original booking time for display
   const getOriginalBookingTime = () => {
-    if (!booking) return '';
-    return booking.booking_time || '';
+    if (!booking?.booking_time) return '';
+    return booking.booking_time.toString().slice(0, 5);
   };
 
   return (
@@ -335,9 +318,8 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
             Modificați serviciul, data sau ora pentru această rezervare și salvați modificările.
           </DialogDescription>
         </DialogHeader>
-        
+
         <div className="space-y-6">
-          {/* Personal Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="first_name" className="text-violet-200">Prenume</Label>
@@ -358,7 +340,7 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
               />
             </div>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="phone_number" className="text-violet-200">Număr de Telefon</Label>
@@ -386,11 +368,9 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
             </div>
           </div>
 
-          {/* Date and Time Selection */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-violet-300">Selectare Dată și Oră</h3>
             <div className="flex flex-col space-y-6 md:space-y-0 md:flex-row md:space-x-6">
-              {/* Calendar Section */}
               <div className="w-full md:w-1/2">
                 <div className="flex items-center mb-3">
                   <CalendarIcon className="mr-2 h-5 w-5 text-violet-400" />
@@ -404,8 +384,7 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
                   className="rounded-md border border-gray-600 bg-gray-800 text-violet-200 [&_.rdp-day]:text-violet-200 [&_.rdp-day_selected]:bg-violet-600 [&_.rdp-day_selected]:text-white [&_.rdp-day:hover]:bg-violet-600/20"
                 />
               </div>
-              
-              {/* Time Selection Section */}
+
               <div className="w-full md:w-1/2">
                 <div className="flex items-center mb-3">
                   <Clock className="mr-2 h-5 w-5 text-violet-400" />
@@ -416,18 +395,36 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
                     Ora originală: <span className="font-semibold">{getOriginalBookingTime()}</span>
                   </p>
                 )}
-                <Select value={bookingTime} onValueChange={setBookingTime}>
-                  <SelectTrigger className="bg-gray-800 text-white border-gray-600">
-                    <SelectValue placeholder="Selectați o oră" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-gray-800 text-white border-gray-600">
-                    {getAvailableHoursForSelectedDate().map((hour) => (
-                      <SelectItem key={hour} value={hour}>
-                        {hour}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="flex gap-3">
+                  <Select value={selectedHour} onValueChange={setSelectedHour}>
+                    <SelectTrigger className="bg-gray-800 text-white border-gray-600 flex-1">
+                      <SelectValue placeholder="Oră" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-800 text-white border-gray-600">
+                      {getAvailableHoursForSelectedDate().map((hour) => (
+                        <SelectItem key={hour} value={hour}>
+                          {hour}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select
+                    value={selectedMinute}
+                    onValueChange={setSelectedMinute}
+                    disabled={!selectedHour}
+                  >
+                    <SelectTrigger className="bg-gray-800 text-white border-gray-600 w-28">
+                      <SelectValue placeholder="Min" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-800 text-white border-gray-600 max-h-60">
+                      {MINUTE_OPTIONS.map((minute) => (
+                        <SelectItem key={minute} value={minute}>
+                          :{minute}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 {bookingDate && getAvailableHoursForSelectedDate().length === 0 && (
                   <p className="text-violet-300 text-sm mt-2">
                     Nu există intervale orare disponibile pentru această dată.
@@ -437,16 +434,20 @@ export default function EditBookingModal({ open, onClose, booking, onBookingUpda
             </div>
           </div>
 
+          {error && (
+            <p className="text-red-400 text-sm">{error}</p>
+          )}
+
           <DialogFooter>
             <Button type="button" variant="outline" onClick={handleClose} className="border-gray-600 text-violet-800 hover:bg-gray-700">
               Anulează
             </Button>
-            <Button onClick={handleSave} className="bg-violet-600 hover:bg-violet-700 text-white">
-              Salvează Modificările
+            <Button onClick={handleSave} disabled={isSaving} className="bg-violet-600 hover:bg-violet-700 text-white">
+              {isSaving ? 'Se salvează...' : 'Salvează Modificările'}
             </Button>
           </DialogFooter>
         </div>
       </DialogContent>
     </Dialog>
   );
-}; 
+};

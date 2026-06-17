@@ -12,12 +12,97 @@ export const SATURDAY_TIME_SLOTS = Array.from({ length: 5 }, (_, i) => {
   return `${hour}:00`;
 });
 
+export const MINUTE_OPTIONS = Array.from({ length: 60 }, (_, i) =>
+  String(i).padStart(2, '0')
+);
+
+export const getHourKey = (time: string): string => {
+  const hourPart = (time || '').toString().slice(0, 5).split(':')[0];
+  if (!hourPart) return '';
+  return String(parseInt(hourPart, 10));
+};
+
+export const normalizeHourSlot = (time: string): string => {
+  const key = getHourKey(time);
+  if (!key) return '';
+  return `${parseInt(key, 10)}:00`;
+};
+
+export const getMinutePart = (time: string): string => {
+  const parts = (time || '').toString().slice(0, 5).split(':');
+  return (parts[1] ?? '00').padStart(2, '0');
+};
+
+export const combineHourAndMinute = (hour: string, minute: string): string => {
+  const hourNum = parseInt(hour.split(':')[0], 10);
+  return `${String(hourNum).padStart(2, '0')}:${minute.padStart(2, '0')}`;
+};
+
+export const isHourSlotBooked = (hourSlot: string, bookedTimes: string[]): boolean => {
+  const hourKey = getHourKey(hourSlot);
+  return bookedTimes.some((b) => getHourKey(b) === hourKey);
+};
+
+export const isHourSlotUnavailable = (hourSlot: string, unavailableHours: string[]): boolean => {
+  const hourKey = getHourKey(hourSlot);
+  return unavailableHours.some((u) => getHourKey(u) === hourKey);
+};
+
 // Helper: format date correctly for database
 export const formatDateForDB = (date: Date) => {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
+};
+
+/** Calendar date → requested_date_text (dd/MM/yyyy) for profile re-requests */
+export const formatRequestedDateText = (date: Date): string => {
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+};
+
+/** Parse requested_date_text back to Date (dd/MM/yyyy, dd.MM.yyyy, or yyyy-MM-dd) */
+export const parseRequestedDateText = (text: string | null | undefined): Date | undefined => {
+  if (!text?.trim()) return undefined;
+  const trimmed = text.trim();
+
+  const isoMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(trimmed);
+  if (isoMatch) {
+    const d = new Date(+isoMatch[1], +isoMatch[2] - 1, +isoMatch[3]);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }
+
+  const dmyMatch = /^(\d{1,2})[./](\d{1,2})[./](\d{4})$/.exec(trimmed);
+  if (dmyMatch) {
+    const d = new Date(+dmyMatch[3], +dmyMatch[2] - 1, +dmyMatch[1]);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }
+
+  const parsed = new Date(trimmed);
+  if (!isNaN(parsed.getTime())) {
+    parsed.setHours(0, 0, 0, 0);
+    return parsed;
+  }
+
+  return undefined;
+};
+
+/** Extract HH:MM from requested_time_text for dropdown prefill; null if not parseable */
+export const parseRequestedTimeText = (
+  text: string | null | undefined
+): { hour: string; minute: string } | null => {
+  if (!text?.trim()) return null;
+  const match = /(\d{1,2}):(\d{2})/.exec(text.trim());
+  if (!match) return null;
+  return {
+    hour: `${parseInt(match[1], 10)}:00`,
+    minute: match[2].padStart(2, '0'),
+  };
 };
 
 // Get tomorrow's date (minimum selectable date)
@@ -65,20 +150,23 @@ export const getAvailableTimeSlotsForDate = (date: Date): string[] => {
 
 // Check if a specific time is available for a date (considering business rules)
 export const isTimeAvailableForDate = (date: Date, time: string): boolean => {
+  const hourSlot = normalizeHourSlot(time);
+  if (!hourSlot) return false;
+
   const dayOfWeek = date.getDay();
-  
+
   // Sunday is not available
   if (dayOfWeek === 0) {
     return false;
   }
-  
+
   // Saturday: only 8 AM to 12 PM
   if (dayOfWeek === 6) {
-    return SATURDAY_TIME_SLOTS.includes(time);
+    return SATURDAY_TIME_SLOTS.includes(hourSlot);
   }
-  
+
   // Monday to Friday: full day (8 AM to 8 PM)
-  return TIME_SLOTS.includes(time);
+  return TIME_SLOTS.includes(hourSlot);
 };
 
 // Fetch booked time slots for a specific date
@@ -88,14 +176,18 @@ export const fetchBookedTimeSlots = async (date: Date): Promise<string[]> => {
     const { data, error } = await supabase
       .from('bookings')
       .select('booking_time')
-      .eq('booking_date', formattedDate);
+      .eq('booking_date', formattedDate)
+      .eq('status', 'confirmed')
+      .not('booking_time', 'is', null);
     
     if (error) {
       console.error('Error fetching booked time slots:', error);
       return [];
     }
     
-    const concrete = (data ?? []).map(booking => (booking.booking_time || "").toString().slice(0, 5));
+    const concrete = (data ?? [])
+      .filter((booking) => booking.booking_time)
+      .map(booking => (booking.booking_time || "").toString().slice(0, 5));
 
     // Also include recurring instances (HH:MM) for that date
     // Note: utils cannot use hooks directly; provide a fallback direct query here
@@ -198,7 +290,9 @@ export const checkForDoubleBooking = async (
       .from('bookings')
       .select('id')
       .eq('booking_date', formattedDate)
-      .eq('booking_time', timeFormatted);
+      .eq('booking_time', timeFormatted)
+      .eq('status', 'confirmed')
+      .not('booking_time', 'is', null);
     
     // Exclude current booking if updating
     if (excludeBookingId) {
@@ -220,6 +314,49 @@ export const checkForDoubleBooking = async (
   } catch (error) {
     console.error('Error in checkForDoubleBooking:', error);
     return { isDoubleBooked: false, error: 'Eroare la verificarea disponibilității' };
+  }
+};
+
+// Check if another booking already occupies the same hour window
+export const checkForHourBookingConflict = async (
+  date: Date,
+  time: string,
+  excludeBookingId?: string
+): Promise<{ hasConflict: boolean; error?: string }> => {
+  try {
+    const formattedDate = formatDateForDB(date);
+    const selectedHourKey = getHourKey(time);
+
+    let query = supabase
+      .from('bookings')
+      .select('id, booking_time')
+      .eq('booking_date', formattedDate)
+      .eq('status', 'confirmed')
+      .not('booking_time', 'is', null);
+
+    if (excludeBookingId) {
+      query = query.neq('id', excludeBookingId);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Error checking for hour booking conflict:', error);
+      return { hasConflict: false, error: 'Eroare la verificarea disponibilității' };
+    }
+
+    const conflict = (data ?? []).some(
+      (booking) => getHourKey((booking.booking_time || '').toString()) === selectedHourKey
+    );
+
+    if (conflict) {
+      return { hasConflict: true, error: 'Acest interval orar este deja rezervat' };
+    }
+
+    return { hasConflict: false };
+  } catch (error) {
+    console.error('Error in checkForHourBookingConflict:', error);
+    return { hasConflict: false, error: 'Eroare la verificarea disponibilității' };
   }
 };
 
